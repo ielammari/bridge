@@ -1,5 +1,11 @@
 HELP.md
 target/
+
+### Uploaded files. Paths are stored in the database.
+storage/
+
+### Project local PostgreSQL data directory (docker-compose bind mount).
+.postgres-data/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
