@@ -2,10 +2,11 @@ package io.github.ielammari.bridge.controller;
 
 import java.util.Map;
 
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import io.github.ielammari.bridge.service.HealthService;
 
 /**
  * Reports application and database availability, plus the size of the traits
@@ -15,19 +16,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1")
 public class HealthController {
 
-	private final JdbcTemplate jdbcTemplate;
+	private final HealthService healthService;
 
-	public HealthController(JdbcTemplate jdbcTemplate) {
-		this.jdbcTemplate = jdbcTemplate;
+	public HealthController(HealthService healthService) {
+		this.healthService = healthService;
 	}
 
 	@GetMapping("/health")
 	public Map<String, Object> health() {
-		Integer traitCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM trait", Integer.class);
 		return Map.of(
 				"application", "bridge",
 				"database", "up",
-				"traitCount", traitCount == null ? 0 : traitCount);
+				"traitCount", healthService.countTraits());
 	}
 
 }
