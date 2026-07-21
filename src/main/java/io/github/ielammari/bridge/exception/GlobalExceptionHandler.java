@@ -61,6 +61,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		return super.handleExceptionInternal(exception, payload, headers, statusCode, request);
 	}
 
+	@ExceptionHandler(ApiException.class)
+	public ResponseEntity<ErrorResponse> handleApi(ApiException exception) {
+		return ResponseEntity.status(exception.getStatus())
+				.body(new ErrorResponse(exception.getCode(), exception.getMessage()));
+	}
+
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ErrorResponse> handleUnexpected(Exception exception) {
 		log.error("Unhandled exception", exception);
