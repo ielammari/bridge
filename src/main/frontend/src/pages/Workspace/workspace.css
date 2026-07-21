@@ -12,6 +12,12 @@
   border-bottom: 1px solid var(--border);
 }
 
+.workspace__lead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
 .workspace__logo {
   font-family: var(--font-display);
   font-size: var(--size-lg);
@@ -19,6 +25,35 @@
   letter-spacing: -0.03em;
   padding-bottom: 1px;
   border-bottom: 2px solid var(--accent);
+}
+
+.workspace__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.workspace__link {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  font-size: var(--size-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition:
+    background-color var(--duration) var(--ease),
+    color var(--duration) var(--ease),
+    outline-color var(--duration) var(--ease);
+}
+
+.workspace__link:hover {
+  background: var(--surface-sunken);
+  color: var(--text);
+}
+
+.workspace__link--active {
+  color: var(--primary);
+  background: var(--status-en-revue-bg);
 }
 
 .workspace__account {

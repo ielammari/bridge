@@ -12,7 +12,8 @@
   transition:
     background-color var(--duration) var(--ease),
     border-color var(--duration) var(--ease),
-    color var(--duration) var(--ease);
+    color var(--duration) var(--ease),
+    outline-color var(--duration) var(--ease);
 }
 
 .button:disabled {

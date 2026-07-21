@@ -1,0 +1,102 @@
+.profile__intro {
+  max-width: 60ch;
+  color: var(--text-secondary);
+  font-size: var(--size-sm);
+}
+
+.profile__loading {
+  color: var(--text-faint);
+}
+
+/* ---- Card sections --------------------------------------------------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.card__head {
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border);
+}
+
+.card__title {
+  font-size: var(--size-lg);
+}
+
+.card__subtitle {
+  margin-top: var(--space-1);
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+}
+
+.card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+
+/* ---- Identity -------------------------------------------------------- */
+.profile__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.profile__name {
+  font-weight: var(--weight-semibold);
+}
+
+.profile__email {
+  font-size: var(--size-sm);
+  color: var(--text-faint);
+}
+
+.profile__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+/* ---- Save bar -------------------------------------------------------- */
+.profile__savebar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-float);
+}
+
+.profile__savestate {
+  margin-right: auto;
+  font-size: var(--size-sm);
+}
+
+.profile__saveok {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--status-embauchee);
+}
+
+.profile__saveerror {
+  color: var(--danger);
+}
+
+.profile__savehint {
+  color: var(--text-faint);
+}
+
+@media (max-width: 40rem) {
+  .profile__grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -46,6 +46,7 @@ public class SecurityConfig {
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(HttpMethod.GET, "/api/v1/health").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login").permitAll()
+						.requestMatchers("/api/v1/profile/**").hasRole("CANDIDAT")
 						.requestMatchers("/api/**").authenticated()
 						// Anything else is the SPA shell and its static assets.
 						.anyRequest().permitAll())

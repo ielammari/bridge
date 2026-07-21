@@ -3,6 +3,8 @@ package io.github.ielammari.bridge.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.Table;
 
@@ -19,8 +21,11 @@ public class Candidate extends User {
 	@Column(name = "niveau_experience", length = 40)
 	private String experienceLevel;
 
+	// Stored as the enum name in the free text diplome column, validated in the
+	// service rather than by a database constraint.
+	@Enumerated(EnumType.STRING)
 	@Column(name = "diplome", length = 80)
-	private String degree;
+	private Degree degree;
 
 	protected Candidate() {
 	}
@@ -50,11 +55,11 @@ public class Candidate extends User {
 		this.experienceLevel = experienceLevel;
 	}
 
-	public String getDegree() {
+	public Degree getDegree() {
 		return degree;
 	}
 
-	public void setDegree(String degree) {
+	public void setDegree(Degree degree) {
 		this.degree = degree;
 	}
 

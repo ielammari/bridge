@@ -1,0 +1,212 @@
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* ---- Search ---------------------------------------------------------- */
+.picker__search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.picker__search-icon {
+  position: absolute;
+  left: var(--space-3);
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.picker__search-input {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-6);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  transition:
+    border-color var(--duration) var(--ease),
+    outline-color var(--duration) var(--ease);
+}
+
+.picker__search-input:focus {
+  border-color: var(--primary);
+}
+
+/* ---- Selected chips -------------------------------------------------- */
+.picker__selected {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.picker__selected-count {
+  font-size: var(--size-xs);
+  font-weight: var(--weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+}
+
+.picker__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 32px;
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-3);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    border-color var(--duration) var(--ease),
+    color var(--duration) var(--ease),
+    outline-color var(--duration) var(--ease);
+}
+
+.chip:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.chip__remove {
+  color: var(--text-faint);
+}
+
+.chip:hover .chip__remove {
+  color: var(--danger);
+}
+
+/* ---- Categories ------------------------------------------------------ */
+.picker__categories {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.picker__category {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.picker__category-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 48px;
+  padding: var(--space-3) var(--space-4);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.picker__category-head:disabled {
+  cursor: default;
+}
+
+.picker__category-name {
+  font-weight: var(--weight-medium);
+}
+
+.picker__category-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-faint);
+}
+
+.picker__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 var(--space-1);
+  background: var(--primary);
+  color: var(--on-primary);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: var(--size-xs);
+}
+
+.picker__caret {
+  transition: transform var(--duration) var(--ease);
+}
+
+.picker__caret--open {
+  transform: rotate(180deg);
+}
+
+.picker__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4) var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.trait {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 36px;
+  padding: var(--space-1) var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    border-color var(--duration) var(--ease),
+    background-color var(--duration) var(--ease),
+    color var(--duration) var(--ease),
+    outline-color var(--duration) var(--ease);
+}
+
+.trait:hover {
+  border-color: var(--primary);
+}
+
+.trait__check {
+  color: transparent;
+}
+
+/* Selection is not colour alone: the check appears and the label bolds. */
+.trait--on {
+  background: var(--status-en-revue-bg);
+  border-color: var(--primary);
+  color: var(--text);
+  font-weight: var(--weight-medium);
+}
+
+.trait--on .trait__check {
+  color: var(--primary);
+}
+
+.picker__empty {
+  padding: var(--space-5);
+  text-align: center;
+  color: var(--text-faint);
+  font-size: var(--size-sm);
+}

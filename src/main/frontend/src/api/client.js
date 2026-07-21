@@ -50,8 +50,27 @@ async function request(path, { method = 'GET', body, headers = {} } = {}) {
   return payload;
 }
 
+// Fetches a binary body with the JWT attached, for downloads an anchor tag
+// cannot authenticate on its own.
+async function requestBlob(path) {
+  const token = tokenProvider();
+  const response = await fetch(`${BASE_URL}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    throw new ApiError(
+      response.status,
+      payload?.code ?? 'UNKNOWN_ERROR',
+      payload?.message ?? 'Une erreur est survenue. Veuillez réessayer.',
+    );
+  }
+  return response.blob();
+}
+
 export const api = {
   get: (path) => request(path),
+  getBlob: (path) => requestBlob(path),
   post: (path, body) => request(path, { method: 'POST', body }),
   put: (path, body) => request(path, { method: 'PUT', body }),
   patch: (path, body) => request(path, { method: 'PATCH', body }),
