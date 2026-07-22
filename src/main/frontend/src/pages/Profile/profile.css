@@ -8,36 +8,6 @@
   color: var(--text-faint);
 }
 
-/* ---- Card sections --------------------------------------------------- */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
-.card__head {
-  padding: var(--space-4) var(--space-5);
-  border-bottom: 1px solid var(--border);
-}
-
-.card__title {
-  font-size: var(--size-lg);
-}
-
-.card__subtitle {
-  margin-top: var(--space-1);
-  font-size: var(--size-sm);
-  color: var(--text-secondary);
-}
-
-.card__body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  padding: var(--space-5);
-}
-
 /* ---- Identity -------------------------------------------------------- */
 .profile__identity {
   display: flex;

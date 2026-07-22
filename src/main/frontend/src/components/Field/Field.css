@@ -39,6 +39,13 @@
   border-color: var(--primary);
 }
 
+.field__input--multiline {
+  min-height: auto;
+  padding: var(--space-3);
+  resize: vertical;
+  line-height: var(--leading-normal);
+}
+
 .field__input--error {
   border-color: var(--danger);
 }

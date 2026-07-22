@@ -8,7 +8,10 @@ const NAV_BY_ROLE = {
     { to: '/offres', label: 'Offres' },
     { to: '/profil', label: 'Mon profil' },
   ],
-  RH: [{ to: '/candidatures', label: 'Candidatures' }],
+  RH: [
+    { to: '/offres', label: 'Offres' },
+    { to: '/candidatures', label: 'Candidatures' },
+  ],
   EXPERT: [{ to: '/evaluations', label: 'Évaluations' }],
 };
 

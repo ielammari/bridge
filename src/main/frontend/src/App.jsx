@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import Login from './pages/auth/Login.jsx';
 import Signup from './pages/auth/Signup.jsx';
 import Profile from './pages/Profile/Profile.jsx';
+import OffersPage from './pages/Offers/OffersPage.jsx';
 import Workspace from './pages/Workspace/Workspace.jsx';
 import ProtectedRoute, { HOME_BY_ROLE } from './components/ProtectedRoute/ProtectedRoute.jsx';
 import { useAuth } from './context/AuthContext.jsx';
@@ -45,8 +46,8 @@ export default function App() {
       <Route
         path="/offres"
         element={
-          <ProtectedRoute roles={['CANDIDAT']}>
-            <Workspace title="Offres" />
+          <ProtectedRoute roles={['CANDIDAT', 'RH']}>
+            <OffersPage />
           </ProtectedRoute>
         }
       />

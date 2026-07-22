@@ -8,16 +8,9 @@ import Field from '../../components/Field/Field.jsx';
 import Icon from '../../components/Icon/Icon.jsx';
 import Select from '../../components/Select/Select.jsx';
 import TraitPicker from '../../components/TraitPicker/TraitPicker.jsx';
+import { DEGREE_OPTIONS } from '../../constants/enums.js';
 import Workspace from '../Workspace/Workspace.jsx';
 import './profile.css';
-
-const DEGREE_OPTIONS = [
-  { value: 'BAC', label: 'Baccalauréat' },
-  { value: 'BAC_2', label: 'Bac +2' },
-  { value: 'BAC_3', label: 'Bac +3 (Licence)' },
-  { value: 'BAC_5', label: 'Bac +5 (Master)' },
-  { value: 'DOCTORAT', label: 'Doctorat' },
-];
 
 function snapshot(form) {
   return JSON.stringify({

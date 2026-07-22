@@ -72,7 +72,7 @@
   /* ---- Typography ------------------------------------------------------ */
   --font-display: 'Archivo', system-ui, sans-serif;
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-mono: 'Sora', system-ui, sans-serif;
 
   --size-xs: 0.75rem;
   --size-sm: 0.875rem;

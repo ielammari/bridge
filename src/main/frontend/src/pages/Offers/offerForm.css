@@ -1,0 +1,105 @@
+.offerform {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.offerform__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.offerform__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.offerform__actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-float);
+}
+
+/* ---- Requirement config list ---------------------------------------- */
+.reqlist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reqlist__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-sunken);
+  border-radius: var(--radius);
+}
+
+.reqlist__label {
+  display: flex;
+  flex-direction: column;
+  font-weight: var(--weight-medium);
+  font-size: var(--size-sm);
+}
+
+.reqlist__cat {
+  font-weight: var(--weight-normal);
+  font-size: var(--size-xs);
+  color: var(--text-faint);
+}
+
+/* ---- Segmented required/plus toggle --------------------------------- */
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+
+.segmented__opt {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background-color var(--duration) var(--ease), color var(--duration) var(--ease);
+}
+
+.segmented__opt--on {
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: var(--weight-medium);
+}
+
+@media (max-width: 40rem) {
+  .offerform__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reqlist__row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

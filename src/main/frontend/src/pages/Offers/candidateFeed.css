@@ -1,0 +1,109 @@
+.feed__muted {
+  color: var(--text-faint);
+}
+
+.feed__intro {
+  max-width: 60ch;
+  color: var(--text-secondary);
+  font-size: var(--size-sm);
+}
+
+.feed__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  max-width: 52ch;
+  padding: var(--space-7) var(--space-5);
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+}
+
+.feed__empty-title {
+  font-family: var(--font-display);
+  font-size: var(--size-lg);
+  color: var(--text);
+}
+
+.feed__empty-link {
+  margin-top: var(--space-2);
+  font-weight: var(--weight-medium);
+}
+
+.feed__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feedcard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.feedcard__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.feedcard__title {
+  font-size: var(--size-xl);
+}
+
+.feedcard__contract {
+  flex-shrink: 0;
+  font-size: var(--size-sm);
+  font-weight: var(--weight-medium);
+  color: var(--primary);
+}
+
+.feedcard__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+}
+
+.feedcard__desc {
+  max-width: 70ch;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}
+
+.feedcard__traits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.tag {
+  padding: 2px var(--space-3);
+  border-radius: 999px;
+  font-size: var(--size-xs);
+}
+
+/* Required traits carry the accent weight; plus traits stay quiet. */
+.tag--required {
+  background: var(--status-en-revue-bg);
+  color: var(--status-en-revue);
+  font-weight: var(--weight-medium);
+}
+
+.tag--plus {
+  background: var(--surface-sunken);
+  color: var(--text-faint);
+}

@@ -1,0 +1,9 @@
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-3);
+  border-radius: 999px;
+  font-size: var(--size-xs);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}

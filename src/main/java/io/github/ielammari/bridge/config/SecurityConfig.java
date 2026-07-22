@@ -47,6 +47,10 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.GET, "/api/v1/health").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login").permitAll()
 						.requestMatchers("/api/v1/profile/**").hasRole("CANDIDAT")
+						// The candidate feed is matched before the general offer rules,
+						// which are reserved for HR management.
+						.requestMatchers(HttpMethod.GET, "/api/v1/offers/feed").hasRole("CANDIDAT")
+						.requestMatchers("/api/v1/offers", "/api/v1/offers/**").hasRole("RH")
 						.requestMatchers("/api/**").authenticated()
 						// Anything else is the SPA shell and its static assets.
 						.anyRequest().permitAll())

@@ -16,6 +16,8 @@ export default function Field({
   hint,
   required = false,
   autoComplete,
+  multiline = false,
+  rows = 4,
   ...rest
 }) {
   const id = useId();
@@ -23,6 +25,7 @@ export default function Field({
   const errorId = `${id}-error`;
 
   const describedBy = [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(' ');
+  const controlClass = `field__input${multiline ? ' field__input--multiline' : ''}${error ? ' field__input--error' : ''}`;
 
   return (
     <div className="field">
@@ -41,19 +44,34 @@ export default function Field({
         </p>
       )}
 
-      <input
-        id={id}
-        type={type}
-        className={`field__input${error ? ' field__input--error' : ''}`}
-        value={value}
-        onChange={onChange}
-        onBlur={onBlur}
-        required={required}
-        autoComplete={autoComplete}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy || undefined}
-        {...rest}
-      />
+      {multiline ? (
+        <textarea
+          id={id}
+          rows={rows}
+          className={controlClass}
+          value={value}
+          onChange={onChange}
+          onBlur={onBlur}
+          required={required}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy || undefined}
+          {...rest}
+        />
+      ) : (
+        <input
+          id={id}
+          type={type}
+          className={controlClass}
+          value={value}
+          onChange={onChange}
+          onBlur={onBlur}
+          required={required}
+          autoComplete={autoComplete}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy || undefined}
+          {...rest}
+        />
+      )}
 
       {error && (
         <p className="field__error" id={errorId}>

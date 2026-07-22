@@ -93,17 +93,17 @@ export default function Signup() {
       <form className="auth__form" onSubmit={handleSubmit} noValidate>
         {failure && <Alert>{failure}</Alert>}
 
-        <div className="auth__row">
-          <Field
-            label="Prénom"
-            value={form.firstName}
-            onChange={update('firstName')}
-            onBlur={handleBlur('firstName')}
-            error={errorFor('firstName')}
-            autoComplete="given-name"
-            required
-          />
-          <Field
+        <Field
+          label="Prénom"
+          value={form.firstName}
+          onChange={update('firstName')}
+          onBlur={handleBlur('firstName')}
+          error={errorFor('firstName')}
+          autoComplete="given-name"
+          required
+        />
+
+        <Field
             label="Nom"
             value={form.lastName}
             onChange={update('lastName')}
@@ -111,8 +111,7 @@ export default function Signup() {
             error={errorFor('lastName')}
             autoComplete="family-name"
             required
-          />
-        </div>
+        />
 
         <Field
           label="Adresse email"
