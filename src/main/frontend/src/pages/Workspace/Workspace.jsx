@@ -6,6 +6,7 @@ import './workspace.css';
 const NAV_BY_ROLE = {
   CANDIDAT: [
     { to: '/offres', label: 'Offres' },
+    { to: '/mes-candidatures', label: 'Mes candidatures' },
     { to: '/profil', label: 'Mon profil' },
   ],
   RH: [

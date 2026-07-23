@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { applicationsApi } from '../../api/applications.js';
 import { offersApi } from '../../api/offers.js';
 import Alert from '../../components/Alert/Alert.jsx';
+import Button from '../../components/Button/Button.jsx';
 import { CONTRACT_LABELS, DEGREE_LABELS, REMOTE_LABELS } from '../../constants/enums.js';
 import Workspace from '../Workspace/Workspace.jsx';
 import './candidateFeed.css';
@@ -16,13 +18,17 @@ function salaryText(min, max) {
 export default function CandidateFeed() {
   const [status, setStatus] = useState('loading');
   const [offers, setOffers] = useState([]);
+  const [applied, setApplied] = useState(() => new Set());
+  const [pending, setPending] = useState(null);
+  const [feedback, setFeedback] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
-    offersApi.feed()
-      .then((data) => {
+    Promise.all([offersApi.feed(), applicationsApi.mine()])
+      .then(([feed, mine]) => {
         if (cancelled) return;
-        setOffers(data);
+        setOffers(feed);
+        setApplied(new Set(mine.map((a) => a.offerId)));
         setStatus('ready');
       })
       .catch(() => {
@@ -32,6 +38,20 @@ export default function CandidateFeed() {
       cancelled = true;
     };
   }, []);
+
+  async function apply(offer) {
+    setFeedback(null);
+    setPending(offer.id);
+    try {
+      await applicationsApi.apply(offer.id);
+      setApplied((prev) => new Set(prev).add(offer.id));
+      setFeedback({ tone: 'info', message: `Candidature envoyée pour « ${offer.title} ».` });
+    } catch (apiError) {
+      setFeedback({ tone: 'error', message: apiError.message });
+    } finally {
+      setPending(null);
+    }
+  }
 
   if (status === 'loading') {
     return <Workspace title="Offres"><p className="feed__muted">Recherche des offres compatibles...</p></Workspace>;
@@ -46,6 +66,8 @@ export default function CandidateFeed() {
         Ces offres correspondent à votre profil : vous possédez chaque trait obligatoire et le
         diplôme requis.
       </p>
+
+      {feedback && <Alert tone={feedback.tone}>{feedback.message}</Alert>}
 
       {offers.length === 0 ? (
         <div className="feed__empty">
@@ -62,6 +84,7 @@ export default function CandidateFeed() {
             const required = offer.requirements.filter((r) => r.mandatory);
             const plus = offer.requirements.filter((r) => !r.mandatory);
             const salary = salaryText(offer.salaryMin, offer.salaryMax);
+            const hasApplied = applied.has(offer.id);
             return (
               <li key={offer.id} className="feedcard">
                 <div className="feedcard__head">
@@ -85,6 +108,16 @@ export default function CandidateFeed() {
                   {plus.map((r) => (
                     <span key={r.traitId} className="tag tag--plus">{r.label}</span>
                   ))}
+                </div>
+
+                <div className="feedcard__foot">
+                  {hasApplied ? (
+                    <span className="feedcard__applied">Candidature envoyée</span>
+                  ) : (
+                    <Button onClick={() => apply(offer)} loading={pending === offer.id}>
+                      Postuler
+                    </Button>
+                  )}
                 </div>
               </li>
             );

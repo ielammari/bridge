@@ -51,6 +51,11 @@ public class SecurityConfig {
 						// which are reserved for HR management.
 						.requestMatchers(HttpMethod.GET, "/api/v1/offers/feed").hasRole("CANDIDAT")
 						.requestMatchers("/api/v1/offers", "/api/v1/offers/**").hasRole("RH")
+						// Applying and tracking are the candidate's; listing an offer's
+						// applications and reading an attached CV are HR's.
+						.requestMatchers(HttpMethod.POST, "/api/v1/applications").hasRole("CANDIDAT")
+						.requestMatchers(HttpMethod.GET, "/api/v1/applications/mine").hasRole("CANDIDAT")
+						.requestMatchers("/api/v1/applications", "/api/v1/applications/**").hasRole("RH")
 						.requestMatchers("/api/**").authenticated()
 						// Anything else is the SPA shell and its static assets.
 						.anyRequest().permitAll())

@@ -107,3 +107,20 @@
   background: var(--surface-sunken);
   color: var(--text-faint);
 }
+
+.feedcard__foot {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+
+.feedcard__applied {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--size-sm);
+  font-weight: var(--weight-medium);
+  color: var(--status-embauchee);
+}

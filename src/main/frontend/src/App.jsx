@@ -3,6 +3,8 @@ import Login from './pages/auth/Login.jsx';
 import Signup from './pages/auth/Signup.jsx';
 import Profile from './pages/Profile/Profile.jsx';
 import OffersPage from './pages/Offers/OffersPage.jsx';
+import CandidateApplications from './pages/Applications/CandidateApplications.jsx';
+import HrApplications from './pages/Applications/HrApplications.jsx';
 import Workspace from './pages/Workspace/Workspace.jsx';
 import ProtectedRoute, { HOME_BY_ROLE } from './components/ProtectedRoute/ProtectedRoute.jsx';
 import { useAuth } from './context/AuthContext.jsx';
@@ -60,10 +62,18 @@ export default function App() {
         }
       />
       <Route
+        path="/mes-candidatures"
+        element={
+          <ProtectedRoute roles={['CANDIDAT']}>
+            <CandidateApplications />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/candidatures"
         element={
           <ProtectedRoute roles={['RH']}>
-            <Workspace title="Candidatures" />
+            <HrApplications />
           </ProtectedRoute>
         }
       />

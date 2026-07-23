@@ -48,6 +48,12 @@ public class MatchingService {
 				.toList();
 	}
 
+	/** Whether the candidate qualifies for the given offer, gating application. */
+	@Transactional(readOnly = true)
+	public boolean isCompatible(Candidate candidate, JobOffer offer) {
+		return isCompatible(candidate, heldTraitIds(candidate.getId()), offer);
+	}
+
 	/**
 	 * Compatibility gate. Kept package visible and pure so the unit tests can
 	 * exercise it directly with hand built inputs.

@@ -1,0 +1,135 @@
+.rail {
+  display: flex;
+  align-items: flex-start;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+
+.rail__step {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: center;
+  min-width: 0;
+}
+
+/* The connector runs from each node to the previous one. */
+.rail__step::before {
+  content: '';
+  position: absolute;
+  top: 11px;
+  right: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--border-strong);
+}
+
+.rail__step:first-child::before {
+  display: none;
+}
+
+.rail__node {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  background: var(--surface);
+  font-size: var(--size-xs);
+  color: var(--on-primary);
+  transition: background-color var(--duration) var(--ease), border-color var(--duration) var(--ease);
+}
+
+.rail__label {
+  font-size: var(--size-xs);
+  color: var(--text-faint);
+  line-height: 1.25;
+}
+
+/* ---- States ---------------------------------------------------------- */
+.rail__step--done .rail__node {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.rail__step--done::before {
+  background: var(--primary);
+}
+
+.rail__step--current .rail__node {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.rail__step--current::before {
+  background: var(--primary);
+}
+
+.rail__step--current .rail__label {
+  color: var(--text);
+  font-weight: var(--weight-semibold);
+}
+
+.rail__step--hired .rail__node {
+  background: var(--status-embauchee);
+  border-color: var(--status-embauchee);
+}
+
+.rail__step--hired::before {
+  background: var(--primary);
+}
+
+.rail__step--hired .rail__label {
+  color: var(--status-embauchee);
+  font-weight: var(--weight-semibold);
+}
+
+.rail__step--refused .rail__node {
+  background: var(--status-refusee);
+  border-color: var(--status-refusee);
+}
+
+.rail__step--refused .rail__label {
+  color: var(--status-refusee);
+  font-weight: var(--weight-semibold);
+}
+
+/* Inactive stages of a refused application: present but clearly not reached. */
+.rail__step--inactive .rail__label {
+  color: var(--text-faint);
+}
+
+@media (max-width: 34rem) {
+  .rail {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+
+  .rail__step {
+    flex-direction: row;
+    gap: var(--space-3);
+    text-align: left;
+  }
+
+  .rail__step::before {
+    top: 0;
+    left: 11px;
+    right: auto;
+    width: 2px;
+    height: 100%;
+  }
+
+  .rail__label {
+    font-size: var(--size-sm);
+  }
+}
