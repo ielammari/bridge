@@ -5,4 +5,7 @@ export const applicationsApi = {
   mine: () => api.get('/applications/mine'),
   forOffer: (offerId) => api.get(`/applications?offerId=${offerId}`),
   cv: (id) => api.getBlob(`/applications/${id}/cv`),
+  review: (id) => api.post(`/applications/${id}/review`),
+  preselect: (id, payload) => api.post(`/applications/${id}/preselection`, payload),
+  schedule: (id, payload) => api.post(`/applications/${id}/schedule`, payload),
 };

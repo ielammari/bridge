@@ -3,6 +3,7 @@ package io.github.ielammari.bridge.mapper;
 import io.github.ielammari.bridge.dto.ApplicationDto;
 import io.github.ielammari.bridge.dto.HrApplicationDto;
 import io.github.ielammari.bridge.model.Application;
+import io.github.ielammari.bridge.model.Appointment;
 import io.github.ielammari.bridge.model.Candidate;
 import io.github.ielammari.bridge.model.JobOffer;
 
@@ -12,7 +13,7 @@ public final class ApplicationMapper {
 	private ApplicationMapper() {
 	}
 
-	public static ApplicationDto toCandidateView(Application application) {
+	public static ApplicationDto toCandidateView(Application application, Appointment appointment) {
 		JobOffer offer = application.getOffer();
 		return new ApplicationDto(
 				application.getId(),
@@ -21,10 +22,12 @@ public final class ApplicationMapper {
 				offer.getContractType(),
 				offer.getLocation(),
 				application.getApplicationDate(),
-				application.getStatus());
+				application.getStatus(),
+				appointment == null ? null : appointment.getDate(),
+				appointment == null ? null : appointment.getTime());
 	}
 
-	public static HrApplicationDto toHrView(Application application) {
+	public static HrApplicationDto toHrView(Application application, Appointment appointment) {
 		Candidate candidate = application.getCandidate();
 		return new HrApplicationDto(
 				application.getId(),
@@ -33,7 +36,9 @@ public final class ApplicationMapper {
 				candidate.getLastName(),
 				candidate.getEmail(),
 				application.getApplicationDate(),
-				application.getStatus());
+				application.getStatus(),
+				appointment == null ? null : appointment.getDate(),
+				appointment == null ? null : appointment.getTime());
 	}
 
 }

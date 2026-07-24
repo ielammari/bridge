@@ -5,7 +5,7 @@ import Profile from './pages/Profile/Profile.jsx';
 import OffersPage from './pages/Offers/OffersPage.jsx';
 import CandidateApplications from './pages/Applications/CandidateApplications.jsx';
 import HrApplications from './pages/Applications/HrApplications.jsx';
-import Workspace from './pages/Workspace/Workspace.jsx';
+import TechnicalEvaluations from './pages/Evaluations/TechnicalEvaluations.jsx';
 import ProtectedRoute, { HOME_BY_ROLE } from './components/ProtectedRoute/ProtectedRoute.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 
@@ -81,7 +81,7 @@ export default function App() {
         path="/evaluations"
         element={
           <ProtectedRoute roles={['EXPERT']}>
-            <Workspace title="Évaluations" />
+            <TechnicalEvaluations />
           </ProtectedRoute>
         }
       />

@@ -21,7 +21,11 @@ import org.springframework.web.bind.annotation.RestController;
 import io.github.ielammari.bridge.dto.ApplicationDto;
 import io.github.ielammari.bridge.dto.ApplyRequest;
 import io.github.ielammari.bridge.dto.HrApplicationDto;
+import io.github.ielammari.bridge.dto.PreselectionRequest;
+import io.github.ielammari.bridge.dto.ScheduleRequest;
 import io.github.ielammari.bridge.service.ApplicationService;
+import io.github.ielammari.bridge.service.AppointmentService;
+import io.github.ielammari.bridge.service.EvaluationService;
 import jakarta.validation.Valid;
 
 @RestController
@@ -29,9 +33,14 @@ import jakarta.validation.Valid;
 public class ApplicationController {
 
 	private final ApplicationService applicationService;
+	private final EvaluationService evaluationService;
+	private final AppointmentService appointmentService;
 
-	public ApplicationController(ApplicationService applicationService) {
+	public ApplicationController(ApplicationService applicationService,
+			EvaluationService evaluationService, AppointmentService appointmentService) {
 		this.applicationService = applicationService;
+		this.evaluationService = evaluationService;
+		this.appointmentService = appointmentService;
 	}
 
 	@PostMapping
@@ -60,6 +69,25 @@ public class ApplicationController {
 				.contentType(MediaType.APPLICATION_PDF)
 				.header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"cv.pdf\"")
 				.body(cv);
+	}
+
+	/** HR: opening an application to inspect it moves it into review. */
+	@PostMapping("/{id}/review")
+	public HrApplicationDto review(@PathVariable Integer id) {
+		return evaluationService.review(id);
+	}
+
+	/** HR: the first screening decision. */
+	@PostMapping("/{id}/preselection")
+	public HrApplicationDto preselect(@AuthenticationPrincipal Jwt jwt, @PathVariable Integer id,
+			@Valid @RequestBody PreselectionRequest request) {
+		return evaluationService.preselect(currentUserId(jwt), id, request.decision(), request.comment());
+	}
+
+	/** HR: book or move the interview this application is waiting on. */
+	@PostMapping("/{id}/schedule")
+	public HrApplicationDto schedule(@PathVariable Integer id, @Valid @RequestBody ScheduleRequest request) {
+		return appointmentService.schedule(id, request.date(), request.time());
 	}
 
 	private Integer currentUserId(Jwt jwt) {

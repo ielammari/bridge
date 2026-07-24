@@ -1,0 +1,66 @@
+.stars {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.stars__row {
+  display: inline-flex;
+  gap: 2px;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--brass);
+  border-radius: var(--radius-sm);
+}
+
+.stars__row--editable {
+  cursor: pointer;
+}
+
+.stars__star {
+  position: relative;
+  width: 1em;
+  height: 1em;
+}
+
+/* Empty base plus a clipped filled overlay gives clean half fills. */
+.stars__bg {
+  color: var(--weave-strong);
+}
+
+.stars__fill {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  color: var(--brass);
+}
+
+.stars__fg {
+  width: 1em;
+  height: 1em;
+}
+
+.stars__hit {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.stars__hit--left {
+  left: 0;
+}
+
+.stars__hit--right {
+  right: 0;
+}
+
+.stars__value {
+  min-width: 2ch;
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+}

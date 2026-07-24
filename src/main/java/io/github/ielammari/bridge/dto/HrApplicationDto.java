@@ -1,6 +1,8 @@
 package io.github.ielammari.bridge.dto;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 import io.github.ielammari.bridge.model.ApplicationStatus;
 
@@ -12,5 +14,7 @@ public record HrApplicationDto(
 		String candidateLastName,
 		String candidateEmail,
 		Instant applicationDate,
-		ApplicationStatus status) {
+		ApplicationStatus status,
+		LocalDate appointmentDate,
+		LocalTime appointmentTime) {
 }

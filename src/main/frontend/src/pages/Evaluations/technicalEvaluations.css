@@ -1,0 +1,137 @@
+.tech__muted {
+  color: var(--text-faint);
+}
+
+.tech__intro {
+  color: var(--text-secondary);
+  font-size: var(--size-sm);
+}
+
+.tech__empty {
+  padding: var(--space-7) var(--space-5);
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+}
+
+.tech__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.techcard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.techcard__name {
+  display: block;
+  font-weight: var(--weight-medium);
+}
+
+.techcard__meta {
+  font-size: var(--size-sm);
+  color: var(--text-faint);
+}
+
+.tech__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.tech__title {
+  font-size: var(--size-2xl);
+}
+
+.tech__sub {
+  color: var(--text-secondary);
+}
+
+/* ---- Scoring grid ---------------------------------------------------- */
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.grid__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.grid__row:last-child {
+  border-bottom: none;
+}
+
+.grid__label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.grid__tag {
+  padding: 1px var(--space-2);
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  font-size: var(--size-xs);
+  color: var(--text-faint);
+}
+
+.grid__tag--req {
+  background: var(--status-en-revue-bg);
+  color: var(--status-en-revue);
+}
+
+.grid__optin {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.tech__decide {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-float);
+}
+
+@media (max-width: 40rem) {
+  .grid__row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .tech__decide {
+    flex-direction: column-reverse;
+  }
+}

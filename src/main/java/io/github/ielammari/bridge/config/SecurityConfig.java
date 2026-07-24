@@ -56,6 +56,9 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.POST, "/api/v1/applications").hasRole("CANDIDAT")
 						.requestMatchers(HttpMethod.GET, "/api/v1/applications/mine").hasRole("CANDIDAT")
 						.requestMatchers("/api/v1/applications", "/api/v1/applications/**").hasRole("RH")
+						// Manual scheduling is HR; the technical evaluation is the expert's.
+						.requestMatchers("/api/v1/schedule/**").hasRole("RH")
+						.requestMatchers("/api/v1/evaluations/technical/**").hasRole("EXPERT")
 						.requestMatchers("/api/**").authenticated()
 						// Anything else is the SPA shell and its static assets.
 						.anyRequest().permitAll())

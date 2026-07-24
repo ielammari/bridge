@@ -10,6 +10,15 @@ import './candidateApplications.css';
 
 const dateFormat = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
+// When an interview is booked, its date replaces the generic "date to come" line.
+function alertText(app) {
+  if ((app.status === 'EXAMEN_TECHNIQUE' || app.status === 'ENTRETIEN_RH') && app.appointmentDate) {
+    const label = app.status === 'EXAMEN_TECHNIQUE' ? 'Votre examen technique' : 'Votre entretien RH';
+    return `${label} est fixé au ${dateFormat.format(new Date(app.appointmentDate))} à ${app.appointmentTime.slice(0, 5)}.`;
+  }
+  return APPLICATION_ALERTS[app.status];
+}
+
 export default function CandidateApplications() {
   const [status, setStatus] = useState('loading');
   const [applications, setApplications] = useState([]);
@@ -64,7 +73,7 @@ export default function CandidateApplications() {
               <FunnelRail status={app.status} />
 
               <p className={`apptrack__alert${app.status === 'REFUSEE' ? ' apptrack__alert--refused' : ''}`}>
-                {APPLICATION_ALERTS[app.status]}
+                {alertText(app)}
               </p>
             </li>
           ))}
