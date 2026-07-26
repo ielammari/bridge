@@ -13,11 +13,14 @@ export default function Select({
   options,
   placeholder,
   hint,
+  error,
   required = false,
   ...rest
 }) {
   const id = useId();
   const hintId = `${id}-hint`;
+  const errorId = `${id}-error`;
+  const describedBy = [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(' ');
 
   return (
     <div className="select">
@@ -39,10 +42,11 @@ export default function Select({
       <div className="select__control">
         <select
           id={id}
-          className="select__native"
+          className={`select__native${error ? ' select__native--error' : ''}`}
           value={value ?? ''}
           onChange={onChange}
-          aria-describedby={hint ? hintId : undefined}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy || undefined}
           {...rest}
         >
           {placeholder && <option value="">{placeholder}</option>}
@@ -54,6 +58,12 @@ export default function Select({
         </select>
         <Icon name="chevron" className="select__chevron" />
       </div>
+
+      {error && (
+        <p className="select__error" id={errorId}>
+          {error}
+        </p>
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 package io.github.ielammari.bridge.service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.core.io.Resource;
@@ -16,8 +17,11 @@ import io.github.ielammari.bridge.model.AppointmentType;
 import io.github.ielammari.bridge.model.Candidate;
 import io.github.ielammari.bridge.model.JobOffer;
 import io.github.ielammari.bridge.model.OfferStatus;
+import io.github.ielammari.bridge.model.ApplicationStatus;
+import io.github.ielammari.bridge.model.Hiring;
 import io.github.ielammari.bridge.repository.ApplicationRepository;
 import io.github.ielammari.bridge.repository.AppointmentRepository;
+import io.github.ielammari.bridge.repository.HiringRepository;
 import io.github.ielammari.bridge.repository.JobOfferRepository;
 import io.github.ielammari.bridge.repository.UserRepository;
 
@@ -26,15 +30,18 @@ public class ApplicationService {
 
 	private final ApplicationRepository applications;
 	private final AppointmentRepository appointments;
+	private final HiringRepository hirings;
 	private final JobOfferRepository offers;
 	private final UserRepository users;
 	private final MatchingService matching;
 	private final StorageService storage;
 
 	public ApplicationService(ApplicationRepository applications, AppointmentRepository appointments,
-			JobOfferRepository offers, UserRepository users, MatchingService matching, StorageService storage) {
+			HiringRepository hirings, JobOfferRepository offers, UserRepository users,
+			MatchingService matching, StorageService storage) {
 		this.applications = applications;
 		this.appointments = appointments;
+		this.hirings = hirings;
 		this.offers = offers;
 		this.users = users;
 		this.matching = matching;
@@ -65,14 +72,21 @@ public class ApplicationService {
 		}
 
 		Application application = new Application(candidate, offer, candidate.getCvPath());
-		return ApplicationMapper.toCandidateView(applications.save(application), null);
+		return ApplicationMapper.toCandidateView(applications.save(application), null, null);
 	}
 
 	@Transactional(readOnly = true)
 	public List<ApplicationDto> forCandidate(Integer candidateId) {
 		return applications.findByCandidate(candidateId).stream()
-				.map(a -> ApplicationMapper.toCandidateView(a, currentAppointment(a)))
+				.map(a -> ApplicationMapper.toCandidateView(a, currentAppointment(a), hiringStartDate(a)))
 				.toList();
+	}
+
+	private LocalDate hiringStartDate(Application application) {
+		if (application.getStatus() != ApplicationStatus.EMBAUCHEE) {
+			return null;
+		}
+		return hirings.findByApplicationId(application.getId()).map(Hiring::getStartDate).orElse(null);
 	}
 
 	@Transactional(readOnly = true)

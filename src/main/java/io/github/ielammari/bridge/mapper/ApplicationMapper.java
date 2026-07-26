@@ -1,5 +1,7 @@
 package io.github.ielammari.bridge.mapper;
 
+import java.time.LocalDate;
+
 import io.github.ielammari.bridge.dto.ApplicationDto;
 import io.github.ielammari.bridge.dto.HrApplicationDto;
 import io.github.ielammari.bridge.model.Application;
@@ -13,7 +15,8 @@ public final class ApplicationMapper {
 	private ApplicationMapper() {
 	}
 
-	public static ApplicationDto toCandidateView(Application application, Appointment appointment) {
+	public static ApplicationDto toCandidateView(Application application, Appointment appointment,
+			LocalDate hiringStartDate) {
 		JobOffer offer = application.getOffer();
 		return new ApplicationDto(
 				application.getId(),
@@ -24,7 +27,8 @@ public final class ApplicationMapper {
 				application.getApplicationDate(),
 				application.getStatus(),
 				appointment == null ? null : appointment.getDate(),
-				appointment == null ? null : appointment.getTime());
+				appointment == null ? null : appointment.getTime(),
+				hiringStartDate);
 	}
 
 	public static HrApplicationDto toHrView(Application application, Appointment appointment) {

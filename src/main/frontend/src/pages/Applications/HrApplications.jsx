@@ -9,7 +9,9 @@ import Scheduler from '../../components/Scheduler/Scheduler.jsx';
 import Select from '../../components/Select/Select.jsx';
 import StatusBadge from '../../components/StatusBadge/StatusBadge.jsx';
 import Workspace from '../Workspace/Workspace.jsx';
+import FinalEvaluation from './FinalEvaluation.jsx';
 import './hrApplications.css';
+import './finalEvaluation.css';
 
 const dateFormat = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -30,9 +32,12 @@ export default function HrApplications() {
   const [applications, setApplications] = useState([]);
   const [loadingApps, setLoadingApps] = useState(false);
   const [panel, setPanel] = useState(null); // { id, mode: 'preselect' | 'schedule' }
+  const [finalizing, setFinalizing] = useState(null); // an application, shown full page
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+
+  const offerTitle = offers.find((o) => String(o.id) === offerId)?.title ?? '';
 
   useEffect(() => {
     let cancelled = false;
@@ -124,6 +129,22 @@ export default function HrApplications() {
     );
   }
 
+  if (finalizing) {
+    return (
+      <Workspace title="Candidatures">
+        <FinalEvaluation
+          app={finalizing}
+          offerTitle={offerTitle}
+          onDone={(updated) => {
+            replace(updated);
+            setFinalizing(null);
+          }}
+          onCancel={() => setFinalizing(null)}
+        />
+      </Workspace>
+    );
+  }
+
   return (
     <Workspace title="Candidatures">
       <div className="hrapps__filter">
@@ -172,6 +193,9 @@ export default function HrApplications() {
                         onClick={() => setPanel(open ? null : { id: app.id, mode: 'schedule' })}>
                         {app.appointmentDate ? 'Reprogrammer' : 'Planifier'}
                       </Button>
+                    )}
+                    {app.status === 'ENTRETIEN_RH' && (
+                      <Button onClick={() => setFinalizing(app)}>Finaliser l'entretien</Button>
                     )}
                   </div>
                 </div>

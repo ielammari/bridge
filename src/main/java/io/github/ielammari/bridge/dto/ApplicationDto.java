@@ -17,5 +17,6 @@ public record ApplicationDto(
 		Instant applicationDate,
 		ApplicationStatus status,
 		LocalDate appointmentDate,
-		LocalTime appointmentTime) {
+		LocalTime appointmentTime,
+		LocalDate hiringStartDate) {
 }

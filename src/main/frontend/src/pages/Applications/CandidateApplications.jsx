@@ -10,11 +10,15 @@ import './candidateApplications.css';
 
 const dateFormat = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-// When an interview is booked, its date replaces the generic "date to come" line.
+// When an interview is booked, its date replaces the generic "date to come"
+// line; a hire shows the start date.
 function alertText(app) {
   if ((app.status === 'EXAMEN_TECHNIQUE' || app.status === 'ENTRETIEN_RH') && app.appointmentDate) {
     const label = app.status === 'EXAMEN_TECHNIQUE' ? 'Votre examen technique' : 'Votre entretien RH';
     return `${label} est fixé au ${dateFormat.format(new Date(app.appointmentDate))} à ${app.appointmentTime.slice(0, 5)}.`;
+  }
+  if (app.status === 'EMBAUCHEE' && app.hiringStartDate) {
+    return `Félicitations, vous êtes embauché(e). Prise de poste le ${dateFormat.format(new Date(app.hiringStartDate))}.`;
   }
   return APPLICATION_ALERTS[app.status];
 }

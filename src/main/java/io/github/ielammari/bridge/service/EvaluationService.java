@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import io.github.ielammari.bridge.dto.ExaminedTraitDto;
+import io.github.ielammari.bridge.dto.FinalEvaluationRequest;
 import io.github.ielammari.bridge.dto.HrApplicationDto;
 import io.github.ielammari.bridge.dto.PendingTechnicalDto;
 import io.github.ielammari.bridge.dto.TechnicalContextDto;
@@ -24,7 +25,9 @@ import io.github.ielammari.bridge.model.Decision;
 import io.github.ielammari.bridge.model.Evaluation;
 import io.github.ielammari.bridge.model.EvaluationType;
 import io.github.ielammari.bridge.model.Evaluator;
+import io.github.ielammari.bridge.model.HRInterview;
 import io.github.ielammari.bridge.model.HRManager;
+import io.github.ielammari.bridge.model.Hiring;
 import io.github.ielammari.bridge.model.JobOffer;
 import io.github.ielammari.bridge.model.OfferRequirement;
 import io.github.ielammari.bridge.model.TechnicalExpert;
@@ -32,6 +35,8 @@ import io.github.ielammari.bridge.model.Trait;
 import io.github.ielammari.bridge.repository.ApplicationRepository;
 import io.github.ielammari.bridge.repository.AppointmentRepository;
 import io.github.ielammari.bridge.repository.EvaluationRepository;
+import io.github.ielammari.bridge.repository.HRInterviewRepository;
+import io.github.ielammari.bridge.repository.HiringRepository;
 import io.github.ielammari.bridge.repository.JobOfferRepository;
 import io.github.ielammari.bridge.repository.TraitRepository;
 import io.github.ielammari.bridge.repository.UserRepository;
@@ -45,16 +50,20 @@ public class EvaluationService {
 	private final JobOfferRepository offers;
 	private final TraitRepository traits;
 	private final UserRepository users;
+	private final HRInterviewRepository hrInterviews;
+	private final HiringRepository hirings;
 
 	public EvaluationService(ApplicationRepository applications, AppointmentRepository appointments,
 			EvaluationRepository evaluations, JobOfferRepository offers, TraitRepository traits,
-			UserRepository users) {
+			UserRepository users, HRInterviewRepository hrInterviews, HiringRepository hirings) {
 		this.applications = applications;
 		this.appointments = appointments;
 		this.evaluations = evaluations;
 		this.offers = offers;
 		this.traits = traits;
 		this.users = users;
+		this.hrInterviews = hrInterviews;
+		this.hirings = hirings;
 	}
 
 	/** HR opens an application to inspect it, which moves it into review. */
@@ -176,6 +185,66 @@ public class EvaluationService {
 		application.setStatus(request.decision() == Decision.VALIDEE
 				? ApplicationStatus.ENTRETIEN_RH
 				: ApplicationStatus.REFUSEE);
+	}
+
+	/**
+	 * HR's final decision after the interview. The interview data is recorded
+	 * whatever the outcome; acceptance creates the hiring record and hires the
+	 * candidate, refusal closes the application.
+	 */
+	@Transactional
+	public HrApplicationDto finalize(Integer hrId, Integer applicationId, FinalEvaluationRequest request) {
+		Evaluator hr = requireHr(hrId);
+		Application application = requireApplication(applicationId);
+		requireStage(application, ApplicationStatus.ENTRETIEN_RH);
+		if (evaluations.existsByApplicationIdAndType(applicationId, EvaluationType.ENTRETIEN_RH)) {
+			throw ApiException.badRequest("ALREADY_EVALUATED", "L'entretien final a déjà été enregistré.");
+		}
+
+		Evaluation evaluation = new Evaluation(EvaluationType.ENTRETIEN_RH, request.decision(),
+				blankToNull(request.comment()), application, hr);
+		appointments.findByApplicationIdAndType(applicationId, AppointmentType.RH)
+				.ifPresent(appointment -> {
+					appointment.setStatus(AppointmentStatus.REALISE);
+					evaluation.setAppointment(appointment);
+				});
+		evaluations.save(evaluation);
+
+		hrInterviews.save(buildInterview(application, request.interview()));
+
+		if (request.decision() == Decision.VALIDEE) {
+			hirings.save(buildHiring(application, request.hiring()));
+			application.setStatus(ApplicationStatus.EMBAUCHEE);
+		} else {
+			application.setStatus(ApplicationStatus.REFUSEE);
+		}
+
+		return ApplicationMapper.toHrView(application, null);
+	}
+
+	private HRInterview buildInterview(Application application, FinalEvaluationRequest.InterviewData data) {
+		HRInterview interview = new HRInterview(application);
+		interview.setExpectedSalary(data.expectedSalary());
+		interview.setAvailabilityDate(data.availabilityDate());
+		interview.setEnvisagedContract(data.envisagedContract());
+		interview.setNoticePeriod(blankToNull(data.noticePeriod()));
+		interview.setScheduleFlexibility(blankToNull(data.scheduleFlexibility()));
+		interview.setRemoteExpectation(data.remoteExpectation());
+		interview.setCultureFit(blankToNull(data.cultureFit()));
+		return interview;
+	}
+
+	private Hiring buildHiring(Application application, FinalEvaluationRequest.HiringTerms terms) {
+		if (terms == null || terms.negotiatedSalary() == null || terms.startDate() == null
+				|| terms.finalContract() == null) {
+			throw ApiException.badRequest("HIRING_TERMS_REQUIRED",
+					"Le salaire négocié, la date de prise de poste et le contrat final sont obligatoires pour une embauche.");
+		}
+		Hiring hiring = new Hiring(application, terms.negotiatedSalary(), terms.startDate(), terms.finalContract());
+		hiring.setTrialPeriod(blankToNull(terms.trialPeriod()));
+		hiring.setExecutiveStatus(terms.executiveStatus());
+		hiring.setBenefits(blankToNull(terms.benefits()));
+		return hiring;
 	}
 
 	private JobOffer requireOfferWithRequirements(Application application) {

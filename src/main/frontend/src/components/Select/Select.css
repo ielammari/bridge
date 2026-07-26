@@ -48,9 +48,18 @@
   border-color: var(--primary);
 }
 
+.select__native--error {
+  border-color: var(--danger);
+}
+
 .select__chevron {
   position: absolute;
   right: var(--space-3);
   color: var(--text-faint);
   pointer-events: none;
+}
+
+.select__error {
+  font-size: var(--size-xs);
+  color: var(--danger);
 }

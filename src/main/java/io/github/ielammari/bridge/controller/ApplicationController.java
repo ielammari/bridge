@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.github.ielammari.bridge.dto.ApplicationDto;
 import io.github.ielammari.bridge.dto.ApplyRequest;
+import io.github.ielammari.bridge.dto.FinalEvaluationRequest;
 import io.github.ielammari.bridge.dto.HrApplicationDto;
 import io.github.ielammari.bridge.dto.PreselectionRequest;
 import io.github.ielammari.bridge.dto.ScheduleRequest;
@@ -88,6 +89,13 @@ public class ApplicationController {
 	@PostMapping("/{id}/schedule")
 	public HrApplicationDto schedule(@PathVariable Integer id, @Valid @RequestBody ScheduleRequest request) {
 		return appointmentService.schedule(id, request.date(), request.time());
+	}
+
+	/** HR: record the final interview and close the application. */
+	@PostMapping("/{id}/finalize")
+	public HrApplicationDto finalize(@AuthenticationPrincipal Jwt jwt, @PathVariable Integer id,
+			@Valid @RequestBody FinalEvaluationRequest request) {
+		return evaluationService.finalize(currentUserId(jwt), id, request);
 	}
 
 	private Integer currentUserId(Jwt jwt) {

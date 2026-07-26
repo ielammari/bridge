@@ -8,4 +8,5 @@ export const applicationsApi = {
   review: (id) => api.post(`/applications/${id}/review`),
   preselect: (id, payload) => api.post(`/applications/${id}/preselection`, payload),
   schedule: (id, payload) => api.post(`/applications/${id}/schedule`, payload),
+  finalize: (id, payload) => api.post(`/applications/${id}/finalize`, payload),
 };
