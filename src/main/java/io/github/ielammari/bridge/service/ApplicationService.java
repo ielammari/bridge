@@ -35,10 +35,11 @@ public class ApplicationService {
 	private final UserRepository users;
 	private final MatchingService matching;
 	private final StorageService storage;
+	private final NotificationService notifications;
 
 	public ApplicationService(ApplicationRepository applications, AppointmentRepository appointments,
 			HiringRepository hirings, JobOfferRepository offers, UserRepository users,
-			MatchingService matching, StorageService storage) {
+			MatchingService matching, StorageService storage, NotificationService notifications) {
 		this.applications = applications;
 		this.appointments = appointments;
 		this.hirings = hirings;
@@ -46,6 +47,7 @@ public class ApplicationService {
 		this.users = users;
 		this.matching = matching;
 		this.storage = storage;
+		this.notifications = notifications;
 	}
 
 	/**
@@ -71,8 +73,9 @@ public class ApplicationService {
 					"Ajoutez un CV à votre profil avant de postuler.");
 		}
 
-		Application application = new Application(candidate, offer, candidate.getCvPath());
-		return ApplicationMapper.toCandidateView(applications.save(application), null, null);
+		Application application = applications.save(new Application(candidate, offer, candidate.getCvPath()));
+		notifications.applicationReceived(application);
+		return ApplicationMapper.toCandidateView(application, null, null);
 	}
 
 	@Transactional(readOnly = true)

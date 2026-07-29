@@ -35,10 +35,13 @@ public class AppointmentService {
 
 	private final AppointmentRepository appointments;
 	private final ApplicationRepository applications;
+	private final NotificationService notifications;
 
-	public AppointmentService(AppointmentRepository appointments, ApplicationRepository applications) {
+	public AppointmentService(AppointmentRepository appointments, ApplicationRepository applications,
+			NotificationService notifications) {
 		this.appointments = appointments;
 		this.applications = applications;
+		this.notifications = notifications;
 	}
 
 	@Transactional(readOnly = true)
@@ -90,6 +93,7 @@ public class AppointmentService {
 				})
 				.orElseGet(() -> appointments.save(new Appointment(application, type, date, time)));
 
+		notifications.interviewScheduled(application, type, date, time);
 		return ApplicationMapper.toHrView(application, appointment);
 	}
 

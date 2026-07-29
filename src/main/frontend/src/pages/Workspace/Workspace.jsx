@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useNotifications } from '../../context/NotificationContext.jsx';
 import Button from '../../components/Button/Button.jsx';
 import './workspace.css';
 
@@ -22,6 +23,7 @@ const NAV_BY_ROLE = {
  */
 export default function Workspace({ title, children }) {
   const { user, logout } = useAuth();
+  const { unreadCount } = useNotifications();
   const nav = NAV_BY_ROLE[user.role] ?? [];
 
   return (
@@ -29,21 +31,32 @@ export default function Workspace({ title, children }) {
       <header className="workspace__bar">
         <div className="workspace__lead">
           <span className="workspace__logo">Bridge</span>
-          {nav.length > 0 && (
-            <nav className="workspace__nav" aria-label="Navigation principale">
-              {nav.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `workspace__link${isActive ? ' workspace__link--active' : ''}`
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              ))}
-            </nav>
-          )}
+          <nav className="workspace__nav" aria-label="Navigation principale">
+            {nav.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  `workspace__link${isActive ? ' workspace__link--active' : ''}`
+                }
+              >
+                {item.label}
+              </NavLink>
+            ))}
+            <NavLink
+              to="/messages"
+              className={({ isActive }) =>
+                `workspace__link${isActive ? ' workspace__link--active' : ''}`
+              }
+            >
+              Messages
+              {unreadCount > 0 && (
+                <span className="workspace__badge" aria-label={`${unreadCount} non lus`}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </NavLink>
+          </nav>
         </div>
 
         <div className="workspace__account">

@@ -52,10 +52,12 @@ public class EvaluationService {
 	private final UserRepository users;
 	private final HRInterviewRepository hrInterviews;
 	private final HiringRepository hirings;
+	private final NotificationService notifications;
 
 	public EvaluationService(ApplicationRepository applications, AppointmentRepository appointments,
 			EvaluationRepository evaluations, JobOfferRepository offers, TraitRepository traits,
-			UserRepository users, HRInterviewRepository hrInterviews, HiringRepository hirings) {
+			UserRepository users, HRInterviewRepository hrInterviews, HiringRepository hirings,
+			NotificationService notifications) {
 		this.applications = applications;
 		this.appointments = appointments;
 		this.evaluations = evaluations;
@@ -64,6 +66,7 @@ public class EvaluationService {
 		this.users = users;
 		this.hrInterviews = hrInterviews;
 		this.hirings = hirings;
+		this.notifications = notifications;
 	}
 
 	/** HR opens an application to inspect it, which moves it into review. */
@@ -92,9 +95,13 @@ public class EvaluationService {
 		}
 
 		evaluations.save(new Evaluation(EvaluationType.PRESELECTION, decision, blankToNull(comment), application, hr));
-		application.setStatus(decision == Decision.VALIDEE
-				? ApplicationStatus.EXAMEN_TECHNIQUE
-				: ApplicationStatus.REFUSEE);
+		if (decision == Decision.VALIDEE) {
+			application.setStatus(ApplicationStatus.EXAMEN_TECHNIQUE);
+			notifications.scheduleNeeded(application, AppointmentType.TECHNIQUE);
+		} else {
+			application.setStatus(ApplicationStatus.REFUSEE);
+			notifications.rejected(application);
+		}
 
 		return ApplicationMapper.toHrView(application, null);
 	}
@@ -182,9 +189,13 @@ public class EvaluationService {
 		}
 
 		evaluations.save(evaluation);
-		application.setStatus(request.decision() == Decision.VALIDEE
-				? ApplicationStatus.ENTRETIEN_RH
-				: ApplicationStatus.REFUSEE);
+		if (request.decision() == Decision.VALIDEE) {
+			application.setStatus(ApplicationStatus.ENTRETIEN_RH);
+			notifications.scheduleNeeded(application, AppointmentType.RH);
+		} else {
+			application.setStatus(ApplicationStatus.REFUSEE);
+			notifications.rejected(application);
+		}
 	}
 
 	/**
@@ -215,8 +226,10 @@ public class EvaluationService {
 		if (request.decision() == Decision.VALIDEE) {
 			hirings.save(buildHiring(application, request.hiring()));
 			application.setStatus(ApplicationStatus.EMBAUCHEE);
+			notifications.hired(application);
 		} else {
 			application.setStatus(ApplicationStatus.REFUSEE);
+			notifications.rejected(application);
 		}
 
 		return ApplicationMapper.toHrView(application, null);

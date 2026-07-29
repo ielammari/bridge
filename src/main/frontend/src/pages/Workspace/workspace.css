@@ -56,6 +56,23 @@
   background: var(--status-en-revue-bg);
 }
 
+.workspace__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin-left: var(--space-2);
+  padding: 0 5px;
+  background: var(--accent);
+  color: var(--on-primary);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: var(--size-xs);
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+}
+
 .workspace__account {
   display: flex;
   align-items: center;

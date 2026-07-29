@@ -1,0 +1,91 @@
+.msg__muted {
+  color: var(--text-faint);
+}
+
+.msg__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.msg__count {
+  font-size: var(--size-sm);
+  color: var(--text-faint);
+}
+
+.msg__empty {
+  padding: var(--space-7) var(--space-5);
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+}
+
+.msg__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.msg {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border);
+  border-radius: var(--radius);
+  --tone: var(--border)
+}
+
+/* Unread carries the type accent on the rail and a heavier body. */
+.msg--unread {
+  border-left-color: var(--tone);
+  background: var(--surface);
+}
+
+.msg--unread .msg__text {
+  font-weight: var(--weight-medium);
+  color: var(--text);
+}
+
+.msg__icon {
+  display: inline-flex;
+  color: var(--tone);
+  font-size: var(--size-lg);
+  line-height: 1;
+}
+
+.msg__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.msg__text {
+  color: var(--text-secondary);
+}
+
+.msg__time {
+  margin-top: var(--space-1);
+  font-size: var(--size-xs);
+  color: var(--text-faint);
+}
+
+.msg__read {
+  flex-shrink: 0;
+  padding: var(--space-1) var(--space-2);
+  background: none;
+  border: none;
+  font-size: var(--size-sm);
+  color: var(--primary);
+  cursor: pointer;
+}
+
+.msg__read:hover {
+  text-decoration: underline;
+}
