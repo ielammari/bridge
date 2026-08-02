@@ -4,10 +4,6 @@
   font-size: var(--size-sm);
 }
 
-.profile__loading {
-  color: var(--text-faint);
-}
-
 /* ---- Identity -------------------------------------------------------- */
 .profile__identity {
   display: flex;
@@ -48,21 +44,6 @@
 .profile__savestate {
   margin-right: auto;
   font-size: var(--size-sm);
-}
-
-.profile__saveok {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  color: var(--status-embauchee);
-}
-
-.profile__saveerror {
-  color: var(--danger);
-}
-
-.profile__savehint {
-  color: var(--text-faint);
 }
 
 @media (max-width: 40rem) {

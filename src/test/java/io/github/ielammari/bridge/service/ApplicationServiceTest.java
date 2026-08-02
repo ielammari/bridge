@@ -3,6 +3,7 @@ package io.github.ielammari.bridge.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -46,7 +47,7 @@ class ApplicationServiceTest {
 	}
 
 	private Integer candidateWithProfile(String email, boolean withCv) {
-		Integer id = authService.register(new RegisterRequest(email, "motdepasse1", "App", "Test", null)).user().id();
+		Integer id = authService.register(new RegisterRequest(email, "Motdepasse1!x", "App", "Test", null, LocalDate.of(1995, 5, 20), null, null, null)).user().id();
 		profileService.update(id, new UpdateProfileRequest(Degree.BAC_5, null, null,
 				List.of(new TraitSelection(aTrait().getId(), null))));
 		if (withCv) {

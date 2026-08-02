@@ -4,13 +4,6 @@
   gap: var(--space-4);
 }
 
-.offerform__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
 .offerform__grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

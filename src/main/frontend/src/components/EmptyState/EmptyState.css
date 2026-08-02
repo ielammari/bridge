@@ -1,0 +1,27 @@
+/* A dashed edge marks a slot waiting to be filled. */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-7) var(--space-5);
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+}
+
+.empty__title {
+  font-family: var(--font-display);
+  font-size: var(--size-lg);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.015em;
+}
+
+.empty__body {
+  max-width: 56ch;
+  color: var(--text-secondary);
+}
+
+.empty__action {
+  font-weight: var(--weight-medium);
+}

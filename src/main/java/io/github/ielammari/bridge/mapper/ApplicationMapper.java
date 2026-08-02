@@ -39,6 +39,8 @@ public final class ApplicationMapper {
 				candidate.getFirstName(),
 				candidate.getLastName(),
 				candidate.getEmail(),
+				application.getOffer().getId(),
+				application.getOffer().getTitle(),
 				application.getApplicationDate(),
 				application.getStatus(),
 				appointment == null ? null : appointment.getDate(),

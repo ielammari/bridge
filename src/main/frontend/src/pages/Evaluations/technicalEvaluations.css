@@ -1,18 +1,6 @@
-.tech__muted {
-  color: var(--text-faint);
-}
-
 .tech__intro {
   color: var(--text-secondary);
   font-size: var(--size-sm);
-}
-
-.tech__empty {
-  padding: var(--space-7) var(--space-5);
-  background: var(--surface);
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-lg);
-  color: var(--text-secondary);
 }
 
 .tech__list {
@@ -43,21 +31,6 @@
 .techcard__meta {
   font-size: var(--size-sm);
   color: var(--text-faint);
-}
-
-.tech__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.tech__title {
-  font-size: var(--size-2xl);
-}
-
-.tech__sub {
-  color: var(--text-secondary);
 }
 
 /* ---- Scoring grid ---------------------------------------------------- */

@@ -17,8 +17,8 @@ const STATUS = {
 };
 
 /**
- * The single status indicator used across the app. A coloured dot plus the text
- * label, so status is never conveyed by colour alone.
+ * The single status indicator used across the app. The label is always spelled
+ * out, so status is never conveyed by colour alone.
  */
 export default function StatusBadge({ status }) {
   const entry = STATUS[status];

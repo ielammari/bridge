@@ -1,46 +1,33 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { applicationsApi } from '../../api/applications.js';
 import { scheduleApi } from '../../api/schedule.js';
+import { clockTime, localDate } from '../../constants/format.js';
+import useResource from '../../hooks/useResource.js';
 import './Scheduler.css';
 
-function tomorrow() {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
+/** Whether an hour on a given day has already gone by. */
+function isPast(date, time) {
+  if (date !== localDate()) return false;
+  const now = new Date();
+  return Number(time.slice(0, 2)) <= now.getHours();
 }
 
 /**
- * HR books an interview from an hourly grid. A slot already taken by another
- * interview is disabled and names its occupant; the slot currently held by this
- * application is marked so HR can keep or move it.
+ * HR books an interview from an hourly grid. A slot taken by another interview
+ * is disabled and names its occupant; this application's own slot is marked.
  */
 export default function Scheduler({ applicationId, current, onScheduled }) {
-  const [date, setDate] = useState(current?.date ?? tomorrow());
-  const [grid, setGrid] = useState(null);
+  const [date, setDate] = useState(current?.date ?? localDate(1));
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    setGrid(null);
-    scheduleApi.day(date)
-      .then((data) => {
-        if (!cancelled) setGrid(data);
-      })
-      .catch(() => {
-        if (!cancelled) setError('La journée n\'a pas pu être chargée.');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [date]);
+  const { status, data, reload } = useResource(() => scheduleApi.day(date), [date]);
 
   async function pick(time) {
     setError(null);
     setBusy(time);
     try {
-      const updated = await applicationsApi.schedule(applicationId, { date, time });
-      onScheduled(updated);
+      onScheduled(await applicationsApi.schedule(applicationId, { date, time }));
     } catch (apiError) {
       setError(apiError.message);
     } finally {
@@ -52,31 +39,41 @@ export default function Scheduler({ applicationId, current, onScheduled }) {
     <div className="scheduler">
       <label className="scheduler__date">
         <span>Date</span>
-        <input type="date" value={date} min={new Date().toISOString().slice(0, 10)}
-          onChange={(e) => setDate(e.target.value)} />
+        <input type="date" value={date} min={localDate()}
+          onChange={(event) => setDate(event.target.value)} />
       </label>
 
       {error && <p className="scheduler__error" role="alert">{error}</p>}
 
-      {!grid ? (
-        <p className="scheduler__muted">Chargement des créneaux...</p>
-      ) : (
+      {status === 'loading' && <p className="scheduler__muted">Chargement des créneaux...</p>}
+
+      {status === 'error' && (
+        <p className="scheduler__error" role="alert">
+          La journée n'a pas pu être chargée.{' '}
+          <button type="button" className="scheduler__retry" onClick={reload}>Réessayer</button>
+        </p>
+      )}
+
+      {status === 'ready' && (
         <div className="scheduler__grid" role="group" aria-label="Créneaux de la journée">
-          {grid.slots.map((slot) => {
+          {data.slots.map((slot) => {
             const mine = slot.taken && slot.applicationId === applicationId;
             const takenByOther = slot.taken && !mine;
+            const past = isPast(date, slot.time);
+            const blocked = takenByOther || past;
             return (
               <button
                 key={slot.time}
                 type="button"
-                className={`slot${mine ? ' slot--current' : ''}${takenByOther ? ' slot--taken' : ''}`}
-                disabled={takenByOther || busy === slot.time}
+                className={`slot${mine ? ' slot--current' : ''}${blocked ? ' slot--taken' : ''}`}
+                disabled={blocked || busy === slot.time}
                 onClick={() => pick(slot.time)}
                 title={takenByOther ? `Pris par ${slot.candidateName}` : undefined}
               >
-                <span className="slot__time mono">{slot.time}</span>
+                <span className="slot__time mono">{clockTime(slot.time)}</span>
                 {mine && <span className="slot__note">Actuel</span>}
                 {takenByOther && <span className="slot__note">{slot.candidateName}</span>}
+                {past && !takenByOther && <span className="slot__note">Passé</span>}
               </button>
             );
           })}

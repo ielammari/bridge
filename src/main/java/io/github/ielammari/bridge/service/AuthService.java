@@ -1,5 +1,8 @@
 package io.github.ielammari.bridge.service;
 
+import java.time.LocalDate;
+import java.time.Period;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +19,9 @@ import io.github.ielammari.bridge.security.JwtService;
 
 @Service
 public class AuthService {
+
+	private static final int MIN_AGE = 16;
+	private static final int MAX_AGE = 100;
 
 	private final UserRepository users;
 	private final PasswordEncoder passwordEncoder;
@@ -35,12 +41,19 @@ public class AuthService {
 			throw ApiException.emailAlreadyUsed();
 		}
 
+		PasswordPolicy.check(request.password(), email, request.firstName(), request.lastName());
+		checkAge(request.birthDate());
+
 		Candidate candidate = new Candidate(
 				email,
 				passwordEncoder.encode(request.password()),
 				request.firstName().trim(),
 				request.lastName().trim(),
-				blankToNull(request.phone()));
+				blankToNull(request.phone()),
+				request.birthDate(),
+				request.gender(),
+				blankToNull(request.city()),
+				blankToNull(request.country()));
 
 		return respond(users.save(candidate));
 	}
@@ -66,6 +79,22 @@ public class AuthService {
 	private AuthResponse respond(User user) {
 		JwtService.IssuedToken token = jwtService.issue(user);
 		return new AuthResponse(token.value(), token.expiresAt(), UserMapper.toSummary(user));
+	}
+
+	/**
+	 * The working age range. The upper bound catches a mistyped year, which is
+	 * otherwise indistinguishable from a valid date.
+	 */
+	private void checkAge(LocalDate birthDate) {
+		int age = Period.between(birthDate, LocalDate.now()).getYears();
+		if (age < MIN_AGE) {
+			throw ApiException.badRequest("AGE_TOO_LOW",
+					"Vous devez avoir au moins " + MIN_AGE + " ans pour créer un compte.");
+		}
+		if (age > MAX_AGE) {
+			throw ApiException.badRequest("BIRTH_DATE_IMPLAUSIBLE",
+					"Vérifiez votre date de naissance, l'année saisie semble incorrecte.");
+		}
 	}
 
 	private String normalize(String email) {

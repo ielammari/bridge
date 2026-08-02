@@ -2,6 +2,7 @@ package io.github.ielammari.bridge.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,7 @@ class MatchingServiceTest {
 	}
 
 	private Integer newCandidate(String email) {
-		return authService.register(new RegisterRequest(email, "motdepasse1", "Match", "Test", null)).user().id();
+		return authService.register(new RegisterRequest(email, "Motdepasse1!x", "Match", "Test", null, LocalDate.of(1995, 5, 20), null, null, null)).user().id();
 	}
 
 	private List<Trait> someTraits(int n) {

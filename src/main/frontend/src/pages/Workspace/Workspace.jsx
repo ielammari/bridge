@@ -1,7 +1,10 @@
-import { NavLink } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useNotifications } from '../../context/NotificationContext.jsx';
 import Button from '../../components/Button/Button.jsx';
+import Icon from '../../components/Icon/Icon.jsx';
+import useDocumentTitle from '../../hooks/useDocumentTitle.js';
 import './workspace.css';
 
 const NAV_BY_ROLE = {
@@ -17,17 +20,33 @@ const NAV_BY_ROLE = {
   EXPERT: [{ to: '/evaluations', label: 'Évaluations' }],
 };
 
+const ROLE_LABELS = { CANDIDAT: 'Candidat', RH: 'RH', EXPERT: 'Expert' };
+
 /**
- * Signed in shell shared by the three workspaces: brand, primary navigation for
- * the current role, and the account controls.
+ * Signed in shell shared by the three workspaces: brand, navigation for the
+ * current role, and the account controls. Also names the page in the tab and
+ * moves focus on navigation, which a single page application must do by hand.
  */
-export default function Workspace({ title, children }) {
+export default function Workspace({ title, subtitle, back, children }) {
   const { user, logout } = useAuth();
   const { unreadCount } = useNotifications();
+  const location = useLocation();
+  const heading = useRef(null);
+
+  useDocumentTitle(title);
+
+  // Focus moves to the new page's heading, so the next Tab starts from its
+  // content rather than the link that was clicked.
+  useEffect(() => {
+    heading.current?.focus();
+  }, [location.pathname]);
+
   const nav = NAV_BY_ROLE[user.role] ?? [];
 
   return (
     <div className="workspace">
+      <a className="workspace__skip" href="#contenu">Aller au contenu</a>
+
       <header className="workspace__bar">
         <div className="workspace__lead">
           <span className="workspace__logo">Bridge</span>
@@ -62,7 +81,7 @@ export default function Workspace({ title, children }) {
         <div className="workspace__account">
           <span className="workspace__identity">
             {user.firstName} {user.lastName}
-            <span className="workspace__role">{user.role}</span>
+            <span className="workspace__role">{ROLE_LABELS[user.role] ?? user.role}</span>
           </span>
           <Button variant="text" onClick={logout}>
             Se déconnecter
@@ -70,8 +89,17 @@ export default function Workspace({ title, children }) {
         </div>
       </header>
 
-      <main className="workspace__content">
-        <h1>{title}</h1>
+      <main className="workspace__content" id="contenu">
+        <div className="workspace__head">
+          {back && (
+            <Link className="workspace__back" to={back.to}>
+              <Icon name="chevron" className="workspace__back-icon" /> {back.label}
+            </Link>
+          )}
+          <h1 className="workspace__title" ref={heading} tabIndex={-1}>{title}</h1>
+          {subtitle && <p className="workspace__subtitle">{subtitle}</p>}
+        </div>
+
         {children}
       </main>
     </div>

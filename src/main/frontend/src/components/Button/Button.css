@@ -45,11 +45,41 @@
   color: var(--primary);
 }
 
+/* Destructive actions: outlined at rest, solid on hover and focus. */
+.button--danger {
+  background: var(--surface);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.button--danger:hover:not(:disabled),
+.button--danger:focus-visible:not(:disabled) {
+  background: var(--danger);
+  color: var(--on-primary);
+}
+
+.button--danger:active:not(:disabled) {
+  background: var(--danger-hover);
+  border-color: var(--danger-hover);
+}
+
 .button--text {
+  position: relative;
   min-height: 0;
   padding: var(--space-1) var(--space-2);
   background: none;
   color: var(--primary);
+}
+
+/* Extends the pointer target to 44px without changing the visible size. */
+.button--text::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  translate: 0 -50%;
+  height: 44px;
 }
 
 .button--text:hover:not(:disabled) {

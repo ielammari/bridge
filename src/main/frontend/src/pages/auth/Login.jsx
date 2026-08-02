@@ -4,68 +4,78 @@ import AuthLayout from './AuthLayout.jsx';
 import Alert from '../../components/Alert/Alert.jsx';
 import Button from '../../components/Button/Button.jsx';
 import Field from '../../components/Field/Field.jsx';
+import FormErrorSummary from '../../components/FormErrorSummary/FormErrorSummary.jsx';
+import PasswordField from '../../components/PasswordField/PasswordField.jsx';
 import { HOME_BY_ROLE } from '../../components/ProtectedRoute/ProtectedRoute.jsx';
+import { emailFormat } from '../../constants/validation.js';
 import { useAuth } from '../../context/AuthContext.jsx';
+import useDocumentTitle from '../../hooks/useDocumentTitle.js';
+import useForm from '../../hooks/useForm.js';
+
+const RULES = {
+  email: {
+    label: 'Adresse email',
+    required: 'Indiquez votre adresse email.',
+    format: emailFormat,
+  },
+  password: {
+    label: 'Mot de passe',
+    required: 'Indiquez votre mot de passe.',
+  },
+};
 
 export default function Login() {
+  useDocumentTitle('Se connecter');
+
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [error, setError] = useState(null);
+  const form = useForm({ email: '', password: '' }, RULES);
+  const [failure, setFailure] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const update = (key) => (event) => setForm({ ...form, [key]: event.target.value });
+  // Set when a session expired mid use, to explain the redirect.
+  const expired = location.state?.expired;
 
-  async function handleSubmit(event) {
-    event.preventDefault();
-    setError(null);
+  const submit = form.handleSubmit(async (values) => {
+    setFailure(null);
     setSubmitting(true);
-
     try {
-      const user = await login(form);
+      const user = await login({ email: values.email.trim(), password: values.password });
       const target = location.state?.from?.pathname ?? HOME_BY_ROLE[user.role] ?? '/';
       navigate(target, { replace: true });
     } catch (apiError) {
-      setError(apiError.message);
+      setFailure(apiError.message);
       setSubmitting(false);
+      document.querySelector('[name="password"]')?.focus();
     }
-  }
+  });
 
   return (
     <AuthLayout
       title="Se connecter"
-      intro="Accédez à votre espace pour suivre vos candidatures et vos entretiens."
       footer={
         <>
           Pas encore de compte ? <Link to="/inscription">Créer un compte candidat</Link>
         </>
       }
     >
-      <form className="auth__form" onSubmit={handleSubmit} noValidate>
-        {error && <Alert>{error}</Alert>}
+      <form className="auth__form" onSubmit={submit} noValidate>
+        {expired && <Alert tone="info">Votre session a expiré. Reconnectez-vous pour continuer.</Alert>}
+        {failure && <Alert>{failure}</Alert>}
+        <FormErrorSummary errors={form.currentErrors()} rules={RULES} />
 
-        <Field
-          label="Adresse email"
-          type="email"
-          value={form.email}
-          onChange={update('email')}
-          autoComplete="email"
-          required
-        />
+        <Field label="Adresse email" type="email" autoComplete="email" {...form.field('email')} />
 
-        <Field
+        <PasswordField
           label="Mot de passe"
-          type="password"
-          value={form.password}
-          onChange={update('password')}
           autoComplete="current-password"
-          required
+          {...form.field('password')}
         />
 
         <Button type="submit" fullWidth loading={submitting}>
-          {submitting ? 'Connexion...' : 'Se connecter'}
+          Se connecter
         </Button>
       </form>
     </AuthLayout>

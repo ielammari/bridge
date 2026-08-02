@@ -1,4 +1,6 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { setMutationHandler } from '../api/client.js';
 import { messagesApi } from '../api/messages.js';
 import { useAuth } from './AuthContext.jsx';
 
@@ -6,6 +8,7 @@ const NotificationContext = createContext(null);
 
 export function NotificationProvider({ children }) {
   const { user } = useAuth();
+  const location = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
 
   const refresh = useCallback(async () => {
@@ -21,9 +24,19 @@ export function NotificationProvider({ children }) {
     }
   }, [user]);
 
+  // Installed once, so it reaches the current refresh through a ref.
+  const latest = useRef(refresh);
+  latest.current = refresh;
+
+  useEffect(() => {
+    setMutationHandler(() => latest.current());
+  }, []);
+
+  // On every write and every navigation. Reading the count is also what
+  // settles the notifications whose task is done.
   useEffect(() => {
     refresh();
-  }, [refresh]);
+  }, [refresh, location.pathname]);
 
   const value = useMemo(() => ({ unreadCount, refresh }), [unreadCount, refresh]);
   return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>;

@@ -1,146 +1,155 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { applicationsApi } from '../../api/applications.js';
+import { messagesApi } from '../../api/messages.js';
 import { offersApi } from '../../api/offers.js';
-import Alert from '../../components/Alert/Alert.jsx';
 import Button from '../../components/Button/Button.jsx';
+import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog.jsx';
+import EmptyState from '../../components/EmptyState/EmptyState.jsx';
+import ErrorState from '../../components/ErrorState/ErrorState.jsx';
 import Field from '../../components/Field/Field.jsx';
 import Icon from '../../components/Icon/Icon.jsx';
 import Scheduler from '../../components/Scheduler/Scheduler.jsx';
 import Select from '../../components/Select/Select.jsx';
+import Skeleton from '../../components/Skeleton/Skeleton.jsx';
 import StatusBadge from '../../components/StatusBadge/StatusBadge.jsx';
+import { useToast } from '../../components/Toast/ToastContext.jsx';
+import { clockTime, longDate } from '../../constants/format.js';
+import useResource from '../../hooks/useResource.js';
 import Workspace from '../Workspace/Workspace.jsx';
-import FinalEvaluation from './FinalEvaluation.jsx';
 import './hrApplications.css';
-import './finalEvaluation.css';
-
-const dateFormat = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-
-function appliedOn(iso) {
-  return dateFormat.format(new Date(iso));
-}
 
 function interviewText(app) {
   const label = app.status === 'EXAMEN_TECHNIQUE' ? 'Examen technique' : 'Entretien RH';
   if (!app.appointmentDate) return `${label} à planifier`;
-  return `${label} le ${dateFormat.format(new Date(app.appointmentDate))} à ${app.appointmentTime.slice(0, 5)}`;
+  return `${label} le ${longDate(app.appointmentDate)} à ${clockTime(app.appointmentTime)}`;
 }
 
+// Both outcomes are irreversible, so both are confirmed.
+const DECISIONS = {
+  VALIDEE: {
+    title: 'Valider cette candidature ?',
+    body: 'Le candidat passe à l\'examen technique. Vous devrez ensuite en fixer la date.',
+    confirmLabel: 'Valider et passer à l\'examen technique',
+    tone: 'primary',
+    nextStatus: 'EXAMEN_TECHNIQUE',
+    done: 'Candidature validée. Planifiez l\'examen technique.',
+  },
+  REFUSEE: {
+    title: 'Rejeter cette candidature ?',
+    body: 'Le candidat en est informé immédiatement et la candidature est close. Cette décision ne se reprend pas.',
+    confirmLabel: 'Rejeter la candidature',
+    tone: 'danger',
+    nextStatus: 'REFUSEE',
+    done: 'Candidature rejetée. Le candidat a été prévenu.',
+  },
+};
+
 export default function HrApplications() {
-  const [status, setStatus] = useState('loading');
-  const [offers, setOffers] = useState([]);
+  const navigate = useNavigate();
+  const toast = useToast();
+
+  const offersRes = useResource(() => offersApi.list());
+  const offers = offersRes.data ?? [];
   const [offerId, setOfferId] = useState('');
-  const [applications, setApplications] = useState([]);
-  const [loadingApps, setLoadingApps] = useState(false);
+
+  useEffect(() => {
+    if (offers.length > 0 && !offerId) setOfferId(String(offers[0].id));
+  }, [offers, offerId]);
+
+  const appsRes = useResource(
+    () => (offerId ? applicationsApi.forOffer(offerId) : Promise.resolve([])),
+    [offerId],
+  );
+  const applications = appsRes.data ?? [];
+
   const [panel, setPanel] = useState(null); // { id, mode: 'preselect' | 'schedule' }
-  const [finalizing, setFinalizing] = useState(null); // an application, shown full page
   const [comment, setComment] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
-
-  const offerTitle = offers.find((o) => String(o.id) === offerId)?.title ?? '';
-
-  useEffect(() => {
-    let cancelled = false;
-    offersApi.list()
-      .then((list) => {
-        if (cancelled) return;
-        setOffers(list);
-        if (list.length > 0) setOfferId(String(list[0].id));
-        setStatus('ready');
-      })
-      .catch(() => {
-        if (!cancelled) setStatus('error');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!offerId) {
-      setApplications([]);
-      return;
-    }
-    let cancelled = false;
-    setLoadingApps(true);
-    setPanel(null);
-    applicationsApi.forOffer(offerId)
-      .then((data) => {
-        if (!cancelled) setApplications(data);
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingApps(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [offerId]);
+  const [confirming, setConfirming] = useState(null); // { app, decision }
+  const [busy, setBusy] = useState(false);
 
   function replace(updated) {
-    setApplications((apps) => apps.map((a) => (a.id === updated.id ? updated : a)));
+    appsRes.setData((list) => list.map((a) => (a.id === updated.id ? updated : a)));
   }
 
   async function viewCv(id) {
-    const blob = await applicationsApi.cv(id);
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank', 'noopener');
-    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    try {
+      const blob = await applicationsApi.cv(id);
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener');
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    } catch (apiError) {
+      toast.error(apiError.message);
+    }
+  }
+
+  /** Opening an application marks the notices about it read. */
+  async function markSeen(app) {
+    try {
+      await messagesApi.readForApplication(app.id);
+    } catch {
+      // A side effect of looking, not a requested action: the count corrects
+      // itself on the next read.
+    }
   }
 
   async function openPreselection(app) {
-    setError(null);
     setComment('');
     setPanel({ id: app.id, mode: 'preselect' });
+    markSeen(app);
     if (app.status === 'NOUVELLE') {
       try {
         replace(await applicationsApi.review(app.id));
       } catch (apiError) {
-        setError(apiError.message);
+        toast.error(apiError.message);
       }
     }
   }
 
-  async function decide(app, decision) {
-    setError(null);
-    setSubmitting(true);
+  async function decide() {
+    const { app, decision } = confirming;
+    setBusy(true);
     try {
       replace(await applicationsApi.preselect(app.id, { decision, comment: comment || null }));
+      toast.success(DECISIONS[decision].done);
+      setConfirming(null);
       setPanel(null);
     } catch (apiError) {
-      setError(apiError.message);
+      toast.error(apiError.message);
     } finally {
-      setSubmitting(false);
+      setBusy(false);
     }
   }
 
-  if (status === 'loading') {
-    return <Workspace title="Candidatures"><p className="hrapps__muted">Chargement...</p></Workspace>;
-  }
-  if (status === 'error') {
-    return <Workspace title="Candidatures"><Alert>Les candidatures n'ont pas pu être chargées.</Alert></Workspace>;
-  }
-  if (offers.length === 0) {
+  if (offersRes.status === 'loading') {
     return (
       <Workspace title="Candidatures">
-        <div className="hrapps__empty">
-          <p>Vous n'avez pas encore d'offre. Créez une offre pour recevoir des candidatures.</p>
-        </div>
+        <Skeleton label="Chargement des candidatures" />
       </Workspace>
     );
   }
 
-  if (finalizing) {
+  if (offersRes.status === 'error') {
     return (
       <Workspace title="Candidatures">
-        <FinalEvaluation
-          app={finalizing}
-          offerTitle={offerTitle}
-          onDone={(updated) => {
-            replace(updated);
-            setFinalizing(null);
-          }}
-          onCancel={() => setFinalizing(null)}
-        />
+        <ErrorState onRetry={offersRes.reload}>
+          Les candidatures n'ont pas pu être chargées. Réessayez dans un instant.
+        </ErrorState>
+      </Workspace>
+    );
+  }
+
+  if (offers.length === 0) {
+    return (
+      <Workspace title="Candidatures">
+        <EmptyState
+          title="Aucune offre, donc aucune candidature."
+          actionLabel="Créer une offre"
+          onAction={() => navigate('/offres/nouvelle')}
+        >
+          Les candidatures arrivent par les offres publiées. Créez et publiez une offre pour
+          commencer à en recevoir.
+        </EmptyState>
       </Workspace>
     );
   }
@@ -152,13 +161,22 @@ export default function HrApplications() {
           options={offers.map((o) => ({ value: String(o.id), label: o.title }))} />
       </div>
 
-      {error && <Alert>{error}</Alert>}
+      {appsRes.status === 'loading' && <Skeleton label="Chargement des candidatures" />}
 
-      {loadingApps ? (
-        <p className="hrapps__muted">Chargement des candidatures...</p>
-      ) : applications.length === 0 ? (
-        <div className="hrapps__empty"><p>Aucune candidature pour cette offre pour le moment.</p></div>
-      ) : (
+      {appsRes.status === 'error' && (
+        <ErrorState onRetry={appsRes.reload}>
+          Les candidatures de cette offre n'ont pas pu être chargées.
+        </ErrorState>
+      )}
+
+      {appsRes.status === 'ready' && applications.length === 0 && (
+        <EmptyState title="Aucune candidature pour cette offre.">
+          Seuls les candidats qui possèdent tous les traits obligatoires de cette offre peuvent la
+          voir et y postuler.
+        </EmptyState>
+      )}
+
+      {appsRes.status === 'ready' && applications.length > 0 && (
         <ul className="hrapps__list">
           {applications.map((app) => {
             const scheduling = app.status === 'EXAMEN_TECHNIQUE' || app.status === 'ENTRETIEN_RH';
@@ -167,11 +185,12 @@ export default function HrApplications() {
             return (
               <li key={app.id} className="appcard">
                 <div className="appcard__row">
-                  <div className="appcard__who">
+                  <button type="button" className="appcard__who" onClick={() => markSeen(app)}
+                    aria-label={`Candidature de ${app.candidateFirstName} ${app.candidateLastName}`}>
                     <span className="appcard__name">{app.candidateFirstName} {app.candidateLastName}</span>
                     <span className="appcard__email">{app.candidateEmail}</span>
-                    <span className="appcard__date">Postulé le {appliedOn(app.applicationDate)}</span>
-                  </div>
+                    <span className="appcard__date">Postulé le {longDate(app.applicationDate)}</span>
+                  </button>
 
                   <div className="appcard__state">
                     <StatusBadge status={app.status} />
@@ -195,7 +214,9 @@ export default function HrApplications() {
                       </Button>
                     )}
                     {app.status === 'ENTRETIEN_RH' && (
-                      <Button onClick={() => setFinalizing(app)}>Finaliser l'entretien</Button>
+                      <Button onClick={() => navigate(`/candidatures/${app.id}/entretien`)}>
+                        Finaliser l'entretien
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -204,12 +225,12 @@ export default function HrApplications() {
                   <div className="appcard__panel">
                     <Field label="Commentaire de présélection" value={comment}
                       onChange={(e) => setComment(e.target.value)} multiline rows={3}
-                      hint="Conservé avec l'évaluation." />
+                      hint="Facultatif, conservé avec l'évaluation." />
                     <div className="appcard__decide">
-                      <Button variant="secondary" onClick={() => decide(app, 'REFUSEE')} loading={submitting}>
+                      <Button variant="danger" onClick={() => setConfirming({ app, decision: 'REFUSEE' })}>
                         Rejeter
                       </Button>
-                      <Button onClick={() => decide(app, 'VALIDEE')} loading={submitting}>
+                      <Button onClick={() => setConfirming({ app, decision: 'VALIDEE' })}>
                         Valider et passer à l'examen technique
                       </Button>
                     </div>
@@ -224,6 +245,7 @@ export default function HrApplications() {
                       onScheduled={(updated) => {
                         replace(updated);
                         setPanel(null);
+                        toast.success('Entretien planifié. Le candidat a été prévenu.');
                       }}
                     />
                   </div>
@@ -232,6 +254,23 @@ export default function HrApplications() {
             );
           })}
         </ul>
+      )}
+
+      {confirming && (
+        <ConfirmDialog
+          open
+          title={DECISIONS[confirming.decision].title}
+          confirmLabel={DECISIONS[confirming.decision].confirmLabel}
+          tone={DECISIONS[confirming.decision].tone}
+          nextStatus={DECISIONS[confirming.decision].nextStatus}
+          missing={comment.trim() ? [] : [{ key: 'comment', label: 'Commentaire de présélection' }]}
+          busy={busy}
+          onConfirm={decide}
+          onCancel={() => setConfirming(null)}
+        >
+          <strong>{confirming.app.candidateFirstName} {confirming.app.candidateLastName}</strong>.{' '}
+          {DECISIONS[confirming.decision].body}
+        </ConfirmDialog>
       )}
     </Workspace>
   );

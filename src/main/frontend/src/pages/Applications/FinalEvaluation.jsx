@@ -2,9 +2,15 @@ import { useState } from 'react';
 import { applicationsApi } from '../../api/applications.js';
 import Alert from '../../components/Alert/Alert.jsx';
 import Button from '../../components/Button/Button.jsx';
+import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog.jsx';
 import Field from '../../components/Field/Field.jsx';
+import FormErrorSummary from '../../components/FormErrorSummary/FormErrorSummary.jsx';
 import Select from '../../components/Select/Select.jsx';
 import { CONTRACT_OPTIONS, REMOTE_OPTIONS } from '../../constants/enums.js';
+import { localDate } from '../../constants/format.js';
+import { positiveNumber } from '../../constants/validation.js';
+import useForm from '../../hooks/useForm.js';
+import './finalEvaluation.css';
 
 const EMPTY = {
   comment: '',
@@ -14,79 +20,99 @@ const EMPTY = {
   executiveStatus: false, benefits: '',
 };
 
+const RULES = {
+  comment: { label: 'Commentaire global' },
+  expectedSalary: { label: 'Salaire attendu', format: positiveNumber },
+  availabilityDate: { label: 'Disponibilité' },
+  envisagedContract: { label: 'Contrat envisagé' },
+  noticePeriod: { label: 'Préavis' },
+  scheduleFlexibility: { label: 'Flexibilité horaire' },
+  remoteExpectation: { label: 'Attentes télétravail' },
+  cultureFit: { label: 'Adéquation avec la culture' },
+
+  negotiatedSalary: {
+    label: 'Salaire négocié',
+    required: 'Indiquez le salaire négocié.',
+    format: positiveNumber,
+  },
+  startDate: {
+    label: 'Date de prise de poste',
+    required: 'Indiquez la date de prise de poste.',
+    format: (value) =>
+      value < localDate() ? 'Cette date est déjà passée.' : null,
+  },
+  finalContract: { label: 'Contrat final', required: 'Choisissez le contrat final.' },
+  trialPeriod: { label: 'Période d\'essai' },
+  benefits: { label: 'Avantages' },
+};
+
+const INTERVIEW_KEYS = [
+  'comment', 'expectedSalary', 'availabilityDate', 'envisagedContract',
+  'noticePeriod', 'scheduleFlexibility', 'remoteExpectation', 'cultureFit',
+];
+
+const HIRING_KEYS = ['negotiatedSalary', 'startDate', 'finalContract', 'trialPeriod', 'benefits'];
+
 const num = (v) => (v === '' ? null : Number(v));
 const str = (v) => (v.trim() === '' ? null : v.trim());
 
 /**
  * The final HR decision. Interview data is recorded whatever the outcome; the
- * hiring terms below are used only when the candidate is hired.
+ * hiring terms are demanded only when hiring, so each action validates its own
+ * set of fields.
  */
-export default function FinalEvaluation({ app, offerTitle, onDone, onCancel }) {
-  const [form, setForm] = useState(EMPTY);
-  const [errors, setErrors] = useState({});
+export default function FinalEvaluation({ app, offerTitle, onDone }) {
+  const form = useForm(EMPTY, RULES);
+  const [confirming, setConfirming] = useState(null);
   const [failure, setFailure] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
-
-  function interviewPayload() {
-    return {
-      expectedSalary: num(form.expectedSalary),
-      availabilityDate: form.availabilityDate || null,
-      envisagedContract: form.envisagedContract || null,
-      noticePeriod: str(form.noticePeriod),
-      scheduleFlexibility: str(form.scheduleFlexibility),
-      remoteExpectation: form.remoteExpectation || null,
-      cultureFit: str(form.cultureFit),
-    };
+  function attempt(decision) {
+    const keys = decision === 'VALIDEE' ? [...INTERVIEW_KEYS, ...HIRING_KEYS] : INTERVIEW_KEYS;
+    if (form.attempt(keys)) setConfirming(decision);
   }
 
-  async function submit(decision) {
+  async function send() {
+    const decision = confirming;
+    const { values } = form;
     setFailure(null);
-    if (decision === 'VALIDEE') {
-      const found = {};
-      if (!form.negotiatedSalary) found.negotiatedSalary = 'Indiquez le salaire négocié.';
-      if (!form.startDate) found.startDate = 'Indiquez la date de prise de poste.';
-      if (!form.finalContract) found.finalContract = 'Choisissez le contrat final.';
-      setErrors(found);
-      if (Object.keys(found).length > 0) return;
-    }
-
     setSubmitting(true);
     try {
       const updated = await applicationsApi.finalize(app.id, {
         decision,
-        comment: str(form.comment),
-        interview: interviewPayload(),
+        comment: str(values.comment),
+        interview: {
+          expectedSalary: num(values.expectedSalary),
+          availabilityDate: values.availabilityDate || null,
+          envisagedContract: values.envisagedContract || null,
+          noticePeriod: str(values.noticePeriod),
+          scheduleFlexibility: str(values.scheduleFlexibility),
+          remoteExpectation: values.remoteExpectation || null,
+          cultureFit: str(values.cultureFit),
+        },
         hiring: decision === 'VALIDEE'
           ? {
-              negotiatedSalary: num(form.negotiatedSalary),
-              startDate: form.startDate,
-              finalContract: form.finalContract,
-              trialPeriod: str(form.trialPeriod),
-              executiveStatus: form.executiveStatus,
-              benefits: str(form.benefits),
+              negotiatedSalary: num(values.negotiatedSalary),
+              startDate: values.startDate,
+              finalContract: values.finalContract,
+              trialPeriod: str(values.trialPeriod),
+              executiveStatus: values.executiveStatus,
+              benefits: str(values.benefits),
             }
           : null,
       });
-      onDone(updated);
+      onDone(updated, decision);
     } catch (apiError) {
       setFailure(apiError.message);
+      setConfirming(null);
       setSubmitting(false);
     }
   }
 
   return (
     <div className="final">
-      <div className="final__head">
-        <div>
-          <h2 className="final__title">Entretien final : {app.candidateFirstName} {app.candidateLastName}</h2>
-          <p className="final__sub">{offerTitle}</p>
-        </div>
-        <Button variant="text" onClick={onCancel}>Retour à la liste</Button>
-      </div>
-
       {failure && <Alert>{failure}</Alert>}
+      <FormErrorSummary errors={form.currentErrors()} rules={RULES} />
 
       <section className="card">
         <div className="card__head">
@@ -94,58 +120,82 @@ export default function FinalEvaluation({ app, offerTitle, onDone, onCancel }) {
           <p className="card__subtitle">Conservé quelle que soit la décision.</p>
         </div>
         <div className="card__body">
-          <Field label="Commentaire global" value={form.comment} onChange={set('comment')}
-            multiline rows={3} />
+          <Field label="Commentaire global" multiline rows={3} {...form.field('comment')} />
           <div className="final__grid">
-            <Field label="Salaire attendu (€)" type="number" value={form.expectedSalary}
-              onChange={set('expectedSalary')} />
-            <Field label="Disponibilité" type="date" value={form.availabilityDate}
-              onChange={set('availabilityDate')} />
-            <Select label="Contrat envisagé" value={form.envisagedContract}
-              onChange={set('envisagedContract')} options={CONTRACT_OPTIONS} placeholder="Non précisé" />
-            <Field label="Préavis" value={form.noticePeriod} onChange={set('noticePeriod')} />
-            <Field label="Flexibilité horaire" value={form.scheduleFlexibility}
-              onChange={set('scheduleFlexibility')} />
-            <Select label="Attentes télétravail" value={form.remoteExpectation}
-              onChange={set('remoteExpectation')} options={REMOTE_OPTIONS} placeholder="Non précisé" />
+            <Field label="Salaire attendu (€)" type="number" {...form.field('expectedSalary')} />
+            <Field label="Disponibilité" type="date" {...form.field('availabilityDate')} />
+            <Select label="Contrat envisagé" options={CONTRACT_OPTIONS} placeholder="Non précisé"
+              {...form.field('envisagedContract')} />
+            <Field label="Préavis" {...form.field('noticePeriod')} />
+            <Field label="Flexibilité horaire" {...form.field('scheduleFlexibility')} />
+            <Select label="Attentes télétravail" options={REMOTE_OPTIONS} placeholder="Non précisé"
+              {...form.field('remoteExpectation')} />
           </div>
-          <Field label="Adéquation avec la culture" value={form.cultureFit}
-            onChange={set('cultureFit')} multiline rows={2} />
+          <Field label="Adéquation avec la culture" multiline rows={2} {...form.field('cultureFit')} />
         </div>
       </section>
 
       <section className="card">
         <div className="card__head">
           <h2 className="card__title">Conditions d'embauche</h2>
-          <p className="card__subtitle">À remplir uniquement en cas d'embauche.</p>
+          <p className="card__subtitle">Demandées uniquement si vous validez l'embauche.</p>
         </div>
         <div className="card__body">
           <div className="final__grid">
-            <Field label="Salaire négocié (€)" type="number" value={form.negotiatedSalary}
-              onChange={set('negotiatedSalary')} error={errors.negotiatedSalary} />
-            <Field label="Date de prise de poste" type="date" value={form.startDate}
-              onChange={set('startDate')} error={errors.startDate} />
-            <Select label="Contrat final" value={form.finalContract} onChange={set('finalContract')}
-              options={CONTRACT_OPTIONS} placeholder="Choisir" error={errors.finalContract} />
-            <Field label="Période d'essai" value={form.trialPeriod} onChange={set('trialPeriod')} />
+            <Field label="Salaire négocié (€)" type="number" {...form.field('negotiatedSalary')} />
+            <Field label="Date de prise de poste" type="date" min={localDate()}
+              {...form.field('startDate')} />
+            <Select label="Contrat final" options={CONTRACT_OPTIONS} placeholder="Choisir"
+              {...form.field('finalContract')} />
+            <Field label="Période d'essai" {...form.field('trialPeriod')} />
           </div>
           <label className="final__check">
-            <input type="checkbox" checked={form.executiveStatus}
-              onChange={(e) => setForm({ ...form, executiveStatus: e.target.checked })} />
+            <input type="checkbox" checked={form.values.executiveStatus}
+              onChange={(e) => form.setValue('executiveStatus', e.target.checked)} />
             Statut cadre
           </label>
-          <Field label="Avantages" value={form.benefits} onChange={set('benefits')} multiline rows={2} />
+          <Field label="Avantages" multiline rows={2} {...form.field('benefits')} />
         </div>
       </section>
 
       <div className="final__decide">
-        <Button variant="secondary" onClick={() => submit('REFUSEE')} loading={submitting}>
+        <Button variant="danger" onClick={() => attempt('REFUSEE')}>
           Ne pas retenir
         </Button>
-        <Button onClick={() => submit('VALIDEE')} loading={submitting}>
+        <Button onClick={() => attempt('VALIDEE')}>
           Valider l'embauche
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={confirming === 'REFUSEE'}
+        title="Ne pas retenir ce candidat ?"
+        confirmLabel="Ne pas retenir"
+        tone="danger"
+        nextStatus="REFUSEE"
+        missing={form.emptyOptional(INTERVIEW_KEYS)}
+        busy={submitting}
+        onConfirm={send}
+        onCancel={() => setConfirming(null)}
+      >
+        <strong>{app.candidateFirstName} {app.candidateLastName}</strong> en est informé
+        immédiatement et la candidature est close. Le bilan de l'entretien reste conservé.
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={confirming === 'VALIDEE'}
+        title="Valider l'embauche ?"
+        confirmLabel="Valider l'embauche"
+        nextStatus="EMBAUCHEE"
+        missing={form.emptyOptional([...INTERVIEW_KEYS, ...HIRING_KEYS])}
+        busy={submitting}
+        onConfirm={send}
+        onCancel={() => setConfirming(null)}
+      >
+        Un dossier d'embauche est créé pour{' '}
+        <strong>{app.candidateFirstName} {app.candidateLastName}</strong> sur le poste{' '}
+        <strong>{offerTitle}</strong>, et la confirmation lui est envoyée.
+      </ConfirmDialog>
     </div>
   );
 }

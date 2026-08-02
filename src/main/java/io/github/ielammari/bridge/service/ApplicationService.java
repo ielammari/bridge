@@ -99,6 +99,14 @@ public class ApplicationService {
 				.toList();
 	}
 
+	/** One application in the HR view, so a review in progress can be linked to. */
+	@Transactional(readOnly = true)
+	public HrApplicationDto hrView(Integer applicationId) {
+		Application application = applications.findByIdWithOfferAndCandidate(applicationId)
+				.orElseThrow(() -> ApiException.notFound("Cette candidature est introuvable."));
+		return ApplicationMapper.toHrView(application, currentAppointment(application));
+	}
+
 	/** The interview an application is currently waiting on, or null if none applies. */
 	private Appointment currentAppointment(Application application) {
 		AppointmentType type = Stages.appointmentTypeFor(application.getStatus());

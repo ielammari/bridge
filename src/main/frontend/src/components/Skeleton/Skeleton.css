@@ -1,0 +1,81 @@
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.skeleton__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.skeleton__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.skeleton__bar {
+  height: 0.75rem;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+  animation: skeleton-breathe 1.6s var(--ease) infinite;
+}
+
+.skeleton__bar--title {
+  width: 40%;
+  height: 1.1rem;
+}
+
+.skeleton__bar--badge {
+  width: 5.5rem;
+  height: 1.1rem;
+  border-radius: 999px;
+}
+
+.skeleton__bar--meta {
+  width: 60%;
+}
+
+.skeleton__bar--body {
+  width: 100%;
+}
+
+.skeleton__bar--short {
+  width: 30%;
+}
+
+/* Each bar lags the one above it, so the card settles instead of blinking. */
+.skeleton__bar--meta {
+  animation-delay: 120ms;
+}
+
+.skeleton__bar--body {
+  animation-delay: 240ms;
+}
+
+.skeleton__bar--short {
+  animation-delay: 360ms;
+}
+
+@keyframes skeleton-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton__bar {
+    animation: none;
+  }
+}

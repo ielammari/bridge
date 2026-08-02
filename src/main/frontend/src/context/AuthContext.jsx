@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { authApi } from '../api/auth.js';
-import { setTokenProvider } from '../api/client.js';
+import { setTokenProvider, setUnauthorizedHandler } from '../api/client.js';
 
 const STORAGE_KEY = 'bridge.token';
 
@@ -10,15 +10,32 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem(STORAGE_KEY));
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(Boolean(localStorage.getItem(STORAGE_KEY)));
+  const [expired, setExpired] = useState(false);
 
   // The API client reads the token through a ref, so it always sees the
   // current value without the client module depending on React.
   const tokenRef = useRef(token);
   tokenRef.current = token;
 
+  const clear = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEY);
+    tokenRef.current = null;
+    setToken(null);
+    setUser(null);
+  }, []);
+
   useEffect(() => {
     setTokenProvider(() => tokenRef.current);
-  }, []);
+
+    // The token can expire with the tab still open; without this every page
+    // would report an unrecoverable load failure.
+    setUnauthorizedHandler(() => {
+      if (!tokenRef.current) return;
+      clear();
+      setExpired(true);
+      setLoading(false);
+    });
+  }, [clear]);
 
   // A stored token survives a reload, but it may have expired while the tab
   // was closed, so it is verified against the server before being trusted.
@@ -36,11 +53,7 @@ export function AuthProvider({ children }) {
         if (!cancelled) setUser(profile);
       })
       .catch(() => {
-        if (!cancelled) {
-          localStorage.removeItem(STORAGE_KEY);
-          setToken(null);
-          setUser(null);
-        }
+        if (!cancelled) clear();
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -56,6 +69,7 @@ export function AuthProvider({ children }) {
     tokenRef.current = response.token;
     setToken(response.token);
     setUser(response.user);
+    setExpired(false);
     setLoading(false);
     return response.user;
   }, []);
@@ -71,15 +85,13 @@ export function AuthProvider({ children }) {
   );
 
   const logout = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
-    tokenRef.current = null;
-    setToken(null);
-    setUser(null);
-  }, []);
+    clear();
+    setExpired(false);
+  }, [clear]);
 
   const value = useMemo(
-    () => ({ user, loading, isAuthenticated: Boolean(user), login, register, logout }),
-    [user, loading, login, register, logout],
+    () => ({ user, loading, expired, isAuthenticated: Boolean(user), login, register, logout }),
+    [user, loading, expired, login, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

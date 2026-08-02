@@ -18,11 +18,27 @@ public interface MessageRepository extends JpaRepository<Message, Integer> {
 
 	long countByRecipientIdAndReadFalse(Integer recipientId);
 
+	/**
+	 * Unread notifications concerning an application. The inner join drops those
+	 * without one, which are exactly the ones carrying no task.
+	 */
+	@Query("SELECT m FROM Message m JOIN FETCH m.application "
+			+ "WHERE m.recipient.id = :recipientId AND m.read = false")
+	List<Message> findUnreadAboutAnApplication(Integer recipientId);
+
 	Optional<Message> findByIdAndRecipientId(Integer id, Integer recipientId);
 
+	// Bulk updates bypass the persistence context: flush pending changes first,
+	// then clear the stale copies they leave behind.
 	@Transactional
-	@Modifying
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
 	@Query("UPDATE Message m SET m.read = true WHERE m.recipient.id = :recipientId AND m.read = false")
 	void markAllRead(Integer recipientId);
+
+	@Transactional
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query("UPDATE Message m SET m.read = true WHERE m.recipient.id = :recipientId "
+			+ "AND m.application.id = :applicationId AND m.read = false")
+	int markReadForApplication(Integer recipientId, Integer applicationId);
 
 }

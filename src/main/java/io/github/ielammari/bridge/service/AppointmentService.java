@@ -98,12 +98,23 @@ public class AppointmentService {
 	}
 
 	private void validateSlot(LocalDate date, LocalTime time) {
-		if (date.isBefore(LocalDate.now())) {
-			throw ApiException.badRequest("SLOT_PAST", "La date choisie est déjà passée.");
-		}
 		if (time.getMinute() != 0 || time.getHour() < FIRST_HOUR || time.getHour() > LAST_HOUR) {
 			throw ApiException.badRequest("SLOT_INVALID", "Choisissez une heure pleine entre 9h et 16h.");
 		}
+		if (isPast(date, time, LocalDate.now(), LocalTime.now())) {
+			throw ApiException.badRequest("SLOT_PAST", "Ce créneau est déjà passé.");
+		}
+	}
+
+	/**
+	 * Whether a slot has already gone by. The date alone does not settle it: 9h
+	 * today is past by the afternoon. Pure, so it is testable at any hour.
+	 */
+	static boolean isPast(LocalDate date, LocalTime time, LocalDate today, LocalTime now) {
+		if (date.isBefore(today)) {
+			return true;
+		}
+		return date.isEqual(today) && !time.isAfter(now);
 	}
 
 }

@@ -13,6 +13,8 @@ public record HrApplicationDto(
 		String candidateFirstName,
 		String candidateLastName,
 		String candidateEmail,
+		Integer offerId,
+		String offerTitle,
 		Instant applicationDate,
 		ApplicationStatus status,
 		LocalDate appointmentDate,

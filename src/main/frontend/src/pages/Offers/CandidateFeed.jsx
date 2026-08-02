@@ -1,63 +1,46 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { applicationsApi } from '../../api/applications.js';
 import { offersApi } from '../../api/offers.js';
-import Alert from '../../components/Alert/Alert.jsx';
 import Button from '../../components/Button/Button.jsx';
+import EmptyState from '../../components/EmptyState/EmptyState.jsx';
+import ErrorState from '../../components/ErrorState/ErrorState.jsx';
+import Skeleton from '../../components/Skeleton/Skeleton.jsx';
+import { useToast } from '../../components/Toast/ToastContext.jsx';
 import { CONTRACT_LABELS, DEGREE_LABELS, REMOTE_LABELS } from '../../constants/enums.js';
+import { euros } from '../../constants/format.js';
+import useResource from '../../hooks/useResource.js';
 import Workspace from '../Workspace/Workspace.jsx';
 import './candidateFeed.css';
 
 function salaryText(min, max) {
-  if (min && max) return `${Number(min).toLocaleString('fr-FR')} - ${Number(max).toLocaleString('fr-FR')} €`;
-  if (min) return `À partir de ${Number(min).toLocaleString('fr-FR')} €`;
-  if (max) return `Jusqu'à ${Number(max).toLocaleString('fr-FR')} €`;
+  if (min && max) return `${euros(min)} à ${euros(max)}`;
+  if (min) return `À partir de ${euros(min)}`;
+  if (max) return `Jusqu'à ${euros(max)}`;
   return null;
 }
 
 export default function CandidateFeed() {
-  const [status, setStatus] = useState('loading');
-  const [offers, setOffers] = useState([]);
+  const toast = useToast();
   const [applied, setApplied] = useState(() => new Set());
   const [pending, setPending] = useState(null);
-  const [feedback, setFeedback] = useState(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([offersApi.feed(), applicationsApi.mine()])
-      .then(([feed, mine]) => {
-        if (cancelled) return;
-        setOffers(feed);
-        setApplied(new Set(mine.map((a) => a.offerId)));
-        setStatus('ready');
-      })
-      .catch(() => {
-        if (!cancelled) setStatus('error');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { status, data, reload } = useResource(async () => {
+    const [feed, mine] = await Promise.all([offersApi.feed(), applicationsApi.mine()]);
+    setApplied(new Set(mine.map((a) => a.offerId)));
+    return feed;
+  });
 
   async function apply(offer) {
-    setFeedback(null);
     setPending(offer.id);
     try {
       await applicationsApi.apply(offer.id);
-      setApplied((prev) => new Set(prev).add(offer.id));
-      setFeedback({ tone: 'info', message: `Candidature envoyée pour « ${offer.title} ».` });
+      setApplied((current) => new Set(current).add(offer.id));
+      toast.success(`Candidature envoyée pour « ${offer.title} ».`);
     } catch (apiError) {
-      setFeedback({ tone: 'error', message: apiError.message });
+      toast.error(apiError.message);
     } finally {
       setPending(null);
     }
-  }
-
-  if (status === 'loading') {
-    return <Workspace title="Offres"><p className="feed__muted">Recherche des offres compatibles...</p></Workspace>;
-  }
-  if (status === 'error') {
-    return <Workspace title="Offres"><Alert>Les offres n'ont pas pu être chargées.</Alert></Workspace>;
   }
 
   return (
@@ -67,20 +50,28 @@ export default function CandidateFeed() {
         diplôme requis.
       </p>
 
-      {feedback && <Alert tone={feedback.tone}>{feedback.message}</Alert>}
+      {status === 'loading' && <Skeleton label="Recherche des offres compatibles" />}
 
-      {offers.length === 0 ? (
-        <div className="feed__empty">
-          <p className="feed__empty-title">Aucune offre ne correspond pour le moment.</p>
-          <p>
-            Complétez votre profil (diplôme et traits) pour élargir les correspondances. De
-            nouvelles offres peuvent aussi être publiées plus tard.
-          </p>
-          <Link className="feed__empty-link" to="/profil">Compléter mon profil</Link>
-        </div>
-      ) : (
+      {status === 'error' && (
+        <ErrorState onRetry={reload}>
+          Les offres n'ont pas pu être chargées. Réessayez dans un instant.
+        </ErrorState>
+      )}
+
+      {status === 'ready' && data.length === 0 && (
+        <EmptyState
+          title="Aucune offre ne correspond pour le moment."
+          actionLabel="Compléter mon profil"
+          actionTo="/profil"
+        >
+          Une offre n'apparaît ici que si vous possédez tous ses traits obligatoires et le diplôme
+          demandé. Enrichir votre profil élargit les correspondances.
+        </EmptyState>
+      )}
+
+      {status === 'ready' && data.length > 0 && (
         <ul className="feed__list">
-          {offers.map((offer) => {
+          {data.map((offer) => {
             const required = offer.requirements.filter((r) => r.mandatory);
             const plus = offer.requirements.filter((r) => !r.mandatory);
             const salary = salaryText(offer.salaryMin, offer.salaryMax);
@@ -88,7 +79,7 @@ export default function CandidateFeed() {
             return (
               <li key={offer.id} className="feedcard">
                 <div className="feedcard__head">
-                  <h3 className="feedcard__title">{offer.title}</h3>
+                  <h2 className="feedcard__title">{offer.title}</h2>
                   <span className="feedcard__contract">{CONTRACT_LABELS[offer.contractType]}</span>
                 </div>
 

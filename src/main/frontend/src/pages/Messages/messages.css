@@ -1,7 +1,3 @@
-.msg__muted {
-  color: var(--text-faint);
-}
-
 .msg__bar {
   display: flex;
   align-items: center;
@@ -12,14 +8,6 @@
 .msg__count {
   font-size: var(--size-sm);
   color: var(--text-faint);
-}
-
-.msg__empty {
-  padding: var(--space-7) var(--space-5);
-  background: var(--surface);
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-lg);
-  color: var(--text-secondary);
 }
 
 .msg__list {
@@ -76,16 +64,7 @@
   color: var(--text-faint);
 }
 
-.msg__read {
+.msg .button--text {
   flex-shrink: 0;
-  padding: var(--space-1) var(--space-2);
-  background: none;
-  border: none;
   font-size: var(--size-sm);
-  color: var(--primary);
-  cursor: pointer;
-}
-
-.msg__read:hover {
-  text-decoration: underline;
 }

@@ -60,7 +60,7 @@ class EvaluationFlowTest {
 	/** A candidate with a CV and profile who has applied to a fresh published offer. */
 	private Integer applyToFreshOffer(String email) {
 		Integer candidate = authService.register(
-				new RegisterRequest(email, "motdepasse1", "Eval", "Test", null)).user().id();
+				new RegisterRequest(email, "Motdepasse1!x", "Eval", "Test", null, LocalDate.of(1995, 5, 20), null, null, null)).user().id();
 		profileService.update(candidate, new UpdateProfileRequest(Degree.BAC_5, null, null,
 				List.of(new TraitSelection(aTrait().getId(), null))));
 		profileService.storeCv(candidate,
@@ -105,8 +105,8 @@ class EvaluationFlowTest {
 		Integer app = applyToFreshOffer("ev4@example.fr");
 		evaluationService.preselect(hrId(), app, Decision.VALIDEE, null);
 
-		// A far future slot the manual e2e checks never touch, so the shared
-		// company calendar cannot collide with leftover data.
+		// The company wide calendar allows one interview per date and time, so a
+		// far future slot keeps this off any appointment already in the database.
 		LocalDate date = LocalDate.of(2099, 1, 1);
 		HrApplicationDto scheduled = appointmentService.schedule(app, date, LocalTime.of(10, 0));
 

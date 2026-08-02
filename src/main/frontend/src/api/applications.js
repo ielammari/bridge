@@ -4,6 +4,7 @@ export const applicationsApi = {
   apply: (offerId) => api.post('/applications', { offerId }),
   mine: () => api.get('/applications/mine'),
   forOffer: (offerId) => api.get(`/applications?offerId=${offerId}`),
+  get: (id) => api.get(`/applications/${id}`),
   cv: (id) => api.getBlob(`/applications/${id}/cv`),
   review: (id) => api.post(`/applications/${id}/review`),
   preselect: (id, payload) => api.post(`/applications/${id}/preselection`, payload),

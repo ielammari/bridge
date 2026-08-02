@@ -49,6 +49,13 @@ public class MessageController {
 		messageService.markAllRead(currentUserId(jwt));
 	}
 
+	/** Signalled when the recipient opens an application the notices point at. */
+	@PostMapping("/application/{applicationId}/read")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void markReadForApplication(@AuthenticationPrincipal Jwt jwt, @PathVariable Integer applicationId) {
+		messageService.markReadForApplication(currentUserId(jwt), applicationId);
+	}
+
 	private Integer currentUserId(Jwt jwt) {
 		return Integer.valueOf(jwt.getSubject());
 	}

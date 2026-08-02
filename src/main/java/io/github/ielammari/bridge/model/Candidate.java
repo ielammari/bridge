@@ -1,5 +1,7 @@
 package io.github.ielammari.bridge.model;
 
+import java.time.LocalDate;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
@@ -30,8 +32,9 @@ public class Candidate extends User {
 	protected Candidate() {
 	}
 
-	public Candidate(String email, String passwordHash, String firstName, String lastName, String phone) {
-		super(email, passwordHash, firstName, lastName, phone);
+	public Candidate(String email, String passwordHash, String firstName, String lastName, String phone,
+			LocalDate birthDate, Gender gender, String city, String country) {
+		super(email, passwordHash, firstName, lastName, phone, birthDate, gender, city, country);
 	}
 
 	@Override

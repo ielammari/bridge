@@ -1,17 +1,5 @@
-.hrapps__muted {
-  color: var(--text-faint);
-}
-
 .hrapps__filter {
   max-width: 28rem;
-}
-
-.hrapps__empty {
-  padding: var(--space-6) var(--space-5);
-  background: var(--surface);
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-lg);
-  color: var(--text-secondary);
 }
 
 .hrapps__list {
@@ -38,10 +26,28 @@
   padding: var(--space-4) var(--space-5);
 }
 
+/* The identity block is a button: clicking it marks the application seen. */
 .appcard__who {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   min-width: 0;
+  padding: var(--space-1) var(--space-2);
+  margin-left: calc(var(--space-2) * -1);
+  background: none;
+  border: none;
+  border-radius: var(--radius);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--duration) var(--ease);
+}
+
+.appcard__who:hover {
+  background: var(--surface-sunken);
+}
+
+.appcard__who:hover .appcard__name {
+  color: var(--primary);
 }
 
 .appcard__name {

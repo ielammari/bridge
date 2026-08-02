@@ -5,4 +5,5 @@ export const messagesApi = {
   unreadCount: () => api.get('/messages/unread-count'),
   markRead: (id) => api.post(`/messages/${id}/read`),
   markAllRead: () => api.post('/messages/read-all'),
+  readForApplication: (applicationId) => api.post(`/messages/application/${applicationId}/read`),
 };

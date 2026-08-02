@@ -5,10 +5,25 @@
 const BASE_URL = '/api/v1';
 
 let tokenProvider = () => null;
+let onUnauthorized = () => {};
+let onMutation = () => {};
 
 // The auth context installs its token getter here.
 export function setTokenProvider(provider) {
   tokenProvider = provider;
+}
+
+// Called when a request that carried a token is refused. A rejected login is
+// not this: no token goes out with it, so a wrong password never reads as an
+// expired session.
+export function setUnauthorizedHandler(handler) {
+  onUnauthorized = handler;
+}
+
+// Called after any successful write. Funnel actions settle notifications as a
+// side effect, so listeners can refresh state no page knows has changed.
+export function setMutationHandler(handler) {
+  onMutation = handler;
 }
 
 export class ApiError extends Error {
@@ -32,6 +47,14 @@ async function request(path, { method = 'GET', body, headers = {} } = {}) {
     },
     body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
   });
+
+  if (response.status === 401 && token) {
+    onUnauthorized();
+  }
+
+  if (response.ok && method !== 'GET') {
+    onMutation();
+  }
 
   if (response.status === 204) {
     return null;
@@ -57,6 +80,9 @@ async function requestBlob(path) {
   const response = await fetch(`${BASE_URL}${path}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
+  if (response.status === 401 && token) {
+    onUnauthorized();
+  }
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
     throw new ApiError(

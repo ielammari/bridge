@@ -3,6 +3,8 @@ package io.github.ielammari.bridge.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.LocalDate;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -12,6 +14,7 @@ import io.github.ielammari.bridge.dto.AuthResponse;
 import io.github.ielammari.bridge.dto.LoginRequest;
 import io.github.ielammari.bridge.dto.RegisterRequest;
 import io.github.ielammari.bridge.exception.ApiException;
+import io.github.ielammari.bridge.model.Gender;
 import io.github.ielammari.bridge.model.Role;
 import io.github.ielammari.bridge.model.User;
 
@@ -23,7 +26,12 @@ class AuthServiceTest {
 	private AuthService authService;
 
 	private static RegisterRequest signup(String email) {
-		return new RegisterRequest(email, "motdepasse1", "Camille", "Durand", "0612345678");
+		return signup(email, LocalDate.of(1995, 5, 20));
+	}
+
+	private static RegisterRequest signup(String email, LocalDate birthDate) {
+		return new RegisterRequest(email, "Motdepasse1!x", "Camille", "Durand", "0612345678",
+				birthDate, Gender.FEMME, "Rabat", "Maroc");
 	}
 
 	@Test
@@ -49,7 +57,7 @@ class AuthServiceTest {
 	void loginAcceptsCorrectCredentials() {
 		authService.register(signup("login@example.fr"));
 
-		AuthResponse response = authService.login(new LoginRequest("login@example.fr", "motdepasse1"));
+		AuthResponse response = authService.login(new LoginRequest("login@example.fr", "Motdepasse1!x"));
 
 		assertThat(response.user().email()).isEqualTo("login@example.fr");
 		assertThat(response.token()).isNotBlank();
@@ -81,7 +89,45 @@ class AuthServiceTest {
 
 		assertThat(stored.getPasswordHash())
 				.startsWith("{bcrypt}$2a$10$")
-				.doesNotContain("motdepasse1");
+				.doesNotContain("Motdepasse1!x");
+	}
+
+	@Test
+	void signupStoresThePersonalDetails() {
+		AuthResponse created = authService.register(signup("details@example.fr"));
+
+		User stored = authService.requireById(created.user().id());
+
+		assertThat(stored.getBirthDate()).isEqualTo(LocalDate.of(1995, 5, 20));
+		assertThat(stored.getGender()).isEqualTo(Gender.FEMME);
+		assertThat(stored.getCity()).isEqualTo("Rabat");
+		assertThat(stored.getCountry()).isEqualTo("Maroc");
+	}
+
+	@Test
+	void signupIsRefusedBelowTheMinimumAge() {
+		assertThatThrownBy(() -> authService.register(
+				signup("jeune@example.fr", LocalDate.now().minusYears(14))))
+				.isInstanceOf(ApiException.class)
+				.hasFieldOrPropertyWithValue("code", "AGE_TOO_LOW");
+	}
+
+	/** A mistyped year is otherwise indistinguishable from a valid date. */
+	@Test
+	void signupIsRefusedForAnImplausibleBirthYear() {
+		assertThatThrownBy(() -> authService.register(
+				signup("ancien@example.fr", LocalDate.of(1890, 1, 1))))
+				.isInstanceOf(ApiException.class)
+				.hasFieldOrPropertyWithValue("code", "BIRTH_DATE_IMPLAUSIBLE");
+	}
+
+	@Test
+	void anUnansweredGenderIsStoredAsNothingRatherThanAValue() {
+		AuthResponse created = authService.register(new RegisterRequest(
+				"discret@example.fr", "Motdepasse1!x", "Camille", "Durand", null,
+				LocalDate.of(1990, 2, 2), null, null, null));
+
+		assertThat(authService.requireById(created.user().id()).getGender()).isNull();
 	}
 
 	@Test

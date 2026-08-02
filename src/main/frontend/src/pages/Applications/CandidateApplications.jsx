@@ -1,74 +1,63 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { applicationsApi } from '../../api/applications.js';
-import Alert from '../../components/Alert/Alert.jsx';
+import EmptyState from '../../components/EmptyState/EmptyState.jsx';
+import ErrorState from '../../components/ErrorState/ErrorState.jsx';
 import FunnelRail from '../../components/FunnelRail/FunnelRail.jsx';
+import Skeleton from '../../components/Skeleton/Skeleton.jsx';
 import StatusBadge from '../../components/StatusBadge/StatusBadge.jsx';
 import { APPLICATION_ALERTS, CONTRACT_LABELS } from '../../constants/enums.js';
+import { clockTime, longDate } from '../../constants/format.js';
+import useResource from '../../hooks/useResource.js';
 import Workspace from '../Workspace/Workspace.jsx';
 import './candidateApplications.css';
-
-const dateFormat = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
 // When an interview is booked, its date replaces the generic "date to come"
 // line; a hire shows the start date.
 function alertText(app) {
   if ((app.status === 'EXAMEN_TECHNIQUE' || app.status === 'ENTRETIEN_RH') && app.appointmentDate) {
     const label = app.status === 'EXAMEN_TECHNIQUE' ? 'Votre examen technique' : 'Votre entretien RH';
-    return `${label} est fixé au ${dateFormat.format(new Date(app.appointmentDate))} à ${app.appointmentTime.slice(0, 5)}.`;
+    return `${label} est fixé au ${longDate(app.appointmentDate)} à ${clockTime(app.appointmentTime)}.`;
   }
   if (app.status === 'EMBAUCHEE' && app.hiringStartDate) {
-    return `Félicitations, vous êtes embauché(e). Prise de poste le ${dateFormat.format(new Date(app.hiringStartDate))}.`;
+    return `Félicitations, vous êtes embauché(e). Prise de poste le ${longDate(app.hiringStartDate)}.`;
   }
   return APPLICATION_ALERTS[app.status];
 }
 
 export default function CandidateApplications() {
-  const [status, setStatus] = useState('loading');
-  const [applications, setApplications] = useState([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    applicationsApi.mine()
-      .then((data) => {
-        if (cancelled) return;
-        setApplications(data);
-        setStatus('ready');
-      })
-      .catch(() => {
-        if (!cancelled) setStatus('error');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  if (status === 'loading') {
-    return <Workspace title="Mes candidatures"><p className="apps__muted">Chargement...</p></Workspace>;
-  }
-  if (status === 'error') {
-    return <Workspace title="Mes candidatures"><Alert>Vos candidatures n'ont pas pu être chargées.</Alert></Workspace>;
-  }
+  const { status, data, reload } = useResource(() => applicationsApi.mine());
 
   return (
     <Workspace title="Mes candidatures">
-      {applications.length === 0 ? (
-        <div className="apps__empty">
-          <p className="apps__empty-title">Vous n'avez pas encore postulé.</p>
-          <p>Parcourez les offres qui correspondent à votre profil pour envoyer une candidature.</p>
-          <Link className="apps__empty-link" to="/offres">Voir les offres</Link>
-        </div>
-      ) : (
+      {status === 'loading' && <Skeleton label="Chargement de vos candidatures" />}
+
+      {status === 'error' && (
+        <ErrorState onRetry={reload}>
+          Vos candidatures n'ont pas pu être chargées. Réessayez dans un instant.
+        </ErrorState>
+      )}
+
+      {status === 'ready' && data.length === 0 && (
+        <EmptyState
+          title="Vous n'avez pas encore postulé."
+          actionLabel="Voir les offres compatibles"
+          actionTo="/offres"
+        >
+          Les offres qui correspondent à votre profil vous attendent. Chaque candidature envoyée
+          apparaîtra ici avec son avancement.
+        </EmptyState>
+      )}
+
+      {status === 'ready' && data.length > 0 && (
         <ul className="apps__list">
-          {applications.map((app) => (
+          {data.map((app) => (
             <li key={app.id} className="apptrack">
               <div className="apptrack__head">
                 <div>
-                  <h3 className="apptrack__title">{app.offerTitle}</h3>
+                  <h2 className="apptrack__title">{app.offerTitle}</h2>
                   <p className="apptrack__meta">
                     <span>{CONTRACT_LABELS[app.contractType]}</span>
                     {app.location && <span>{app.location}</span>}
-                    <span>Envoyée le {dateFormat.format(new Date(app.applicationDate))}</span>
+                    <span>Envoyée le {longDate(app.applicationDate)}</span>
                   </p>
                 </div>
                 <StatusBadge status={app.status} />

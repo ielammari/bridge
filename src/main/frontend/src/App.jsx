@@ -3,10 +3,14 @@ import Login from './pages/auth/Login.jsx';
 import Signup from './pages/auth/Signup.jsx';
 import Profile from './pages/Profile/Profile.jsx';
 import OffersPage from './pages/Offers/OffersPage.jsx';
+import OfferEditor from './pages/Offers/OfferEditor.jsx';
 import CandidateApplications from './pages/Applications/CandidateApplications.jsx';
 import HrApplications from './pages/Applications/HrApplications.jsx';
+import FinalEvaluationPage from './pages/Applications/FinalEvaluationPage.jsx';
 import TechnicalEvaluations from './pages/Evaluations/TechnicalEvaluations.jsx';
+import TechnicalEvaluation from './pages/Evaluations/TechnicalEvaluation.jsx';
 import Messages from './pages/Messages/Messages.jsx';
+import NotFound from './pages/NotFound/NotFound.jsx';
 import ProtectedRoute, { HOME_BY_ROLE } from './components/ProtectedRoute/ProtectedRoute.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 
@@ -29,22 +33,8 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Entry />} />
 
-      <Route
-        path="/connexion"
-        element={
-          <GuestOnly>
-            <Login />
-          </GuestOnly>
-        }
-      />
-      <Route
-        path="/inscription"
-        element={
-          <GuestOnly>
-            <Signup />
-          </GuestOnly>
-        }
-      />
+      <Route path="/connexion" element={<GuestOnly><Login /></GuestOnly>} />
+      <Route path="/inscription" element={<GuestOnly><Signup /></GuestOnly>} />
 
       <Route
         path="/offres"
@@ -54,6 +44,23 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/offres/nouvelle"
+        element={
+          <ProtectedRoute roles={['RH']}>
+            <OfferEditor mode="create" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/offres/:id/modifier"
+        element={
+          <ProtectedRoute roles={['RH']}>
+            <OfferEditor mode="edit" />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/profil"
         element={
@@ -70,6 +77,7 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/candidatures"
         element={
@@ -79,6 +87,15 @@ export default function App() {
         }
       />
       <Route
+        path="/candidatures/:id/entretien"
+        element={
+          <ProtectedRoute roles={['RH']}>
+            <FinalEvaluationPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/evaluations"
         element={
           <ProtectedRoute roles={['EXPERT']}>
@@ -86,6 +103,15 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/evaluations/:id"
+        element={
+          <ProtectedRoute roles={['EXPERT']}>
+            <TechnicalEvaluation />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/messages"
         element={
@@ -95,7 +121,7 @@ export default function App() {
         }
       />
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

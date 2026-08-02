@@ -57,7 +57,7 @@ class NotificationFlowTest {
 	}
 
 	private Integer applyingCandidate(String email) {
-		Integer id = authService.register(new RegisterRequest(email, "motdepasse1", "Notif", "Test", null)).user().id();
+		Integer id = authService.register(new RegisterRequest(email, "Motdepasse1!x", "Notif", "Test", null, LocalDate.of(1995, 5, 20), null, null, null)).user().id();
 		profileService.update(id, new UpdateProfileRequest(Degree.BAC_5, null, null,
 				List.of(new TraitSelection(aTrait().getId(), null))));
 		profileService.storeCv(id, new MockMultipartFile("file", "cv.pdf", "application/pdf", "%PDF-1.4".getBytes()));
@@ -122,6 +122,123 @@ class NotificationFlowTest {
 						ContractType.PERMANENT, null, false, null)));
 
 		assertThat(hasType(messageService.inbox(candidate), NotificationType.HIRED)).isTrue();
+	}
+
+	/** Scoped to one application: the shared inboxes also hold older notifications. */
+	private long unreadOfType(Integer userId, Integer applicationId, NotificationType type) {
+		return messageService.inbox(userId).stream()
+				.filter(m -> m.type() == type && !m.read() && applicationId.equals(m.applicationId()))
+				.count();
+	}
+
+	/** Screening the application discharges the prompt that announced it. */
+	@Test
+	void anAnsweredApplicationNoticeStopsCountingAsUnread() {
+		Integer candidate = applyingCandidate("n6@example.fr");
+		Integer app = applicationService.apply(candidate, publishedOffer()).id();
+
+		assertThat(unreadOfType(hrId(), app, NotificationType.APPLICATION_RECEIVED)).isGreaterThan(0);
+
+		evaluationService.preselect(hrId(), app, Decision.REFUSEE, null);
+
+		assertThat(unreadOfType(hrId(), app, NotificationType.APPLICATION_RECEIVED)).isZero();
+	}
+
+	/** Booking the interview discharges the prompt asking for it. */
+	@Test
+	void aScheduledInterviewSettlesTheSchedulingPrompt() {
+		Integer candidate = applyingCandidate("n7@example.fr");
+		Integer app = applicationService.apply(candidate, publishedOffer()).id();
+		evaluationService.preselect(hrId(), app, Decision.VALIDEE, null);
+
+		assertThat(unreadOfType(hrId(), app, NotificationType.SCHEDULE_NEEDED)).isGreaterThan(0);
+
+		appointmentService.schedule(app, LocalDate.of(2099, 5, 4), LocalTime.of(11, 0));
+
+		assertThat(unreadOfType(hrId(), app, NotificationType.SCHEDULE_NEEDED)).isZero();
+	}
+
+	/** Recording the exam discharges the expert's prompt to run it. */
+	@Test
+	void aCompletedExamSettlesTheExpertsPrompt() {
+		Integer candidate = applyingCandidate("n8@example.fr");
+		Integer app = applicationService.apply(candidate, publishedOffer()).id();
+		evaluationService.preselect(hrId(), app, Decision.VALIDEE, null);
+		appointmentService.schedule(app, LocalDate.of(2099, 5, 5), LocalTime.of(11, 0));
+
+		assertThat(unreadOfType(expertId(), app, NotificationType.INTERVIEW_SCHEDULED)).isGreaterThan(0);
+
+		evaluationService.evaluateTechnical(expertId(), app, new TechnicalEvaluationRequest(
+				Decision.REFUSEE, "ko", List.of(new Score(aTrait().getId(), (short) 2))));
+
+		assertThat(unreadOfType(expertId(), app, NotificationType.INTERVIEW_SCHEDULED)).isZero();
+	}
+
+	/** News is not a task: a refusal stays unread until the candidate reads it. */
+	@Test
+	void aRefusalNoticeIsNeverSettledAutomatically() {
+		Integer candidate = applyingCandidate("n9@example.fr");
+		Integer app = applicationService.apply(candidate, publishedOffer()).id();
+		evaluationService.preselect(hrId(), app, Decision.REFUSEE, null);
+
+		assertThat(unreadOfType(candidate, app, NotificationType.REJECTED)).isEqualTo(1);
+		// Reading the inbox again must not quietly clear it.
+		assertThat(unreadOfType(candidate, app, NotificationType.REJECTED)).isEqualTo(1);
+	}
+
+	/** An interview date is information for the candidate, so it survives too. */
+	@Test
+	void theCandidatesInterviewNoticeIsNotSettledByTheExamBeingDone() {
+		Integer candidate = applyingCandidate("n10@example.fr");
+		Integer app = applicationService.apply(candidate, publishedOffer()).id();
+		evaluationService.preselect(hrId(), app, Decision.VALIDEE, null);
+		appointmentService.schedule(app, LocalDate.of(2099, 5, 6), LocalTime.of(11, 0));
+		evaluationService.evaluateTechnical(expertId(), app, new TechnicalEvaluationRequest(
+				Decision.REFUSEE, "ko", List.of(new Score(aTrait().getId(), (short) 2))));
+
+		assertThat(unreadOfType(candidate, app, NotificationType.INTERVIEW_SCHEDULED)).isEqualTo(1);
+	}
+
+	/**
+	 * The badge reads this number, so settling has to show up here and not only
+	 * in the inbox listing.
+	 */
+	@Test
+	void theUnreadCountItselfDropsWhenTheTaskIsDone() {
+		Integer candidate = applyingCandidate("n11@example.fr");
+		long before = messageService.unreadCount(hrId());
+
+		Integer app = applicationService.apply(candidate, publishedOffer()).id();
+		assertThat(messageService.unreadCount(hrId())).isEqualTo(before + 1);
+
+		evaluationService.preselect(hrId(), app, Decision.REFUSEE, null);
+
+		assertThat(messageService.unreadCount(hrId())).isEqualTo(before);
+	}
+
+	/** Opening an application answers every notice the reader had about it. */
+	@Test
+	void openingAnApplicationClearsItsNotices() {
+		Integer candidate = applyingCandidate("n12@example.fr");
+		long before = messageService.unreadCount(hrId());
+		Integer app = applicationService.apply(candidate, publishedOffer()).id();
+		assertThat(messageService.unreadCount(hrId())).isEqualTo(before + 1);
+
+		messageService.markReadForApplication(hrId(), app);
+
+		assertThat(messageService.unreadCount(hrId())).isEqualTo(before);
+	}
+
+	/** One reader opening an application says nothing about anyone else's inbox. */
+	@Test
+	void openingAnApplicationLeavesOtherInboxesAlone() {
+		Integer candidate = applyingCandidate("n13@example.fr");
+		Integer app = applicationService.apply(candidate, publishedOffer()).id();
+		evaluationService.preselect(hrId(), app, Decision.REFUSEE, null);
+
+		messageService.markReadForApplication(hrId(), app);
+
+		assertThat(unreadOfType(candidate, app, NotificationType.REJECTED)).isEqualTo(1);
 	}
 
 	@Test

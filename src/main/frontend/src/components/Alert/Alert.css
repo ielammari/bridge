@@ -16,3 +16,9 @@
   border-color: var(--primary);
   color: var(--text-secondary);
 }
+
+.alert--success {
+  background: var(--success-bg);
+  border-color: var(--success);
+  color: var(--success);
+}

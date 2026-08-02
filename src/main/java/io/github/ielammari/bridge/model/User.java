@@ -6,6 +6,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;
 import jakarta.persistence.DiscriminatorType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -46,18 +48,41 @@ public abstract class User {
 	@Column(name = "telephone", length = 20)
 	private String phone;
 
+	@Column(name = "date_naissance")
+	private LocalDate birthDate;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "sexe", length = 20)
+	private Gender gender;
+
+	@Column(name = "ville", length = 100)
+	private String city;
+
+	@Column(name = "pays", length = 100)
+	private String country;
+
 	@Column(name = "date_inscription", nullable = false)
 	private LocalDate registrationDate;
 
 	protected User() {
 	}
 
+	/** For the roles that are provisioned rather than self registered. */
 	protected User(String email, String passwordHash, String firstName, String lastName, String phone) {
+		this(email, passwordHash, firstName, lastName, phone, null, null, null, null);
+	}
+
+	protected User(String email, String passwordHash, String firstName, String lastName, String phone,
+			LocalDate birthDate, Gender gender, String city, String country) {
 		this.email = email;
 		this.passwordHash = passwordHash;
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.phone = phone;
+		this.birthDate = birthDate;
+		this.gender = gender;
+		this.city = city;
+		this.country = country;
 		this.registrationDate = LocalDate.now();
 	}
 
@@ -109,6 +134,38 @@ public abstract class User {
 
 	public void setPhone(String phone) {
 		this.phone = phone;
+	}
+
+	public LocalDate getBirthDate() {
+		return birthDate;
+	}
+
+	public void setBirthDate(LocalDate birthDate) {
+		this.birthDate = birthDate;
+	}
+
+	public Gender getGender() {
+		return gender;
+	}
+
+	public void setGender(Gender gender) {
+		this.gender = gender;
+	}
+
+	public String getCity() {
+		return city;
+	}
+
+	public void setCity(String city) {
+		this.city = city;
+	}
+
+	public String getCountry() {
+		return country;
+	}
+
+	public void setCountry(String country) {
+		this.country = country;
 	}
 
 	public LocalDate getRegistrationDate() {

@@ -1,5 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom';
+import Skeleton from '../Skeleton/Skeleton.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
+import './ProtectedRoute.css';
 
 export const HOME_BY_ROLE = {
   CANDIDAT: '/offres',
@@ -13,15 +15,19 @@ export const HOME_BY_ROLE = {
  * headed after signing in, rather than on a generic home page.
  */
 export default function ProtectedRoute({ roles, children }) {
-  const { user, loading } = useAuth();
+  const { user, loading, expired } = useAuth();
   const location = useLocation();
 
   if (loading) {
-    return null;
+    return (
+      <div className="booting">
+        <Skeleton count={2} label="Vérification de votre session" />
+      </div>
+    );
   }
 
   if (!user) {
-    return <Navigate to="/connexion" state={{ from: location }} replace />;
+    return <Navigate to="/connexion" state={{ from: location, expired }} replace />;
   }
 
   if (roles && !roles.includes(user.role)) {

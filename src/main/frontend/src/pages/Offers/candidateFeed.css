@@ -1,35 +1,7 @@
-.feed__muted {
-  color: var(--text-faint);
-}
-
 .feed__intro {
   max-width: 60ch;
   color: var(--text-secondary);
   font-size: var(--size-sm);
-}
-
-.feed__empty {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-3);
-  max-width: 52ch;
-  padding: var(--space-7) var(--space-5);
-  background: var(--surface);
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-lg);
-  color: var(--text-secondary);
-}
-
-.feed__empty-title {
-  font-family: var(--font-display);
-  font-size: var(--size-lg);
-  color: var(--text);
-}
-
-.feed__empty-link {
-  margin-top: var(--space-2);
-  font-weight: var(--weight-medium);
 }
 
 .feed__list {

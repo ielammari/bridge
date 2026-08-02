@@ -20,6 +20,10 @@ public class TraitCategory {
 	@Column(name = "libelle", nullable = false, length = 80)
 	private String label;
 
+	/** Position in a picker, independent of creation order. */
+	@Column(name = "ordre", nullable = false)
+	private short displayOrder;
+
 	protected TraitCategory() {
 	}
 
@@ -29,6 +33,10 @@ public class TraitCategory {
 
 	public String getLabel() {
 		return label;
+	}
+
+	public short getDisplayOrder() {
+		return displayOrder;
 	}
 
 }

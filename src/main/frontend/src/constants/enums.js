@@ -16,6 +16,13 @@ export const CONTRACT_OPTIONS = [
   { value: 'INTERNSHIP', label: 'Stage' },
 ];
 
+// Optional: the empty choice stores null, not a fourth value.
+export const GENDER_OPTIONS = [
+  { value: 'HOMME', label: 'Homme' },
+  { value: 'FEMME', label: 'Femme' },
+  { value: 'AUTRE', label: 'Autre' },
+];
+
 export const REMOTE_OPTIONS = [
   { value: 'ON_SITE', label: 'Sur site' },
   { value: 'HYBRID', label: 'Hybride' },
@@ -27,6 +34,7 @@ function labelMap(options) {
 }
 
 export const DEGREE_LABELS = labelMap(DEGREE_OPTIONS);
+export const GENDER_LABELS = labelMap(GENDER_OPTIONS);
 export const CONTRACT_LABELS = labelMap(CONTRACT_OPTIONS);
 export const REMOTE_LABELS = labelMap(REMOTE_OPTIONS);
 

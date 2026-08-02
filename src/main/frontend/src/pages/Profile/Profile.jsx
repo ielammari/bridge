@@ -1,93 +1,91 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { profileApi } from '../../api/profile.js';
 import { traitsApi } from '../../api/traits.js';
-import Alert from '../../components/Alert/Alert.jsx';
 import Button from '../../components/Button/Button.jsx';
 import CvUpload from '../../components/CvUpload/CvUpload.jsx';
+import ErrorState from '../../components/ErrorState/ErrorState.jsx';
 import Field from '../../components/Field/Field.jsx';
-import Icon from '../../components/Icon/Icon.jsx';
 import Select from '../../components/Select/Select.jsx';
+import Skeleton from '../../components/Skeleton/Skeleton.jsx';
+import { useToast } from '../../components/Toast/ToastContext.jsx';
 import TraitPicker from '../../components/TraitPicker/TraitPicker.jsx';
 import { DEGREE_OPTIONS } from '../../constants/enums.js';
+import { phoneFormat } from '../../constants/validation.js';
+import useForm from '../../hooks/useForm.js';
+import useResource from '../../hooks/useResource.js';
 import Workspace from '../Workspace/Workspace.jsx';
 import './profile.css';
 
-function snapshot(form) {
+const RULES = {
+  phone: { label: 'Téléphone', format: phoneFormat },
+  degree: { label: 'Diplôme' },
+  experienceLevel: { label: 'Niveau d\'expérience' },
+};
+
+function snapshot(values, traitIds) {
   return JSON.stringify({
-    phone: form.phone,
-    degree: form.degree,
-    experienceLevel: form.experienceLevel,
-    traitIds: [...form.traitIds].sort((a, b) => a - b),
+    phone: values.phone,
+    degree: values.degree,
+    experienceLevel: values.experienceLevel,
+    traitIds: [...traitIds].sort((a, b) => a - b),
   });
 }
 
 export default function Profile() {
-  const [status, setStatus] = useState('loading');
-  const [catalogue, setCatalogue] = useState([]);
+  const toast = useToast();
+
+  const [identity, setIdentity] = useState(null);
   const [hasCv, setHasCv] = useState(false);
-  const [form, setForm] = useState(null);
-  const [saved, setSaved] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState(null);
+  const [traitIds, setTraitIds] = useState([]);
   const [baseline, setBaseline] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([profileApi.read(), traitsApi.catalogue()])
-      .then(([profile, cats]) => {
-        if (cancelled) return;
-        const loaded = {
-          phone: profile.phone ?? '',
-          degree: profile.degree ?? '',
-          experienceLevel: profile.experienceLevel ?? '',
-          traitIds: profile.traits.map((t) => t.traitId),
-          email: profile.email,
-          firstName: profile.firstName,
-          lastName: profile.lastName,
-        };
-        setCatalogue(cats);
-        setHasCv(profile.hasCv);
-        setForm(loaded);
-        setBaseline(snapshot(loaded));
-        setStatus('ready');
-      })
-      .catch(() => {
-        if (!cancelled) setStatus('error');
-      });
-    return () => {
-      cancelled = true;
+  const form = useForm({ phone: '', degree: '', experienceLevel: '' }, RULES);
+
+  const { status, data, reload } = useResource(async () => {
+    const [profile, catalogue] = await Promise.all([profileApi.read(), traitsApi.catalogue()]);
+    const values = {
+      phone: profile.phone ?? '',
+      degree: profile.degree ?? '',
+      experienceLevel: profile.experienceLevel ?? '',
     };
-  }, []);
+    const ids = profile.traits.map((t) => t.traitId);
+    form.setValues(values);
+    setTraitIds(ids);
+    setBaseline(snapshot(values, ids));
+    setHasCv(profile.hasCv);
+    setIdentity({
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      email: profile.email,
+    });
+    return catalogue;
+  });
 
-  const dirty = form && snapshot(form) !== baseline;
-
-  function set(key, val) {
-    setForm((f) => ({ ...f, [key]: val }));
-    setSaved('');
-  }
+  const dirty = status === 'ready' && snapshot(form.values, traitIds) !== baseline;
 
   async function save() {
-    setSaveError(null);
+    if (!form.attempt()) return;
     setSaving(true);
     try {
       const updated = await profileApi.update({
-        degree: form.degree || null,
-        experienceLevel: form.experienceLevel || null,
-        phone: form.phone || null,
-        traits: form.traitIds.map((traitId) => ({ traitId, level: null })),
+        degree: form.values.degree || null,
+        experienceLevel: form.values.experienceLevel || null,
+        phone: form.values.phone || null,
+        traits: traitIds.map((traitId) => ({ traitId, level: null })),
       });
-      const next = {
-        ...form,
+      const values = {
         phone: updated.phone ?? '',
         degree: updated.degree ?? '',
         experienceLevel: updated.experienceLevel ?? '',
-        traitIds: updated.traits.map((t) => t.traitId),
       };
-      setForm(next);
-      setBaseline(snapshot(next));
-      setSaved('Profil enregistré.');
+      const ids = updated.traits.map((t) => t.traitId);
+      form.setValues(values);
+      setTraitIds(ids);
+      setBaseline(snapshot(values, ids));
+      toast.success('Profil enregistré.');
     } catch (apiError) {
-      setSaveError(apiError.message);
+      toast.error(apiError.message);
     } finally {
       setSaving(false);
     }
@@ -96,13 +94,13 @@ export default function Profile() {
   async function uploadCv(file) {
     const updated = await profileApi.uploadCv(file);
     setHasCv(updated.hasCv);
-    setSaved('CV mis à jour.');
+    toast.success('CV mis à jour.');
   }
 
   if (status === 'loading') {
     return (
       <Workspace title="Mon profil">
-        <p className="profile__loading">Chargement de votre profil...</p>
+        <Skeleton count={4} label="Chargement de votre profil" />
       </Workspace>
     );
   }
@@ -110,7 +108,9 @@ export default function Profile() {
   if (status === 'error') {
     return (
       <Workspace title="Mon profil">
-        <Alert>Votre profil n'a pas pu être chargé. Actualisez la page pour réessayer.</Alert>
+        <ErrorState onRetry={reload}>
+          Votre profil n'a pas pu être chargé. Réessayez dans un instant.
+        </ErrorState>
       </Workspace>
     );
   }
@@ -129,18 +129,12 @@ export default function Profile() {
         <div className="card__body">
           <div className="profile__identity">
             <div>
-              <p className="profile__name">{form.firstName} {form.lastName}</p>
-              <p className="profile__email">{form.email}</p>
+              <p className="profile__name">{identity.firstName} {identity.lastName}</p>
+              <p className="profile__email">{identity.email}</p>
             </div>
           </div>
-          <Field
-            label="Téléphone"
-            type="tel"
-            value={form.phone}
-            onChange={(e) => set('phone', e.target.value)}
-            hint="Facultatif."
-            autoComplete="tel"
-          />
+          <Field label="Téléphone" type="tel" autoComplete="tel" hint="Facultatif."
+            {...form.field('phone')} />
         </div>
       </section>
 
@@ -149,20 +143,11 @@ export default function Profile() {
           <h2 id="path-title" className="card__title">Parcours</h2>
         </div>
         <div className="card__body profile__grid">
-          <Select
-            label="Diplôme"
-            value={form.degree}
-            onChange={(e) => set('degree', e.target.value)}
-            options={DEGREE_OPTIONS}
-            placeholder="Sélectionnez votre diplôme"
-            hint="Comparé au diplôme requis par chaque offre."
-          />
-          <Field
-            label="Niveau d'expérience"
-            value={form.experienceLevel}
-            onChange={(e) => set('experienceLevel', e.target.value)}
+          <Select label="Diplôme" options={DEGREE_OPTIONS} placeholder="Sélectionnez votre diplôme"
+            hint="Comparé au diplôme requis par chaque offre." {...form.field('degree')} />
+          <Field label="Niveau d'expérience"
             hint="Facultatif. Par exemple : 5 ans en développement web."
-          />
+            {...form.field('experienceLevel')} />
         </div>
       </section>
 
@@ -184,26 +169,14 @@ export default function Profile() {
           </p>
         </div>
         <div className="card__body">
-          <TraitPicker
-            catalogue={catalogue}
-            value={form.traitIds}
-            onChange={(ids) => set('traitIds', ids)}
-          />
+          <TraitPicker catalogue={data} value={traitIds} onChange={setTraitIds} />
         </div>
       </section>
 
       <div className="profile__savebar">
-        <div className="profile__savestate" aria-live="polite">
-          {saveError && <span className="profile__saveerror">{saveError}</span>}
-          {!saveError && saved && (
-            <span className="profile__saveok">
-              <Icon name="check" /> {saved}
-            </span>
-          )}
-          {!saveError && !saved && dirty && (
-            <span className="profile__savehint">Modifications non enregistrées</span>
-          )}
-        </div>
+        <p className="profile__savestate" aria-live="polite">
+          {dirty ? 'Modifications non enregistrées' : ''}
+        </p>
         <Button onClick={save} loading={saving} disabled={!dirty}>
           Enregistrer les modifications
         </Button>

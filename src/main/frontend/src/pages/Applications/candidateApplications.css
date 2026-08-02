@@ -1,31 +1,3 @@
-.apps__muted {
-  color: var(--text-faint);
-}
-
-.apps__empty {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-3);
-  max-width: 52ch;
-  padding: var(--space-7) var(--space-5);
-  background: var(--surface);
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-lg);
-  color: var(--text-secondary);
-}
-
-.apps__empty-title {
-  font-family: var(--font-display);
-  font-size: var(--size-lg);
-  color: var(--text);
-}
-
-.apps__empty-link {
-  margin-top: var(--space-2);
-  font-weight: var(--weight-medium);
-}
-
 .apps__list {
   display: flex;
   flex-direction: column;

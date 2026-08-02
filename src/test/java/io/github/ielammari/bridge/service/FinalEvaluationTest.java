@@ -63,7 +63,7 @@ class FinalEvaluationTest {
 	/** Carries an application all the way to the ENTRETIEN_RH stage. */
 	private Integer atHrInterview(String email) {
 		Integer candidate = authService.register(
-				new RegisterRequest(email, "motdepasse1", "Fin", "Test", null)).user().id();
+				new RegisterRequest(email, "Motdepasse1!x", "Fin", "Test", null, LocalDate.of(1995, 5, 20), null, null, null)).user().id();
 		profileService.update(candidate, new UpdateProfileRequest(Degree.BAC_5, null, null,
 				List.of(new TraitSelection(aTrait().getId(), null))));
 		profileService.storeCv(candidate,
@@ -126,7 +126,7 @@ class FinalEvaluationTest {
 	@Test
 	void finalizingBeforeTheHrInterviewStageIsRejected() {
 		Integer candidate = authService.register(
-				new RegisterRequest("fin4@example.fr", "motdepasse1", "Too", "Early", null)).user().id();
+				new RegisterRequest("fin4@example.fr", "Motdepasse1!x", "Too", "Early", null, LocalDate.of(1995, 5, 20), null, null, null)).user().id();
 		profileService.update(candidate, new UpdateProfileRequest(Degree.BAC_5, null, null,
 				List.of(new TraitSelection(aTrait().getId(), null))));
 		profileService.storeCv(candidate,

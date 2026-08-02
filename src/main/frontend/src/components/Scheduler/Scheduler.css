@@ -32,6 +32,17 @@
   color: var(--danger);
 }
 
+.scheduler__retry {
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--danger);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
 .scheduler__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));

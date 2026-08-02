@@ -1,0 +1,27 @@
+.errorstate {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--danger);
+  border-radius: var(--radius-lg);
+}
+
+.errorstate__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-size: var(--size-lg);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.015em;
+  color: var(--danger);
+}
+
+.errorstate__body {
+  max-width: 56ch;
+  color: var(--text-secondary);
+}

@@ -62,6 +62,12 @@ public class ApplicationController {
 		return applicationService.forOffer(offerId);
 	}
 
+	/** HR: one application, so a review in progress has its own address. */
+	@GetMapping("/{id}")
+	public HrApplicationDto one(@PathVariable Integer id) {
+		return applicationService.hrView(id);
+	}
+
 	/** HR: the CV attached to an application. */
 	@GetMapping("/{id}/cv")
 	public ResponseEntity<Resource> cv(@PathVariable Integer id) {
