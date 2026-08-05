@@ -61,7 +61,7 @@ class EvaluationFlowTest {
 	private Integer applyToFreshOffer(String email) {
 		Integer candidate = authService.register(
 				new RegisterRequest(email, "Motdepasse1!x", "Eval", "Test", null, LocalDate.of(1995, 5, 20), null, null, null)).user().id();
-		profileService.update(candidate, new UpdateProfileRequest(Degree.BAC_5, null, null,
+		profileService.update(candidate, new UpdateProfileRequest(Degree.BAC_5, null,
 				List.of(new TraitSelection(aTrait().getId(), null))));
 		profileService.storeCv(candidate,
 				new MockMultipartFile("file", "cv.pdf", "application/pdf", "%PDF-1.4".getBytes()));

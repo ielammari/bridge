@@ -19,6 +19,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
 
 	Optional<Appointment> findByApplicationIdAndType(Integer applicationId, AppointmentType type);
 
+	List<Appointment> findByApplicationIdOrderByDateAscTimeAsc(Integer applicationId);
+
 	@Query("SELECT a FROM Appointment a JOIN FETCH a.application ap JOIN FETCH ap.candidate "
 			+ "WHERE a.date = :date ORDER BY a.time")
 	List<Appointment> findByDateWithCandidate(LocalDate date);

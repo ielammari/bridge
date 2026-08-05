@@ -10,6 +10,14 @@ import FinalEvaluationPage from './pages/Applications/FinalEvaluationPage.jsx';
 import TechnicalEvaluations from './pages/Evaluations/TechnicalEvaluations.jsx';
 import TechnicalEvaluation from './pages/Evaluations/TechnicalEvaluation.jsx';
 import Messages from './pages/Messages/Messages.jsx';
+import PastApplications from './pages/History/PastApplications.jsx';
+import PastOffers from './pages/History/PastOffers.jsx';
+import Hirings from './pages/History/Hirings.jsx';
+import PastEvaluations from './pages/History/PastEvaluations.jsx';
+import ApplicationRecord from './pages/History/ApplicationRecord.jsx';
+import OfferPage from './pages/Offers/OfferPage.jsx';
+import PersonPage from './pages/People/PersonPage.jsx';
+import Settings from './pages/Settings/Settings.jsx';
 import NotFound from './pages/NotFound/NotFound.jsx';
 import ProtectedRoute, { HOME_BY_ROLE } from './components/ProtectedRoute/ProtectedRoute.jsx';
 import { useAuth } from './context/AuthContext.jsx';
@@ -117,6 +125,77 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Messages />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/historique/candidatures"
+        element={
+          <ProtectedRoute roles={['CANDIDAT', 'RH']}>
+            <PastApplications />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/historique/candidatures/:id"
+        element={
+          <ProtectedRoute>
+            <ApplicationRecord />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/historique/offres"
+        element={
+          <ProtectedRoute roles={['RH']}>
+            <PastOffers />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/historique/embauches"
+        element={
+          <ProtectedRoute roles={['RH']}>
+            <Hirings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/historique/evaluations"
+        element={
+          <ProtectedRoute roles={['RH', 'EXPERT']}>
+            <PastEvaluations />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Open to every role: the service decides who may read whom, so a
+          candidate reaching their own address is the same request as HR
+          reaching anyone's. */}
+      <Route
+        path="/offres/:id"
+        element={
+          <ProtectedRoute>
+            <OfferPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/personnes/:id"
+        element={
+          <ProtectedRoute>
+            <PersonPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/parametres"
+        element={
+          <ProtectedRoute>
+            <Settings />
           </ProtectedRoute>
         }
       />

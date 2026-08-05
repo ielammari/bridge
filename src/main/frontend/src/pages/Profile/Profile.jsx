@@ -4,29 +4,26 @@ import { traitsApi } from '../../api/traits.js';
 import Button from '../../components/Button/Button.jsx';
 import CvUpload from '../../components/CvUpload/CvUpload.jsx';
 import ErrorState from '../../components/ErrorState/ErrorState.jsx';
-import Field from '../../components/Field/Field.jsx';
 import Select from '../../components/Select/Select.jsx';
 import Skeleton from '../../components/Skeleton/Skeleton.jsx';
 import { useToast } from '../../components/Toast/ToastContext.jsx';
 import TraitPicker from '../../components/TraitPicker/TraitPicker.jsx';
 import { DEGREE_OPTIONS } from '../../constants/enums.js';
-import { phoneFormat } from '../../constants/validation.js';
 import useForm from '../../hooks/useForm.js';
 import useResource from '../../hooks/useResource.js';
 import Workspace from '../Workspace/Workspace.jsx';
+import AcademicPath from './AcademicPath.jsx';
 import './profile.css';
 
+// Identity and contact details are configured in the settings; the profile
+// holds what the matching gate reads, and what stands behind it.
 const RULES = {
-  phone: { label: 'Téléphone', format: phoneFormat },
-  degree: { label: 'Diplôme' },
-  experienceLevel: { label: 'Niveau d\'expérience' },
+  degree: { label: 'Niveau d\'études' },
 };
 
 function snapshot(values, traitIds) {
   return JSON.stringify({
-    phone: values.phone,
     degree: values.degree,
-    experienceLevel: values.experienceLevel,
     traitIds: [...traitIds].sort((a, b) => a - b),
   });
 }
@@ -34,31 +31,24 @@ function snapshot(values, traitIds) {
 export default function Profile() {
   const toast = useToast();
 
-  const [identity, setIdentity] = useState(null);
   const [hasCv, setHasCv] = useState(false);
   const [traitIds, setTraitIds] = useState([]);
+  const [education, setEducation] = useState([]);
   const [baseline, setBaseline] = useState('');
   const [saving, setSaving] = useState(false);
+  const [pathBusy, setPathBusy] = useState(false);
 
-  const form = useForm({ phone: '', degree: '', experienceLevel: '' }, RULES);
+  const form = useForm({ degree: '' }, RULES);
 
-  const { status, data, reload } = useResource(async () => {
+  const { status, data, reload, pending, leaving } = useResource(async () => {
     const [profile, catalogue] = await Promise.all([profileApi.read(), traitsApi.catalogue()]);
-    const values = {
-      phone: profile.phone ?? '',
-      degree: profile.degree ?? '',
-      experienceLevel: profile.experienceLevel ?? '',
-    };
+    const values = { degree: profile.degree ?? '' };
     const ids = profile.traits.map((t) => t.traitId);
     form.setValues(values);
     setTraitIds(ids);
+    setEducation(profile.education);
     setBaseline(snapshot(values, ids));
     setHasCv(profile.hasCv);
-    setIdentity({
-      firstName: profile.firstName,
-      lastName: profile.lastName,
-      email: profile.email,
-    });
     return catalogue;
   });
 
@@ -70,15 +60,9 @@ export default function Profile() {
     try {
       const updated = await profileApi.update({
         degree: form.values.degree || null,
-        experienceLevel: form.values.experienceLevel || null,
-        phone: form.values.phone || null,
         traits: traitIds.map((traitId) => ({ traitId, level: null })),
       });
-      const values = {
-        phone: updated.phone ?? '',
-        degree: updated.degree ?? '',
-        experienceLevel: updated.experienceLevel ?? '',
-      };
+      const values = { degree: updated.degree ?? '' };
       const ids = updated.traits.map((t) => t.traitId);
       form.setValues(values);
       setTraitIds(ids);
@@ -91,6 +75,24 @@ export default function Profile() {
     }
   }
 
+  /**
+   * Each path change is its own record and commits on its own, unlike the level
+   * and the traits, which are one form behind one button.
+   */
+  function pathAction(run, done) {
+    return async (...args) => {
+      setPathBusy(true);
+      try {
+        setEducation((await run(...args)).education);
+        toast.success(done);
+      } catch (apiError) {
+        toast.error(apiError.message);
+      } finally {
+        setPathBusy(false);
+      }
+    };
+  }
+
   async function uploadCv(file) {
     const updated = await profileApi.uploadCv(file);
     setHasCv(updated.hasCv);
@@ -100,7 +102,10 @@ export default function Profile() {
   if (status === 'loading') {
     return (
       <Workspace title="Mon profil">
-        <Skeleton count={4} label="Chargement de votre profil" />
+        {pending && (
+          <Skeleton variant="form" count={5} leaving={leaving}
+            label="Chargement de votre profil" />
+        )}
       </Workspace>
     );
   }
@@ -122,65 +127,62 @@ export default function Profile() {
         obligatoires d'une offre sont comparés à ceux de votre profil.
       </p>
 
-      <section className="card" aria-labelledby="identity-title">
-        <div className="card__head">
-          <h2 id="identity-title" className="card__title">Identité</h2>
-        </div>
-        <div className="card__body">
-          <div className="profile__identity">
-            <div>
-              <p className="profile__name">{identity.firstName} {identity.lastName}</p>
-              <p className="profile__email">{identity.email}</p>
+      {/* The three narrow cards share the left column so the trait catalogue,
+          much the tallest thing here, starts at the top of its own. */}
+      <div className="profile__columns">
+        <div className="profile__col">
+          <section className="card" aria-labelledby="level-title">
+            <div className="card__head">
+              <h2 id="level-title" className="card__title">Niveau d'études</h2>
+              <p className="card__subtitle">Comparé au niveau demandé par chaque offre.</p>
             </div>
-          </div>
-          <Field label="Téléphone" type="tel" autoComplete="tel" hint="Facultatif."
-            {...form.field('phone')} />
-        </div>
-      </section>
+            <div className="card__body">
+              <Select label="Niveau d'études atteint" labelHidden options={DEGREE_OPTIONS}
+                placeholder="Sélectionnez votre niveau" {...form.field('degree')} />
+            </div>
+          </section>
 
-      <section className="card" aria-labelledby="path-title">
-        <div className="card__head">
-          <h2 id="path-title" className="card__title">Parcours</h2>
-        </div>
-        <div className="card__body profile__grid">
-          <Select label="Diplôme" options={DEGREE_OPTIONS} placeholder="Sélectionnez votre diplôme"
-            hint="Comparé au diplôme requis par chaque offre." {...form.field('degree')} />
-          <Field label="Niveau d'expérience"
-            hint="Facultatif. Par exemple : 5 ans en développement web."
-            {...form.field('experienceLevel')} />
-        </div>
-      </section>
+          <AcademicPath
+            entries={education}
+            busy={pathBusy}
+            onAdd={pathAction(profileApi.addEducation, 'Formation ajoutée.')}
+            onUpdate={pathAction(profileApi.updateEducation, 'Formation modifiée.')}
+            onRemove={pathAction(profileApi.removeEducation, 'Formation supprimée.')}
+          />
 
-      <section className="card" aria-labelledby="cv-title">
-        <div className="card__head">
-          <h2 id="cv-title" className="card__title">CV</h2>
+          <section className="card" aria-labelledby="cv-title">
+            <div className="card__head">
+              <h2 id="cv-title" className="card__title">CV</h2>
+              <p className="card__subtitle">Obligatoire au moment de postuler.</p>
+            </div>
+            <div className="card__body">
+              <CvUpload hasCv={hasCv} onUpload={uploadCv} onDownload={profileApi.downloadCv} />
+            </div>
+          </section>
         </div>
-        <div className="card__body">
-          <CvUpload hasCv={hasCv} onUpload={uploadCv} onDownload={profileApi.downloadCv} />
-        </div>
-      </section>
 
-      <section className="card" aria-labelledby="traits-title">
-        <div className="card__head">
-          <h2 id="traits-title" className="card__title">Compétences et traits</h2>
-          <p className="card__subtitle">
-            Sélectionnez tout ce qui vous décrit : compétences techniques, niveau d'expérience,
-            langues et atouts.
-          </p>
+        <div className="profile__col">
+          <section className="card" aria-labelledby="traits-title">
+            <div className="card__head">
+              <h2 id="traits-title" className="card__title">Compétences et traits</h2>
+              <p className="card__subtitle">
+                Sélectionnez tout ce qui vous décrit : compétences techniques, niveau d'expérience,
+                langues et atouts.
+              </p>
+            </div>
+            <div className="card__body">
+              <TraitPicker catalogue={data} value={traitIds} onChange={setTraitIds} />
+            </div>
+          </section>
         </div>
-        <div className="card__body">
-          <TraitPicker catalogue={data} value={traitIds} onChange={setTraitIds} />
-        </div>
-      </section>
-
-      <div className="profile__savebar">
-        <p className="profile__savestate" aria-live="polite">
-          {dirty ? 'Modifications non enregistrées' : ''}
-        </p>
-        <Button onClick={save} loading={saving} disabled={!dirty}>
-          Enregistrer les modifications
-        </Button>
       </div>
+
+      {(dirty || saving) && (
+        <div className="profile__savebar" role="status">
+          <p className="profile__savestate">Modifications non enregistrées</p>
+          <Button onClick={save} loading={saving}>Enregistrer</Button>
+        </div>
+      )}
     </Workspace>
   );
 }

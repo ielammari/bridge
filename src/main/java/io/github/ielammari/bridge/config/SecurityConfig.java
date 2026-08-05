@@ -50,6 +50,10 @@ public class SecurityConfig {
 						// The candidate feed is matched before the general offer rules,
 						// which are reserved for HR management.
 						.requestMatchers(HttpMethod.GET, "/api/v1/offers/feed").hasRole("CANDIDAT")
+						// One offer read in full is open to every role, because who may
+						// read which offer is a question the service answers, not a
+						// question of which role is asking.
+						.requestMatchers(HttpMethod.GET, "/api/v1/offers/*/detail").authenticated()
 						.requestMatchers("/api/v1/offers", "/api/v1/offers/**").hasRole("RH")
 						// Applying and tracking are the candidate's; listing an offer's
 						// applications and reading an attached CV are HR's.
@@ -59,6 +63,16 @@ public class SecurityConfig {
 						// Manual scheduling is HR; the technical evaluation is the expert's.
 						.requestMatchers("/api/v1/schedule/**").hasRole("RH")
 						.requestMatchers("/api/v1/evaluations/technical/**").hasRole("EXPERT")
+						// History: a candidate reads only their own record, the hires
+						// register is HR's, and a trail is for whoever ran the funnel.
+						.requestMatchers("/api/v1/history/mine/**").hasRole("CANDIDAT")
+						.requestMatchers("/api/v1/history/hirings").hasRole("RH")
+						.requestMatchers("/api/v1/history/**").hasAnyRole("RH", "EXPERT")
+						// Settings: everyone configures their own account, only HR
+						// configures the company and provisions other accounts.
+						.requestMatchers("/api/v1/settings/organisation", "/api/v1/settings/accounts")
+						.hasRole("RH")
+						.requestMatchers("/api/v1/settings/**").authenticated()
 						.requestMatchers("/api/**").authenticated()
 						// Anything else is the SPA shell and its static assets.
 						.anyRequest().permitAll())

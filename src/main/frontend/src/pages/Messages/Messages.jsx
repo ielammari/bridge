@@ -22,7 +22,7 @@ const TONE = {
 
 export default function Messages() {
   const toast = useToast();
-  const { status, data, setData, reload } = useResource(() => messagesApi.inbox());
+  const { status, data, setData, reload, pending, leaving } = useResource(() => messagesApi.inbox());
 
   const messages = data ?? [];
   const unread = messages.filter((m) => !m.read).length;
@@ -47,8 +47,8 @@ export default function Messages() {
   }
 
   return (
-    <Workspace title="Messages">
-      {status === 'loading' && <Skeleton count={4} label="Chargement de vos messages" />}
+    <Workspace width="narrow" title="Messages">
+      {pending && <Skeleton variant="rows" count={4} leaving={leaving} label="Chargement de vos messages" />}
 
       {status === 'error' && (
         <ErrorState onRetry={reload}>

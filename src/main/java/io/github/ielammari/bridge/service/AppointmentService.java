@@ -20,8 +20,10 @@ import io.github.ielammari.bridge.mapper.ApplicationMapper;
 import io.github.ielammari.bridge.model.Application;
 import io.github.ielammari.bridge.model.Appointment;
 import io.github.ielammari.bridge.model.AppointmentType;
+import io.github.ielammari.bridge.model.OrganisationSettings;
 import io.github.ielammari.bridge.repository.ApplicationRepository;
 import io.github.ielammari.bridge.repository.AppointmentRepository;
+import io.github.ielammari.bridge.repository.OrganisationSettingsRepository;
 
 /**
  * HR schedules interviews by hand. There is one company wide calendar with an
@@ -30,18 +32,24 @@ import io.github.ielammari.bridge.repository.AppointmentRepository;
 @Service
 public class AppointmentService {
 
-	private static final int FIRST_HOUR = 9;
-	private static final int LAST_HOUR = 16;
-
 	private final AppointmentRepository appointments;
 	private final ApplicationRepository applications;
 	private final NotificationService notifications;
+	private final OrganisationSettingsRepository organisation;
 
 	public AppointmentService(AppointmentRepository appointments, ApplicationRepository applications,
-			NotificationService notifications) {
+			NotificationService notifications, OrganisationSettingsRepository organisation) {
 		this.appointments = appointments;
 		this.applications = applications;
 		this.notifications = notifications;
+		this.organisation = organisation;
+	}
+
+	/** The bookable hours, as configured by HR. */
+	private OrganisationSettings grid() {
+		return organisation.findById(OrganisationSettings.SINGLETON_ID)
+				.orElseThrow(() -> ApiException.internal("SETTINGS_MISSING",
+						"Les paramètres de l'organisation sont introuvables."));
 	}
 
 	@Transactional(readOnly = true)
@@ -49,8 +57,9 @@ public class AppointmentService {
 		Map<LocalTime, Appointment> byTime = appointments.findByDateWithCandidate(date).stream()
 				.collect(Collectors.toMap(Appointment::getTime, Function.identity()));
 
+		OrganisationSettings grid = grid();
 		List<DaySlotDto> slots = new ArrayList<>();
-		for (int hour = FIRST_HOUR; hour <= LAST_HOUR; hour++) {
+		for (int hour = grid.getFirstHour(); hour <= grid.getLastHour(); hour++) {
 			LocalTime time = LocalTime.of(hour, 0);
 			Appointment appointment = byTime.get(time);
 			if (appointment == null) {
@@ -98,8 +107,11 @@ public class AppointmentService {
 	}
 
 	private void validateSlot(LocalDate date, LocalTime time) {
-		if (time.getMinute() != 0 || time.getHour() < FIRST_HOUR || time.getHour() > LAST_HOUR) {
-			throw ApiException.badRequest("SLOT_INVALID", "Choisissez une heure pleine entre 9h et 16h.");
+		OrganisationSettings grid = grid();
+		if (time.getMinute() != 0 || time.getHour() < grid.getFirstHour() || time.getHour() > grid.getLastHour()) {
+			throw ApiException.badRequest("SLOT_INVALID",
+					"Choisissez une heure pleine entre " + grid.getFirstHour() + "h et "
+							+ grid.getLastHour() + "h.");
 		}
 		if (isPast(date, time, LocalDate.now(), LocalTime.now())) {
 			throw ApiException.badRequest("SLOT_PAST", "Ce créneau est déjà passé.");

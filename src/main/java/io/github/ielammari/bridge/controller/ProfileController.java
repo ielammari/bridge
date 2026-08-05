@@ -6,7 +6,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import io.github.ielammari.bridge.dto.CandidateProfileDto;
+import io.github.ielammari.bridge.dto.EducationRequest;
 import io.github.ielammari.bridge.dto.UpdateProfileRequest;
 import io.github.ielammari.bridge.service.ProfileService;
 import jakarta.validation.Valid;
@@ -39,6 +42,27 @@ public class ProfileController {
 	public CandidateProfileDto update(@AuthenticationPrincipal Jwt jwt,
 			@Valid @RequestBody UpdateProfileRequest request) {
 		return profileService.update(currentUserId(jwt), request);
+	}
+
+	// Each returns the whole profile, so one round trip both writes and
+	// refreshes the page.
+
+	@PostMapping("/education")
+	public CandidateProfileDto addEducation(@AuthenticationPrincipal Jwt jwt,
+			@Valid @RequestBody EducationRequest request) {
+		return profileService.addEducation(currentUserId(jwt), request);
+	}
+
+	@PutMapping("/education/{id}")
+	public CandidateProfileDto updateEducation(@AuthenticationPrincipal Jwt jwt,
+			@PathVariable Integer id, @Valid @RequestBody EducationRequest request) {
+		return profileService.updateEducation(currentUserId(jwt), id, request);
+	}
+
+	@DeleteMapping("/education/{id}")
+	public CandidateProfileDto removeEducation(@AuthenticationPrincipal Jwt jwt,
+			@PathVariable Integer id) {
+		return profileService.removeEducation(currentUserId(jwt), id);
 	}
 
 	@PostMapping("/cv")

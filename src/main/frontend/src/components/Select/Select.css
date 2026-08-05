@@ -4,22 +4,6 @@
   gap: var(--space-1);
 }
 
-.select__label {
-  font-size: var(--size-sm);
-  font-weight: var(--weight-medium);
-  color: var(--text-secondary);
-}
-
-.select__required {
-  margin-left: 2px;
-  color: var(--accent);
-}
-
-.select__hint {
-  font-size: var(--size-xs);
-  color: var(--text-faint);
-}
-
 .select__control {
   position: relative;
   display: flex;
@@ -57,9 +41,4 @@
   right: var(--space-3);
   color: var(--text-faint);
   pointer-events: none;
-}
-
-.select__error {
-  font-size: var(--size-xs);
-  color: var(--danger);
 }

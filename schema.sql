@@ -1,5 +1,5 @@
 -- The current database schema.
-
+--
 -- Read this to learn the shape of the data. Do not edit it, and do not run
 -- it: Flyway owns the schema through src/main/resources/db/migration, and
 -- this file is regenerated from a database those migrations produced.
@@ -129,6 +129,28 @@ CREATE TABLE public.expert_technique (
     specialite character varying(80)
 );
 
+CREATE TABLE public.formation (
+    id_formation integer NOT NULL,
+    id_candidat integer NOT NULL,
+    intitule character varying(150) NOT NULL,
+    etablissement character varying(150) NOT NULL,
+    domaine character varying(150),
+    annee_debut smallint NOT NULL,
+    annee_fin smallint,
+    CONSTRAINT ck_formation_annee_debut CHECK (((annee_debut >= 1950) AND (annee_debut <= 2100))),
+    CONSTRAINT ck_formation_annees CHECK (((annee_fin IS NULL) OR (annee_fin >= annee_debut)))
+);
+
+CREATE SEQUENCE public.formation_id_formation_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public.formation_id_formation_seq OWNED BY public.formation.id_formation;
+
 CREATE TABLE public.message (
     id_message integer NOT NULL,
     contenu text NOT NULL,
@@ -184,10 +206,24 @@ CREATE SEQUENCE public.offre_id_offre_seq
 
 ALTER SEQUENCE public.offre_id_offre_seq OWNED BY public.offre.id_offre;
 
+CREATE TABLE public.parametre_organisation (
+    id smallint NOT NULL,
+    premiere_heure smallint NOT NULL,
+    derniere_heure smallint NOT NULL,
+    CONSTRAINT ck_parametre_heures CHECK (((premiere_heure >= 0) AND (derniere_heure <= 23) AND (premiere_heure < derniere_heure))),
+    CONSTRAINT ck_parametre_singleton CHECK ((id = 1))
+);
+
 CREATE TABLE public.posseder (
     id_candidat integer NOT NULL,
     id_trait integer NOT NULL,
     niveau character varying(30)
+);
+
+CREATE TABLE public.preference_notification (
+    id_utilisateur integer NOT NULL,
+    type_notification character varying(30) NOT NULL,
+    CONSTRAINT ck_preference_type CHECK (((type_notification)::text = ANY ((ARRAY['APPLICATION_RECEIVED'::character varying, 'SCHEDULE_NEEDED'::character varying, 'INTERVIEW_SCHEDULED'::character varying])::text[])))
 );
 
 CREATE TABLE public.rendez_vous (
@@ -270,6 +306,8 @@ ALTER TABLE ONLY public.entretien_rh ALTER COLUMN id_entretien_rh SET DEFAULT ne
 
 ALTER TABLE ONLY public.evaluation ALTER COLUMN id_evaluation SET DEFAULT nextval('public.evaluation_id_evaluation_seq'::regclass);
 
+ALTER TABLE ONLY public.formation ALTER COLUMN id_formation SET DEFAULT nextval('public.formation_id_formation_seq'::regclass);
+
 ALTER TABLE ONLY public.message ALTER COLUMN id_message SET DEFAULT nextval('public.message_id_message_seq'::regclass);
 
 ALTER TABLE ONLY public.offre ALTER COLUMN id_offre SET DEFAULT nextval('public.offre_id_offre_seq'::regclass);
@@ -319,6 +357,9 @@ ALTER TABLE ONLY public.exiger
 ALTER TABLE ONLY public.expert_technique
     ADD CONSTRAINT expert_technique_pkey PRIMARY KEY (id_expert);
 
+ALTER TABLE ONLY public.formation
+    ADD CONSTRAINT formation_pkey PRIMARY KEY (id_formation);
+
 ALTER TABLE ONLY public.message
     ADD CONSTRAINT message_pkey PRIMARY KEY (id_message);
 
@@ -328,8 +369,14 @@ ALTER TABLE ONLY public.noter
 ALTER TABLE ONLY public.offre
     ADD CONSTRAINT offre_pkey PRIMARY KEY (id_offre);
 
+ALTER TABLE ONLY public.parametre_organisation
+    ADD CONSTRAINT parametre_organisation_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY public.posseder
     ADD CONSTRAINT posseder_pkey PRIMARY KEY (id_candidat, id_trait);
+
+ALTER TABLE ONLY public.preference_notification
+    ADD CONSTRAINT preference_notification_pkey PRIMARY KEY (id_utilisateur, type_notification);
 
 ALTER TABLE ONLY public.rendez_vous
     ADD CONSTRAINT rendez_vous_pkey PRIMARY KEY (id_rendez_vous);
@@ -367,6 +414,8 @@ CREATE INDEX idx_candidature_statut ON public.candidature USING btree (statut);
 CREATE INDEX idx_evaluation_candidature ON public.evaluation USING btree (id_candidature);
 
 CREATE INDEX idx_exiger_trait ON public.exiger USING btree (id_trait);
+
+CREATE INDEX idx_formation_candidat ON public.formation USING btree (id_candidat);
 
 CREATE INDEX idx_message_destinataire ON public.message USING btree (id_destinataire, lu);
 
@@ -412,6 +461,9 @@ ALTER TABLE ONLY public.exiger
 ALTER TABLE ONLY public.expert_technique
     ADD CONSTRAINT fk_expert_evaluateur FOREIGN KEY (id_expert) REFERENCES public.evaluateur(id_evaluateur) ON DELETE CASCADE;
 
+ALTER TABLE ONLY public.formation
+    ADD CONSTRAINT fk_formation_candidat FOREIGN KEY (id_candidat) REFERENCES public.candidat(id_candidat) ON DELETE CASCADE;
+
 ALTER TABLE ONLY public.message
     ADD CONSTRAINT fk_message_candidature FOREIGN KEY (id_candidature) REFERENCES public.candidature(id_candidature) ON DELETE SET NULL;
 
@@ -435,6 +487,9 @@ ALTER TABLE ONLY public.posseder
 
 ALTER TABLE ONLY public.posseder
     ADD CONSTRAINT fk_posseder_trait FOREIGN KEY (id_trait) REFERENCES public.trait(id_trait) ON DELETE RESTRICT;
+
+ALTER TABLE ONLY public.preference_notification
+    ADD CONSTRAINT fk_preference_utilisateur FOREIGN KEY (id_utilisateur) REFERENCES public.utilisateur(id_utilisateur) ON DELETE CASCADE;
 
 ALTER TABLE ONLY public.rendez_vous
     ADD CONSTRAINT fk_rdv_candidature FOREIGN KEY (id_candidature) REFERENCES public.candidature(id_candidature) ON DELETE CASCADE;

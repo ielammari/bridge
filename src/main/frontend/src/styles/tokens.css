@@ -1,13 +1,21 @@
 /*
  * Design tokens. Every color, size, and duration in the application resolves
  * here. Pages and components never declare their own palette.
+ *
+ * The theme is chosen by a data-theme attribute on the document, written before
+ * the first paint. The system preference and an explicit choice therefore reach
+ * the stylesheet by the same route, so there is one dark palette rather than
+ * one per selector.
  */
 
 :root {
+  color-scheme: light;
+
   /* ---- Palette -------------------------------------------------------- */
   --ink: #12212b;
   --ink-soft: #3c4d58;
-  --ink-faint: #64757f;
+  /* Dark enough to clear AA on the sunken surface, not only on white. */
+  --ink-faint: #5c6d77;
 
   --steel: #1f4e5f;
   --steel-light: #2c6b80;
@@ -37,6 +45,9 @@
 
   --accent: var(--brass);
   --focus: var(--brass);
+  /* Brass is a mid tone, so white on it reaches only 3.6:1. Text that sits on
+     the accent is dark in both themes. */
+  --on-accent: var(--ink);
 
   /* Destructive is reserved for actions that destroy data, never for a
      rejected application, which is a legitimate outcome rather than an error. */
@@ -86,11 +97,20 @@
   --size-xl: 1.375rem;
   --size-2xl: 1.75rem;
   --size-3xl: 2.25rem;
+  /* The display tier, for a page title and above. Fluid, because a size that
+     is right on a laptop is oversized on a phone. */
+  --size-4xl: clamp(1.5rem, 1.05rem + 1.9vw, 2.5rem);
+  --size-5xl: clamp(2rem, 1.25rem + 3.4vw, 3.5rem);
 
   --weight-normal: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
   --weight-bold: 700;
+
+  /* Larger type needs less tracking, small uppercase type needs more. */
+  --tracking-display: -0.03em;
+  --tracking-heading: -0.015em;
+  --tracking-label: 0.06em;
 
   --leading-tight: 1.2;
   --leading-normal: 1.55;
@@ -105,6 +125,9 @@
   --space-7: 3rem;
   --space-8: 4rem;
 
+  /* Wide enough for a three track card grid beside the sidebar. */
+  --content-max: 90rem;
+
   /* ---- Radius and elevation -------------------------------------------- */
   --radius-sm: 3px;
   --radius: 4px;
@@ -112,16 +135,86 @@
 
   /* Elevation exists only for things that float above the page. */
   --shadow-float: 0 8px 24px -8px rgb(18 33 43 / 0.22);
+  /* Behind a drawer or a dialog, dimming the page it covers. */
+  --scrim: rgb(18 33 43 / 0.42);
 
   /* ---- Motion ---------------------------------------------------------- */
   --duration: 180ms;
   --duration-slow: 260ms;
   --ease: cubic-bezier(0.2, 0, 0.2, 1);
+  /* Things arriving decelerate into place; things leaving accelerate away. */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
 
   /* ---- Layers ---------------------------------------------------------- */
   --z-nav: 10;
   --z-float: 40;
   --z-modal: 100;
+}
+
+/*
+ * Dark, derived from the light palette. Every colour keeps its hue, eases its
+ * saturation so it does not turn neon as it lifts, and rises only as far as it
+ * must to clear 4.5:1 on the surface it sits on. The ground is the ink carried
+ * downward, so this is the same palette in less light.
+ *
+ * A filled primary control turns light with dark type, because dark steel on a
+ * dark page would disappear.
+ */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* The ink hue (204), taken below the ink itself. */
+  --paper: #0a1217;
+  --surface-sunken: #101a20;
+  --surface: #1c272e;
+  --weave: #333f48;
+  --weave-strong: #485660;
+
+  --ink: #e2e6e9;
+  --ink-soft: #aab1b6;
+  /* Clears AA on the raised surface, the sunken one, and the page. */
+  --ink-faint: #889196;
+
+  /* Still steel: hue 196 held, saturation eased from 51 to 29. */
+  --steel: #6a9cae;
+  --steel-light: #89b0bd;
+  --steel-dark: #568b9e;
+  --on-primary: #0a1217;
+
+  --brass: #bf8c50;
+  /* Ink is the light colour here, so what sits on brass is the page instead. */
+  --on-accent: var(--paper);
+
+  --danger: #c98285;
+  --danger-hover: #d49b9d;
+  --danger-bg: #29191a;
+
+  /* Each ground sits above the card, so a badge is a shape before it is a
+     colour, and keeps enough hue to be told from its neighbours. */
+  --status-nouvelle: #9ca5ab;
+  --status-nouvelle-bg: #2a3841;
+  --status-en-revue: #83afbe;
+  --status-en-revue-bg: #253d46;
+  --status-examen-technique: #9696b6;
+  --status-examen-technique-bg: #2a2a41;
+  --status-entretien-rh: #c5a377;
+  --status-entretien-rh-bg: #4b3820;
+  --status-refusee: #b59691;
+  --status-refusee-bg: #412d2a;
+  --status-embauchee: #7abe9f;
+  --status-embauchee-bg: #234837;
+
+  --status-brouillon: #9ca5aa;
+  --status-brouillon-bg: #2a3941;
+  --status-publiee: #7abe9f;
+  --status-publiee-bg: #234837;
+  --status-cloturee: #9ca5ab;
+  --status-cloturee-bg: #2a3841;
+
+  /* A shadow reads as depth only against light. Here the raised surface and its
+     border carry the elevation, and the shadow only anchors. */
+  --shadow-float: 0 10px 28px -10px rgb(0 0 0 / 0.72);
+  --scrim: rgb(4 8 11 / 0.68);
 }
 
 @media (prefers-reduced-motion: reduce) {

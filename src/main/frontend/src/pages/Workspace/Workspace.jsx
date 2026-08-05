@@ -1,106 +1,146 @@
-import { useEffect, useRef } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext.jsx';
-import { useNotifications } from '../../context/NotificationContext.jsx';
-import Button from '../../components/Button/Button.jsx';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import Icon from '../../components/Icon/Icon.jsx';
+import Sidebar from '../../components/Sidebar/Sidebar.jsx';
+import { useNotifications } from '../../context/NotificationContext.jsx';
 import useDocumentTitle from '../../hooks/useDocumentTitle.js';
+import useMediaQuery from '../../hooks/useMediaQuery.js';
 import './workspace.css';
 
-const NAV_BY_ROLE = {
-  CANDIDAT: [
-    { to: '/offres', label: 'Offres' },
-    { to: '/mes-candidatures', label: 'Mes candidatures' },
-    { to: '/profil', label: 'Mon profil' },
-  ],
-  RH: [
-    { to: '/offres', label: 'Offres' },
-    { to: '/candidatures', label: 'Candidatures' },
-  ],
-  EXPERT: [{ to: '/evaluations', label: 'Évaluations' }],
-};
-
-const ROLE_LABELS = { CANDIDAT: 'Candidat', RH: 'RH', EXPERT: 'Expert' };
+const COLLAPSED_KEY = 'bridge.sidebar.collapsed';
 
 /**
- * Signed in shell shared by the three workspaces: brand, navigation for the
- * current role, and the account controls. Also names the page in the tab and
- * moves focus on navigation, which a single page application must do by hand.
+ * Signed in shell: the sidebar, and the page it frames. Also names the page in
+ * the tab and moves focus on navigation, which a single page application must
+ * do by hand.
+ *
+ * `width` is 'wide' for listings, which want room for a card grid, and 'narrow'
+ * for reading and forms, which want a readable line length instead.
  */
-export default function Workspace({ title, subtitle, back, children }) {
-  const { user, logout } = useAuth();
+export default function Workspace({ title, subtitle, back, width = 'wide', children }) {
   const { unreadCount } = useNotifications();
   const location = useLocation();
   const heading = useRef(null);
+  const rail = useRef(null);
+  const menuButton = useRef(null);
+
+  // Below this width the rail is a drawer rather than a fixture, which changes
+  // whether it may hold focus at all.
+  const isDrawer = useMediaQuery('(max-width: 64rem)');
+
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem(COLLAPSED_KEY) === 'true',
+  );
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useDocumentTitle(title);
 
-  // Focus moves to the new page's heading, so the next Tab starts from its
-  // content rather than the link that was clicked.
   useEffect(() => {
     heading.current?.focus();
   }, [location.pathname]);
 
-  const nav = NAV_BY_ROLE[user.role] ?? [];
+  // An open drawer covers the page, so Tab has to stay inside it, and closing
+  // returns focus to the control that opened it.
+  useEffect(() => {
+    if (!drawerOpen) return undefined;
+
+    const focusable = () =>
+      [...(rail.current?.querySelectorAll('a[href], button:not([disabled])') ?? [])];
+    focusable()[0]?.focus();
+
+    function onKeyDown(event) {
+      if (event.key === 'Escape') {
+        setDrawerOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+
+      const items = focusable();
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      menuButton.current?.focus();
+    };
+  }, [drawerOpen]);
+
+  function toggleCollapsed() {
+    setCollapsed((current) => {
+      localStorage.setItem(COLLAPSED_KEY, String(!current));
+      return !current;
+    });
+  }
 
   return (
-    <div className="workspace">
+    <div className={`workspace workspace--${width}${collapsed ? ' workspace--collapsed' : ''}`}>
       <a className="workspace__skip" href="#contenu">Aller au contenu</a>
 
-      <header className="workspace__bar">
-        <div className="workspace__lead">
-          <span className="workspace__logo">Bridge</span>
-          <nav className="workspace__nav" aria-label="Navigation principale">
-            {nav.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) =>
-                  `workspace__link${isActive ? ' workspace__link--active' : ''}`
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
-            <NavLink
-              to="/messages"
-              className={({ isActive }) =>
-                `workspace__link${isActive ? ' workspace__link--active' : ''}`
-              }
-            >
-              Messages
-              {unreadCount > 0 && (
-                <span className="workspace__badge" aria-label={`${unreadCount} non lus`}>
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </NavLink>
-          </nav>
-        </div>
-
-        <div className="workspace__account">
-          <span className="workspace__identity">
-            {user.firstName} {user.lastName}
-            <span className="workspace__role">{ROLE_LABELS[user.role] ?? user.role}</span>
-          </span>
-          <Button variant="text" onClick={logout}>
-            Se déconnecter
-          </Button>
-        </div>
+      {/* Below the sidebar breakpoint the navigation becomes a drawer, so the
+          wordmark and the unread count need somewhere else to live. */}
+      <header className="workspace__mobilebar">
+        <button
+          type="button"
+          className="workspace__menu"
+          ref={menuButton}
+          onClick={() => setDrawerOpen(true)}
+          aria-expanded={drawerOpen}
+          aria-label="Ouvrir le menu"
+        >
+          <Icon name="menu" />
+          {unreadCount > 0 && <span className="workspace__menu-dot" aria-hidden="true" />}
+        </button>
+        <span className="workspace__logo">Bridge</span>
       </header>
 
-      <main className="workspace__content" id="contenu">
-        <div className="workspace__head">
-          {back && (
-            <Link className="workspace__back" to={back.to}>
-              <Icon name="chevron" className="workspace__back-icon" /> {back.label}
-            </Link>
-          )}
-          <h1 className="workspace__title" ref={heading} tabIndex={-1}>{title}</h1>
-          {subtitle && <p className="workspace__subtitle">{subtitle}</p>}
-        </div>
+      {/* A drawer that is merely translated off screen still holds its links in
+          the tab order, so it is made inert while it is closed. */}
+      <div
+        className={`workspace__rail${drawerOpen ? ' workspace__rail--open' : ''}`}
+        ref={rail}
+        inert={isDrawer && !drawerOpen}
+      >
+        <Sidebar
+          collapsed={collapsed}
+          onToggle={toggleCollapsed}
+          onNavigate={() => setDrawerOpen(false)}
+        />
+      </div>
 
-        {children}
+      {drawerOpen && (
+        <button
+          type="button"
+          className="workspace__scrim"
+          onClick={() => setDrawerOpen(false)}
+          aria-label="Fermer le menu"
+        />
+      )}
+
+      <main className="workspace__content" id="contenu">
+        <div className="workspace__inner">
+          <div className="workspace__head">
+            {back && (
+              <Link className="workspace__back" to={back.to}>
+                <Icon name="chevron" className="workspace__back-icon" /> {back.label}
+              </Link>
+            )}
+            <h1 className="workspace__title" ref={heading} tabIndex={-1}>{title}</h1>
+            {subtitle && <p className="workspace__subtitle">{subtitle}</p>}
+          </div>
+
+          {children}
+        </div>
       </main>
     </div>
   );

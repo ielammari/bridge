@@ -37,7 +37,7 @@ h4 {
   font-family: var(--font-display);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-tight);
-  letter-spacing: -0.015em;
+  letter-spacing: var(--tracking-heading);
 }
 
 h1 {
@@ -112,7 +112,6 @@ textarea,
   white-space: nowrap;
 }
 
-/* Card surface, shared by several pages. */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -140,4 +139,211 @@ textarea,
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-5);
+}
+
+/* ---- Item card ---------------------------------------------------------
+   One offer, application, or evaluation in a listing. It reads as a card
+   through space and edge rather than elevation: nothing in a grid floats. */
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  transition: border-color var(--duration) var(--ease);
+}
+
+.tile:hover {
+  border-color: var(--border-strong);
+}
+
+.tile__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.tile__title {
+  font-size: var(--size-lg);
+}
+
+/* Facts that qualify the item: contract, place, dates. */
+.tile__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+}
+
+/* ---- A card that opens something ---------------------------------------
+   One real link, the title, with its hit area stretched over the card by an
+   overlay, so the whole card is the target and no control nests inside
+   another. Anything else interactive sits above that overlay.
+
+   Reaching the card by keyboard means reaching the title, so the ring goes
+   around the card rather than the words. */
+.tile--openable {
+  position: relative;
+  cursor: pointer;
+}
+
+.tile__stretch::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.tile--openable:has(.tile__stretch:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.tile__stretch:focus-visible {
+  outline: none;
+}
+
+.tile--openable .tile__foot,
+.tile--openable .tile__head > :not(.tile__title) {
+  position: relative;
+  z-index: 1;
+}
+
+/* Clamped, so one verbose description cannot set the height of its whole row. */
+.tile__desc {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  color: var(--text-secondary);
+}
+
+/* Pinned to the bottom so actions line up across a row whatever the content. */
+.tile__foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: auto;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+/* ---- The academic path ----------------------------------------------- */
+
+.path {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A path is read as a sequence, so the entries share one continuous rule
+   rather than sitting in separate boxes. */
+.path__item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.path__item:first-child {
+  padding-top: 0;
+}
+
+.path__item:last-child {
+  border-bottom: none;
+}
+
+.path__entry {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.path__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: var(--weight-semibold);
+}
+
+.path__where {
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+}
+
+.path__period {
+  font-family: var(--font-mono);
+  font-size: var(--size-xs);
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+}
+
+/* Reuses the in-progress reading of a status rather than a colour of its own. */
+.path__ongoing {
+  padding: 2px var(--space-2);
+  background: var(--status-en-revue-bg);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: var(--size-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em;
+  color: var(--status-en-revue);
+}
+
+.path__rowactions {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-1);
+}
+
+.path__empty {
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+}
+
+/* ---- Content entrance ---------------------------------------------------
+   A short rise and fade, staggered across a listing so the eye follows the
+   first row in. It runs on every mount, so a load too fast for a placeholder
+   still arrives rather than appearing.
+
+   Entering is slower than the placeholder's exit, 200ms against 120ms, which is
+   what gives the handover its direction. */
+@keyframes content-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.cardgrid > *,
+.msg__list > *,
+.card {
+  animation: content-in 200ms var(--ease) both;
+}
+
+/* Capped at eight: past that the stagger stops paying for itself and a long
+   listing would take a second to settle. */
+.cardgrid > *:nth-child(2), .msg__list > *:nth-child(2) { animation-delay: 40ms; }
+.cardgrid > *:nth-child(3), .msg__list > *:nth-child(3) { animation-delay: 80ms; }
+.cardgrid > *:nth-child(4), .msg__list > *:nth-child(4) { animation-delay: 120ms; }
+.cardgrid > *:nth-child(5), .msg__list > *:nth-child(5) { animation-delay: 160ms; }
+.cardgrid > *:nth-child(6), .msg__list > *:nth-child(6) { animation-delay: 200ms; }
+.cardgrid > *:nth-child(7), .msg__list > *:nth-child(7) { animation-delay: 240ms; }
+.cardgrid > *:nth-child(n+8), .msg__list > *:nth-child(n+8) { animation-delay: 280ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cardgrid > *,
+  .msg__list > *,
+  .card {
+    animation: none;
+  }
 }

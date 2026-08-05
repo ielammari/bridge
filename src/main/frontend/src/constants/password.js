@@ -52,14 +52,9 @@ export const PASSWORD_RULES = [
   },
 ];
 
-export function unmetPasswordRules(password, context) {
-  if (!password) return PASSWORD_RULES;
-  return PASSWORD_RULES.filter((rule) => !rule.test(password, context));
-}
-
 // One message for the field; the checklist says which rule failed.
 export function passwordProblem(password, context) {
-  return unmetPasswordRules(password, context).length > 0
+  return PASSWORD_RULES.some((rule) => !rule.test(password ?? '', context))
     ? 'Ce mot de passe ne remplit pas toutes les conditions ci-dessous.'
     : null;
 }

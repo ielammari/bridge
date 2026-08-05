@@ -1,0 +1,30 @@
+/* auto-fill rather than auto-fit: with one item left, the card keeps its size
+   instead of stretching across the whole canvas. */
+.cardgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(var(--track), 100%), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The narrowest a card may get. Named rather than passed in, so the sizes a
+   listing can take are a closed set that lives with the layout. */
+.cardgrid--default {
+  --track: 22rem;
+}
+
+.cardgrid--wide {
+  --track: 26rem;
+}
+
+.cardgrid--full {
+  --track: 38rem;
+}
+
+/* For a card that opens a panel in place: it takes the full row, so the panel
+   gets the whole canvas and no sibling is stretched to match its height. */
+.cardgrid > .tile--open {
+  grid-column: 1 / -1;
+}

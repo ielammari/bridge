@@ -9,6 +9,7 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.github.ielammari.bridge.dto.OfferDetailDto;
 import io.github.ielammari.bridge.dto.OfferDto;
 import io.github.ielammari.bridge.dto.OfferRequest;
 import io.github.ielammari.bridge.exception.ApiException;
@@ -16,7 +17,10 @@ import io.github.ielammari.bridge.mapper.OfferMapper;
 import io.github.ielammari.bridge.model.HRManager;
 import io.github.ielammari.bridge.model.JobOffer;
 import io.github.ielammari.bridge.model.OfferStatus;
+import io.github.ielammari.bridge.model.Role;
 import io.github.ielammari.bridge.model.Trait;
+import io.github.ielammari.bridge.repository.ApplicationRepository;
+import io.github.ielammari.bridge.repository.EvaluationRepository;
 import io.github.ielammari.bridge.repository.JobOfferRepository;
 import io.github.ielammari.bridge.repository.TraitRepository;
 import io.github.ielammari.bridge.repository.UserRepository;
@@ -27,11 +31,16 @@ public class OfferService {
 	private final JobOfferRepository offers;
 	private final TraitRepository traits;
 	private final UserRepository users;
+	private final ApplicationRepository applications;
+	private final EvaluationRepository evaluations;
 
-	public OfferService(JobOfferRepository offers, TraitRepository traits, UserRepository users) {
+	public OfferService(JobOfferRepository offers, TraitRepository traits, UserRepository users,
+			ApplicationRepository applications, EvaluationRepository evaluations) {
 		this.offers = offers;
 		this.traits = traits;
 		this.users = users;
+		this.applications = applications;
+		this.evaluations = evaluations;
 	}
 
 	@Transactional
@@ -91,6 +100,36 @@ public class OfferService {
 	@Transactional(readOnly = true)
 	public OfferDto get(Integer offerId) {
 		return OfferMapper.toDto(requireOffer(offerId));
+	}
+
+	/**
+	 * One offer in full, for whoever is entitled to read it.
+	 *
+	 * A recruiter runs every offer and reads any of them. A candidate reads one
+	 * that is published, or one they have already applied to, so an offer that
+	 * closes behind them does not take their own application's subject with it.
+	 * An expert reads an offer they have assessed someone for.
+	 */
+	@Transactional(readOnly = true)
+	public OfferDetailDto detail(Integer viewerId, Role viewerRole, Integer offerId) {
+		JobOffer offer = requireOffer(offerId);
+		boolean applied = applications.existsByCandidateIdAndOfferId(viewerId, offerId);
+
+		boolean allowed = switch (viewerRole) {
+			case RH -> true;
+			case CANDIDAT -> offer.getStatus() == OfferStatus.PUBLIEE || applied;
+			case EXPERT -> evaluations.hasAssessedForOffer(viewerId, offerId);
+		};
+		if (!allowed) {
+			throw ApiException.notFound("Cette offre est introuvable.");
+		}
+
+		HRManager publisher = offer.getPublisher();
+		return new OfferDetailDto(
+				OfferMapper.toDto(offer),
+				publisher == null ? null : publisher.getFirstName() + " " + publisher.getLastName(),
+				viewerRole == Role.CANDIDAT && applied,
+				viewerRole == Role.RH ? applications.findByOffer(offerId).size() : null);
 	}
 
 	private void applyFields(JobOffer offer, OfferRequest request) {

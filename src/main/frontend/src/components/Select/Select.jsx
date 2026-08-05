@@ -1,10 +1,15 @@
 import { useId } from 'react';
 import Icon from '../Icon/Icon.jsx';
+import '../Field/Field.css';
 import './Select.css';
 
 /**
  * Labelled select matching the Field primitive. The label is always visible and
  * the chevron is decorative, so the native control keeps its keyboard behaviour.
+ *
+ * The label, hint, and error come from Field: they are the same parts, and
+ * keeping one copy means a change to them cannot land in one control and not
+ * the other.
  */
 export default function Select({
   label,
@@ -15,6 +20,7 @@ export default function Select({
   hint,
   error,
   required = false,
+  labelHidden = false,
   ...rest
 }) {
   const id = useId();
@@ -24,19 +30,27 @@ export default function Select({
 
   return (
     <div className="select">
-      <label className="select__label" htmlFor={id}>
-        {label}
-        {required && (
-          <span className="select__required" aria-hidden="true">
-            *
-          </span>
-        )}
-      </label>
-
-      {hint && (
-        <p className="select__hint" id={hintId}>
-          {hint}
-        </p>
+      {/* For a control its surroundings already name. The label still exists,
+          so the control keeps its accessible name; the head goes only once
+          there is no hint left in it. */}
+      {labelHidden && !hint ? (
+        <label className="visually-hidden" htmlFor={id}>{label}</label>
+      ) : (
+        <div className="field__head">
+          <label className={`field__label${labelHidden ? ' visually-hidden' : ''}`} htmlFor={id}>
+            {label}
+            {required && (
+              <span className="field__required" aria-hidden="true">
+                *
+              </span>
+            )}
+          </label>
+          {hint && (
+            <span className="field__hint" id={hintId} title={hint}>
+              {hint}
+            </span>
+          )}
+        </div>
       )}
 
       <div className="select__control">
@@ -60,7 +74,7 @@ export default function Select({
       </div>
 
       {error && (
-        <p className="select__error" id={errorId}>
+        <p className="field__error" id={errorId}>
           {error}
         </p>
       )}

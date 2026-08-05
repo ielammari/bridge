@@ -1,0 +1,148 @@
+.record__status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.record__meta {
+  font-size: var(--size-sm);
+  color: var(--text-faint);
+}
+
+/* ---- Lists of recorded facts ------------------------------------------- */
+
+.record__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.record__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--size-sm);
+}
+
+.record__row:last-child {
+  border-bottom: none;
+}
+
+/* ---- One evaluation ----------------------------------------------------- */
+
+.record__eval {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--surface-sunken);
+  border-radius: var(--radius);
+}
+
+.record__eval-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.record__eval-title {
+  font-size: var(--size-base);
+  font-weight: var(--weight-semibold);
+}
+
+.record__comment {
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}
+
+.record__scores {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
+  gap: var(--space-1) var(--space-5);
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.record__score {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--size-sm);
+}
+
+.record__trait {
+  color: var(--text-secondary);
+}
+
+/* The outcome of an evaluation, which is not an application status and so
+   does not use the status palette. */
+.verdict {
+  flex-shrink: 0;
+  padding: 2px var(--space-3);
+  border-radius: 999px;
+  font-size: var(--size-xs);
+  font-weight: var(--weight-medium);
+}
+
+.verdict--validee {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.verdict--refusee {
+  background: var(--status-refusee-bg);
+  color: var(--status-refusee);
+}
+
+/* ---- Agreed terms ------------------------------------------------------- */
+
+.record__terms {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(16rem, 100%), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.record__term dt {
+  font-size: var(--size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+}
+
+.record__term dd {
+  margin: var(--space-1) 0 0;
+}
+
+/* ---- Hire card ---------------------------------------------------------- */
+
+.hire__email {
+  font-size: var(--size-sm);
+  color: var(--text-faint);
+}
+
+.hire__terms {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+  font-size: var(--size-sm);
+}
+
+.hire__terms dt {
+  color: var(--text-faint);
+}
+
+.hire__terms dd {
+  margin: 0;
+  text-align: right;
+}

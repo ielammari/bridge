@@ -1,8 +1,11 @@
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { evaluationsApi } from '../../api/evaluations.js';
 import Button from '../../components/Button/Button.jsx';
+import CardGrid from '../../components/CardGrid/CardGrid.jsx';
 import EmptyState from '../../components/EmptyState/EmptyState.jsx';
 import ErrorState from '../../components/ErrorState/ErrorState.jsx';
+import PersonLink from '../../components/PersonLink/PersonLink.jsx';
+import OfferLink from '../../components/OfferLink/OfferLink.jsx';
 import Skeleton from '../../components/Skeleton/Skeleton.jsx';
 import { clockTime, shortDate } from '../../constants/format.js';
 import useResource from '../../hooks/useResource.js';
@@ -16,7 +19,13 @@ function whenText(app) {
 
 export default function TechnicalEvaluations() {
   const navigate = useNavigate();
-  const { status, data, reload } = useResource(() => evaluationsApi.pendingTechnical());
+  const location = useLocation();
+  // Where this list currently stands, so an evaluation opened from it can
+  // return to the same view.
+  const origin = { from: `${location.pathname}${location.search}` };
+  const { status, data, reload, pending: loading, leaving } = useResource(
+    () => evaluationsApi.pendingTechnical(),
+  );
 
   const pending = data ?? [];
 
@@ -24,7 +33,7 @@ export default function TechnicalEvaluations() {
     <Workspace title="Évaluations">
       <p className="tech__intro">Candidats à évaluer après leur examen technique.</p>
 
-      {status === 'loading' && <Skeleton label="Chargement des évaluations" />}
+      {loading && <Skeleton leaving={leaving} label="Chargement des évaluations" />}
 
       {status === 'error' && (
         <ErrorState onRetry={reload}>
@@ -40,17 +49,24 @@ export default function TechnicalEvaluations() {
       )}
 
       {status === 'ready' && pending.length > 0 && (
-        <ul className="tech__list">
+        <CardGrid label="Évaluations en attente">
           {pending.map((app) => (
-            <li key={app.applicationId} className="techcard">
-              <div>
-                <span className="techcard__name">{app.candidateFirstName} {app.candidateLastName}</span>
-                <span className="techcard__meta">{app.offerTitle} · {whenText(app)}</span>
+            <li key={app.applicationId} className="tile">
+              <div className="tile__head">
+                <h2 className="tile__title">
+                  <PersonLink id={app.candidateId}>{app.candidateFirstName} {app.candidateLastName}</PersonLink>
+                </h2>
               </div>
-              <Button onClick={() => navigate(`/evaluations/${app.applicationId}`)}>Évaluer</Button>
+              <p className="tile__facts">
+                <span><OfferLink id={app.offerId}>{app.offerTitle}</OfferLink></span>
+                <span>{whenText(app)}</span>
+              </p>
+              <div className="tile__foot">
+                <Button onClick={() => navigate(`/evaluations/${app.applicationId}`, { state: origin })}>Évaluer</Button>
+              </div>
             </li>
           ))}
-        </ul>
+        </CardGrid>
       )}
     </Workspace>
   );

@@ -1,0 +1,132 @@
+.vitrine {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Contract and status read before anything else: they decide whether the rest
+   is worth reading at all. */
+.vitrine__banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.vitrine__contract {
+  font-family: var(--font-mono);
+  font-size: var(--size-sm);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* ---- Facts -------------------------------------------------------------- */
+
+.vitrine__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.vitrine__fact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vitrine__fact-label {
+  font-family: var(--font-mono);
+  font-size: var(--size-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.vitrine__fact-value {
+  margin: 0;
+  font-size: var(--size-sm);
+}
+
+/* ---- The description ---------------------------------------------------- */
+
+/* Unclipped, and held to a readable measure. The card in a listing clamps this
+   to three lines; here it is the point of the page. */
+.vitrine__desc {
+  max-width: 68ch;
+  white-space: pre-line;
+  color: var(--text-secondary);
+}
+
+/* ---- Requirements ------------------------------------------------------- */
+
+.vitrine__group + .vitrine__group {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.vitrine__group-title {
+  margin-bottom: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--size-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.vitrine__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vitrine__none {
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+}
+
+/* ---- Applying ----------------------------------------------------------- */
+
+/* At the end of the reading rather than beside it: the decision comes after
+   the offer, not during it. */
+.vitrine__act {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+}
+
+.vitrine__note,
+.vitrine__applied {
+  margin-right: auto;
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+}
+
+.vitrine__applied {
+  color: var(--success);
+  font-weight: var(--weight-medium);
+}
+
+@media (max-width: 40rem) {
+  .vitrine__act {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .vitrine__note,
+  .vitrine__applied {
+    margin-right: 0;
+  }
+}

@@ -1,10 +1,12 @@
 import { applicationsApi } from '../../api/applications.js';
+import CardGrid from '../../components/CardGrid/CardGrid.jsx';
 import EmptyState from '../../components/EmptyState/EmptyState.jsx';
 import ErrorState from '../../components/ErrorState/ErrorState.jsx';
 import FunnelRail from '../../components/FunnelRail/FunnelRail.jsx';
+import OfferLink from '../../components/OfferLink/OfferLink.jsx';
 import Skeleton from '../../components/Skeleton/Skeleton.jsx';
 import StatusBadge from '../../components/StatusBadge/StatusBadge.jsx';
-import { APPLICATION_ALERTS, CONTRACT_LABELS } from '../../constants/enums.js';
+import { APPLICATION_ALERTS, CONTRACT_LABELS, isTerminal } from '../../constants/enums.js';
 import { clockTime, longDate } from '../../constants/format.js';
 import useResource from '../../hooks/useResource.js';
 import Workspace from '../Workspace/Workspace.jsx';
@@ -24,11 +26,14 @@ function alertText(app) {
 }
 
 export default function CandidateApplications() {
-  const { status, data, reload } = useResource(() => applicationsApi.mine());
+  const { status, data, reload, pending, leaving } = useResource(() => applicationsApi.mine());
+
+  // Closed applications move to the history, where their full record lives.
+  const active = (data ?? []).filter((app) => !isTerminal(app.status));
 
   return (
     <Workspace title="Mes candidatures">
-      {status === 'loading' && <Skeleton label="Chargement de vos candidatures" />}
+      {pending && <Skeleton size="full" leaving={leaving} label="Chargement de vos candidatures" />}
 
       {status === 'error' && (
         <ErrorState onRetry={reload}>
@@ -36,25 +41,27 @@ export default function CandidateApplications() {
         </ErrorState>
       )}
 
-      {status === 'ready' && data.length === 0 && (
+      {status === 'ready' && active.length === 0 && (
         <EmptyState
-          title="Vous n'avez pas encore postulé."
+          title="Aucune candidature en cours."
           actionLabel="Voir les offres compatibles"
           actionTo="/offres"
         >
-          Les offres qui correspondent à votre profil vous attendent. Chaque candidature envoyée
-          apparaîtra ici avec son avancement.
+          Les candidatures en cours apparaissent ici avec leur avancement. Celles qui sont closes
+          sont consultables dans l'historique.
         </EmptyState>
       )}
 
-      {status === 'ready' && data.length > 0 && (
-        <ul className="apps__list">
-          {data.map((app) => (
-            <li key={app.id} className="apptrack">
-              <div className="apptrack__head">
+      {status === 'ready' && active.length > 0 && (
+        <CardGrid size="full" label="Vos candidatures">
+          {active.map((app) => (
+            <li key={app.id} className="tile">
+              <div className="tile__head">
                 <div>
-                  <h2 className="apptrack__title">{app.offerTitle}</h2>
-                  <p className="apptrack__meta">
+                  <h2 className="tile__title">
+                    <OfferLink id={app.offerId}>{app.offerTitle}</OfferLink>
+                  </h2>
+                  <p className="tile__facts">
                     <span>{CONTRACT_LABELS[app.contractType]}</span>
                     {app.location && <span>{app.location}</span>}
                     <span>Envoyée le {longDate(app.applicationDate)}</span>
@@ -63,14 +70,17 @@ export default function CandidateApplications() {
                 <StatusBadge status={app.status} />
               </div>
 
-              <FunnelRail status={app.status} />
-
-              <p className={`apptrack__alert${app.status === 'REFUSEE' ? ' apptrack__alert--refused' : ''}`}>
-                {alertText(app)}
-              </p>
+              {/* The rail takes the width it needs and the alert sits beside it,
+                  rather than under it across an empty band. */}
+              <div className="apptrack__progress">
+                <FunnelRail status={app.status} />
+                <p className={`apptrack__alert${app.status === 'REFUSEE' ? ' apptrack__alert--refused' : ''}`}>
+                  {alertText(app)}
+                </p>
+              </div>
             </li>
           ))}
-        </ul>
+        </CardGrid>
       )}
     </Workspace>
   );

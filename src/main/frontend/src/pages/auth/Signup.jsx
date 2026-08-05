@@ -114,15 +114,15 @@ export default function Signup() {
           <Field label="Date de naissance" type="date" max={localDate()} autoComplete="bday"
             {...form.field('birthDate')} />
           <Select label="Sexe" options={GENDER_OPTIONS} placeholder="Ne pas préciser"
-            hint="Facultatif." {...form.field('gender')} />
+            hint="Facultatif" {...form.field('gender')} />
 
           <Field label="Adresse email" type="email" autoComplete="email" {...form.field('email')} />
-          <Field label="Téléphone" type="tel" autoComplete="tel" hint="Facultatif."
+          <Field label="Téléphone" type="tel" autoComplete="tel" hint="Facultatif"
             {...form.field('phone')} />
 
-          <Field label="Ville" autoComplete="address-level2" hint="Facultatif."
+          <Field label="Ville" autoComplete="address-level2" hint="Facultatif"
             {...form.field('city')} />
-          <Field label="Pays" autoComplete="country-name" hint="Facultatif."
+          <Field label="Pays" autoComplete="country-name" hint="Facultatif"
             {...form.field('country')} />
 
           <PasswordField label="Mot de passe" autoComplete="new-password" rulesId="password-rules"

@@ -9,7 +9,7 @@
 }
 
 .confirm::backdrop {
-  background: rgb(18 33 43 / 0.42);
+  background: var(--scrim);
 }
 
 .confirm__title {

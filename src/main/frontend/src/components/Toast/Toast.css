@@ -1,17 +1,23 @@
-/* Bottom left: the action columns and the unread badge occupy the right. */
+/* Top centre. A confirmation answers something the user just did, so it belongs
+   where they are already looking rather than in the corner furthest from the
+   page. Anchored to the viewport, not to the content column, so it lands the
+   same way on the signed out pages, which have no sidebar to clear. */
 .toasts {
   position: fixed;
-  left: var(--space-4);
-  bottom: var(--space-4);
+  top: var(--space-4);
+  left: 50%;
+  translate: -50% 0;
   z-index: var(--z-float);
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--space-2);
-  width: min(24rem, calc(100vw - var(--space-4) * 2));
+  width: min(28rem, calc(100vw - var(--space-4) * 2));
   pointer-events: none;
 }
 
 .toast {
+  width: 100%;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: start;
@@ -74,17 +80,18 @@
   color: var(--text);
 }
 
+/* Enters and leaves upward, the edge it is anchored to. */
 @keyframes toast-enter {
   from {
     opacity: 0;
-    transform: translateY(0.5rem);
+    transform: translateY(-0.5rem);
   }
 }
 
 @keyframes toast-leave {
   to {
     opacity: 0;
-    transform: translateY(0.25rem);
+    transform: translateY(-0.25rem);
   }
 }
 

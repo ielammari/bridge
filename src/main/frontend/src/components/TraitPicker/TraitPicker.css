@@ -90,13 +90,28 @@
 }
 
 /* ---- Categories ------------------------------------------------------ */
+/* Two columns: eighteen categories stacked in one make a very tall card for
+   what is a list of headings. Each is its own grid item and grows in place, so
+   opening one never moves the others. */
 .picker__categories {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+@media (max-width: 48rem) {
+  .picker__categories {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* A message about the whole search spans both columns. */
+.picker__empty {
+  grid-column: 1 / -1;
 }
 
 .picker__category {

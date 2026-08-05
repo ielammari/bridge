@@ -1,0 +1,253 @@
+.sidebar {
+  --sidebar-pad: var(--space-4);
+  --sidebar-icon: var(--size-xl);
+  --sidebar-row: 2.75rem;
+  --sidebar-toggle: 1.875rem;
+  --sidebar-icon-inset: calc(
+    (var(--sidebar-collapsed) - var(--sidebar-pad) * 2 - var(--sidebar-icon)) / 2
+  );
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: var(--sidebar-width);
+  height: 100dvh;
+  padding: var(--space-5) var(--sidebar-pad);
+  background: var(--surface-sunken);
+  border-right: 1px solid var(--border);
+  /* The only thing that moves. */
+  transition: width var(--duration-slow) var(--ease);
+}
+
+/* ---- Wordmark ----------------------------------------------------------- */
+
+.sidebar__top {
+  display: flex;
+  align-items: center;
+  min-height: var(--sidebar-row);
+  padding-left: var(--sidebar-icon-inset);
+  margin-bottom: var(--space-5);
+  overflow-x: hidden;
+}
+
+/* Both marks occupy the same cell and share a left edge, so only their tails
+   differ and the crossfade reads as one word shortening. */
+.sidebar__logo {
+  display: grid;
+  font-family: var(--font-display);
+  font-size: var(--size-2xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-display);
+}
+
+.sidebar__logo-full,
+.sidebar__logo-mark {
+  grid-area: 1 / 1;
+  justify-self: start;
+  padding-bottom: 1px;
+  border-bottom: 2px solid var(--accent);
+  white-space: nowrap;
+  transition: opacity var(--duration) var(--ease);
+}
+
+.sidebar__logo-mark {
+  opacity: 0;
+}
+
+.sidebar--collapsed .sidebar__logo-full {
+  opacity: 0;
+}
+
+.sidebar--collapsed .sidebar__logo-mark {
+  opacity: 1;
+}
+
+/* ---- The collapse control ---------------------------------------------- */
+
+/* Rides the panel edge, so the animation carries it instead of relaying it. */
+.sidebar__toggle {
+  position: absolute;
+  /* Centred on the wordmark row rather than aligned to its top. */
+  top: calc(var(--space-5) + (var(--sidebar-row) - var(--sidebar-toggle)) / 2);
+  right: 0;
+  translate: 50% 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--sidebar-toggle);
+  height: var(--sidebar-toggle);
+  padding: 0;
+  font-size: var(--size-base);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: color var(--duration) var(--ease), border-color var(--duration) var(--ease);
+}
+
+.sidebar__toggle:hover {
+  color: var(--text);
+  border-color: var(--text-faint);
+}
+
+/* The chevron points down by default; it points back towards the edge it folds
+   away to, and turns around once folded. */
+.sidebar__toggle-icon {
+  rotate: 90deg;
+  transition: rotate var(--duration) var(--ease);
+}
+
+.sidebar--collapsed .sidebar__toggle-icon {
+  rotate: -90deg;
+}
+
+/* ---- Rows --------------------------------------------------------------- */
+
+.sidebar__nav,
+.sidebar__foot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  overflow-x: hidden;
+}
+
+.sidebar__nav {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.sidebar__nav::-webkit-scrollbar {
+  display: none;
+}
+
+.sidebar__foot {
+  margin-top: auto;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+/* One geometry for every row, navigation and account alike, so the icon column
+   never shifts between them or between states. */
+.sidebar__row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  min-height: var(--sidebar-row);
+  padding: 0 var(--space-2) 0 var(--sidebar-icon-inset);
+  background: none;
+  border: none;
+  border-radius: var(--radius-lg);
+  font: inherit;
+  font-size: var(--size-base);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--duration) var(--ease), color var(--duration) var(--ease);
+}
+
+.sidebar__row--static {
+  cursor: default;
+}
+
+.sidebar__row:not(.sidebar__row--static):hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.sidebar__row--danger:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.sidebar__row--active {
+  background: var(--surface);
+  color: var(--primary);
+}
+
+/* The active marker is a funnel rail node: the device the application pages
+   use to say where something stands. */
+.sidebar__row--active::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.sidebar__icon {
+  flex-shrink: 0;
+  font-size: var(--sidebar-icon);
+}
+
+/* Never shrinks: the label slides under the panel's clip and fades rather than
+   being squeezed, so no glyph moves while the panel does. */
+.sidebar__label {
+  flex-shrink: 0;
+  white-space: nowrap;
+  /* Expanding does not fade at all: the label is already opaque and already at
+     its final position, so the widening panel uncovers it left to right. The
+     edge is the animation, which is why the text is never late. */
+  transition: none;
+}
+
+.sidebar--collapsed .sidebar__label {
+  opacity: 0;
+  /* Collapsing does fade, and fast: the text has to be gone before the edge
+     reaches it, otherwise it would be sliced by the clip on the way out. */
+  transition: opacity 90ms var(--ease);
+}
+
+.sidebar__identity {
+  display: flex;
+  flex-direction: column;
+  line-height: var(--leading-tight);
+}
+
+.sidebar__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar__role {
+  font-family: var(--font-mono);
+  font-size: var(--size-sm);
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+}
+
+/* Sits on the icon in both states, so it never travels across the row. */
+.sidebar__badge {
+  position: absolute;
+  top: 5px;
+  left: calc(var(--sidebar-icon-inset) + var(--sidebar-icon) - 12px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: var(--size-xs);
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar__label,
+  .sidebar__logo-full,
+  .sidebar__logo-mark,
+  .sidebar__toggle-icon {
+    transition: none;
+  }
+}

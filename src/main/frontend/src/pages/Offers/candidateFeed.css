@@ -4,36 +4,6 @@
   font-size: var(--size-sm);
 }
 
-.feed__list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.feedcard {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-5);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-}
-
-.feedcard__head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.feedcard__title {
-  font-size: var(--size-xl);
-}
-
 .feedcard__contract {
   flex-shrink: 0;
   font-size: var(--size-sm);
@@ -41,25 +11,10 @@
   color: var(--primary);
 }
 
-.feedcard__facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-4);
-  font-size: var(--size-sm);
-  color: var(--text-secondary);
-}
-
-.feedcard__desc {
-  max-width: 70ch;
-  color: var(--text-secondary);
-  white-space: pre-wrap;
-}
-
 .feedcard__traits {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-top: var(--space-1);
 }
 
 .tag {
@@ -78,14 +33,6 @@
 .tag--plus {
   background: var(--surface-sunken);
   color: var(--text-faint);
-}
-
-.feedcard__foot {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding-top: var(--space-2);
-  border-top: 1px solid var(--border);
 }
 
 .feedcard__applied {

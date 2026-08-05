@@ -94,4 +94,32 @@ public class HRInterview {
 		return id;
 	}
 
+	public BigDecimal getExpectedSalary() {
+		return expectedSalary;
+	}
+
+	public LocalDate getAvailabilityDate() {
+		return availabilityDate;
+	}
+
+	public ContractType getEnvisagedContract() {
+		return envisagedContract;
+	}
+
+	public String getNoticePeriod() {
+		return noticePeriod;
+	}
+
+	public String getScheduleFlexibility() {
+		return scheduleFlexibility;
+	}
+
+	public RemoteMode getRemoteExpectation() {
+		return remoteExpectation;
+	}
+
+	public String getCultureFit() {
+		return cultureFit;
+	}
+
 }

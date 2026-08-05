@@ -15,7 +15,7 @@ import './offerForm.css';
 const RULES = {
   title: { label: 'Titre du poste', required: 'Donnez un titre à l\'offre.' },
   description: { label: 'Description', required: 'Décrivez le poste.' },
-  requiredDegree: { label: 'Diplôme requis', required: 'Choisissez le diplôme requis.' },
+  requiredDegree: { label: 'Niveau d\'études requis', required: 'Choisissez le niveau d\'études requis.' },
   contractType: { label: 'Type de contrat', required: 'Choisissez le type de contrat.' },
   location: { label: 'Localisation' },
   remoteMode: { label: 'Télétravail' },
@@ -163,16 +163,16 @@ export default function OfferForm({ mode, offer, catalogue, onSubmit, onCancel, 
           <Field label="Titre du poste" {...form.field('title')} />
           <Field label="Description" multiline rows={6} {...form.field('description')} />
           <div className="offerform__grid">
-            <Select label="Diplôme requis" options={DEGREE_OPTIONS} placeholder="Choisir"
+            <Select label="Niveau d'études requis" options={DEGREE_OPTIONS} placeholder="Choisir"
               {...form.field('requiredDegree')} />
             <Select label="Type de contrat" options={CONTRACT_OPTIONS} placeholder="Choisir"
               {...form.field('contractType')} />
-            <Field label="Localisation" hint="Facultatif." {...form.field('location')} />
+            <Field label="Localisation" hint="Facultatif" {...form.field('location')} />
             <Select label="Télétravail" options={REMOTE_OPTIONS} placeholder="Non précisé"
               {...form.field('remoteMode')} />
-            <Field label="Salaire minimum (€)" type="number" hint="Facultatif."
+            <Field label="Salaire minimum (€)" type="number" hint="Facultatif"
               {...form.field('salaryMin')} />
-            <Field label="Salaire maximum (€)" type="number" hint="Facultatif."
+            <Field label="Salaire maximum (€)" type="number" hint="Facultatif"
               {...form.field('salaryMax')} />
           </div>
         </div>

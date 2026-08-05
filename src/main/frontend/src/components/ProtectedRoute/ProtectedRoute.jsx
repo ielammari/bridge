@@ -21,7 +21,7 @@ export default function ProtectedRoute({ roles, children }) {
   if (loading) {
     return (
       <div className="booting">
-        <Skeleton count={2} label="Vérification de votre session" />
+        <Skeleton variant="page" label="Vérification de votre session" />
       </div>
     );
   }

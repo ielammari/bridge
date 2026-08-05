@@ -14,6 +14,15 @@ const PATHS = {
   warning: <><path d="M12 3.5 2.5 20h19z" /><line x1="12" y1="10" x2="12" y2="14" /><line x1="12" y1="17" x2="12" y2="17" /></>,
   dot: <circle cx="12" cy="12" r="3.5" />,
   retry: <><path d="M21 12a9 9 0 1 1-2.6-6.4" /><polyline points="21 3 21 9 15 9" /></>,
+  briefcase: <><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></>,
+  stack: <><rect x="3" y="4" width="18" height="5" rx="1" /><rect x="3" y="12" width="18" height="5" rx="1" /><line x1="7" y1="20" x2="17" y2="20" /></>,
+  star: <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.6l1-5.8L3.5 9.7l5.9-.9z" />,
+  user: <><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>,
+  settings: <><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M4.2 4.2l2.2 2.2M17.6 17.6l2.2 2.2M2 12h3M19 12h3M4.2 19.8l2.2-2.2M17.6 6.4l2.2-2.2" /></>,
+  logout: <><path d="M14 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8" /><polyline points="17 16 21 12 17 8" /><line x1="21" y1="12" x2="9" y2="12" /></>,
+  panel: <><rect x="3" y="4" width="18" height="16" rx="2" /><line x1="10" y1="4" x2="10" y2="20" /></>,
+  menu: <><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></>,
+  archive: <><rect x="3" y="4" width="18" height="4" rx="1" /><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8" /><line x1="10" y1="13" x2="14" y2="13" /></>,
 };
 
 export default function Icon({ name, className, title }) {

@@ -34,7 +34,6 @@ function labelMap(options) {
 }
 
 export const DEGREE_LABELS = labelMap(DEGREE_OPTIONS);
-export const GENDER_LABELS = labelMap(GENDER_OPTIONS);
 export const CONTRACT_LABELS = labelMap(CONTRACT_OPTIONS);
 export const REMOTE_LABELS = labelMap(REMOTE_OPTIONS);
 
@@ -48,3 +47,41 @@ export const APPLICATION_ALERTS = {
   REFUSEE: 'Votre candidature n\'a pas été retenue cette fois.',
   EMBAUCHEE: 'Félicitations, vous êtes embauché(e).',
 };
+
+// An application whose state can no longer change. Everything else is active.
+const TERMINAL = ['REFUSEE', 'EMBAUCHEE'];
+
+export const isTerminal = (status) => TERMINAL.includes(status);
+
+export const EVALUATION_TYPE_LABELS = {
+  PRESELECTION: 'Présélection',
+  TECHNIQUE: 'Examen technique',
+  ENTRETIEN_RH: 'Entretien RH',
+};
+
+export const DECISION_LABELS = { VALIDEE: 'Favorable', REFUSEE: 'Défavorable' };
+
+export const APPOINTMENT_TYPE_LABELS = { TECHNIQUE: 'Examen technique', RH: 'Entretien RH' };
+
+export const STATUS_LABELS = {
+  NOUVELLE: 'Nouvelle',
+  EN_REVUE: 'En revue',
+  EXAMEN_TECHNIQUE: 'Examen technique',
+  ENTRETIEN_RH: 'Entretien RH',
+  REFUSEE: 'Refusée',
+  EMBAUCHEE: 'Embauchée',
+};
+
+// What each notification is for, so a preference toggle says what it turns off.
+export const NOTIFICATION_LABELS = {
+  APPLICATION_RECEIVED: 'Nouvelle candidature reçue',
+  SCHEDULE_NEEDED: 'Un entretien reste à planifier',
+  INTERVIEW_SCHEDULED: 'Un entretien a été fixé',
+  REJECTED: 'Une candidature n\'a pas été retenue',
+  HIRED: 'Une embauche est confirmée',
+};
+
+export const ROLE_OPTIONS = [
+  { value: 'RH', label: 'Responsable RH' },
+  { value: 'EXPERT', label: 'Expert technique' },
+];

@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { evaluationsApi } from '../../api/evaluations.js';
 import Alert from '../../components/Alert/Alert.jsx';
 import Button from '../../components/Button/Button.jsx';
+import Checkbox from '../../components/Checkbox/Checkbox.jsx';
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog.jsx';
 import ErrorState from '../../components/ErrorState/ErrorState.jsx';
 import Field from '../../components/Field/Field.jsx';
@@ -13,7 +14,7 @@ import useResource from '../../hooks/useResource.js';
 import Workspace from '../Workspace/Workspace.jsx';
 import './technicalEvaluations.css';
 
-const BACK = { to: '/evaluations', label: 'Retour aux évaluations' };
+const EVALUATIONS = '/evaluations';
 
 // Both outcomes are irreversible, so both are confirmed.
 const DECISIONS = {
@@ -37,7 +38,13 @@ const DECISIONS = {
 
 export default function TechnicalEvaluation() {
   const { id } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
+
+  // Back to the list as it stood. The bare list is the fallback for an
+  // evaluation reached by its own link.
+  const returnTo = location.state?.from ?? EVALUATIONS;
+  const back = { to: returnTo, label: 'Retour aux évaluations' };
   const toast = useToast();
 
   const [scores, setScores] = useState({});
@@ -46,7 +53,7 @@ export default function TechnicalEvaluation() {
   const [submitting, setSubmitting] = useState(false);
   const [failure, setFailure] = useState(null);
 
-  const { status, data, reload } = useResource(async () => {
+  const { status, data, reload, pending, leaving } = useResource(async () => {
     const context = await evaluationsApi.technicalContext(id);
     // Required traits open at zero; a plus trait stays null until the expert
     // opts in, so "not evaluated" never reads as "scored zero".
@@ -71,7 +78,7 @@ export default function TechnicalEvaluation() {
           .map(([traitId, units]) => ({ traitId: Number(traitId), note: units })),
       });
       toast.success(DECISIONS[decision].done);
-      navigate('/evaluations');
+      navigate(returnTo);
     } catch (apiError) {
       setFailure(apiError.message);
       setConfirming(null);
@@ -81,10 +88,9 @@ export default function TechnicalEvaluation() {
 
   if (status !== 'ready') {
     return (
-      <Workspace title="Évaluation technique" back={BACK}>
-        {status === 'loading' ? (
-          <Skeleton count={2} label="Chargement de l'évaluation" />
-        ) : (
+      <Workspace width="narrow" title="Évaluation technique" back={back}>
+        {pending && <Skeleton variant="form" count={4} leaving={leaving} label="Chargement de l'évaluation" />}
+        {status === 'error' && (
           <ErrorState onRetry={reload}>
             Cette évaluation n'a pas pu être chargée. Réessayez dans un instant.
           </ErrorState>
@@ -105,7 +111,7 @@ export default function TechnicalEvaluation() {
     : [...unrated, { key: 'comment', label: 'Commentaire global' }];
 
   return (
-    <Workspace title="Évaluation technique" subtitle={`${name} · ${data.offerTitle}`} back={BACK}>
+    <Workspace width="narrow" title="Évaluation technique" subtitle={`${name} · ${data.offerTitle}`} back={back}>
       {failure && <Alert>{failure}</Alert>}
 
       <section className="card">
@@ -130,11 +136,8 @@ export default function TechnicalEvaluation() {
                       onChange={(units) => setScores((s) => ({ ...s, [trait.traitId]: units }))}
                       label={trait.label} />
                   ) : (
-                    <label className="grid__optin">
-                      <input type="checkbox" checked={false}
-                        onChange={() => setScores((s) => ({ ...s, [trait.traitId]: 0 }))} />
-                      Évaluer ce trait
-                    </label>
+                    <Checkbox label="Évaluer ce trait" checked={false}
+                      onChange={() => setScores((s) => ({ ...s, [trait.traitId]: 0 }))} />
                   )}
                 </li>
               );
@@ -147,7 +150,7 @@ export default function TechnicalEvaluation() {
         <div className="card__body">
           <Field label="Commentaire global" value={comment}
             onChange={(e) => setComment(e.target.value)}
-            multiline rows={4} hint="Facultatif. Votre appréciation de l'examen technique." />
+            multiline rows={4} hint="Facultatif" />
         </div>
       </section>
 

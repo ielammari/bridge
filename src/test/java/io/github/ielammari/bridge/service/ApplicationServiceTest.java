@@ -48,7 +48,7 @@ class ApplicationServiceTest {
 
 	private Integer candidateWithProfile(String email, boolean withCv) {
 		Integer id = authService.register(new RegisterRequest(email, "Motdepasse1!x", "App", "Test", null, LocalDate.of(1995, 5, 20), null, null, null)).user().id();
-		profileService.update(id, new UpdateProfileRequest(Degree.BAC_5, null, null,
+		profileService.update(id, new UpdateProfileRequest(Degree.BAC_5, null,
 				List.of(new TraitSelection(aTrait().getId(), null))));
 		if (withCv) {
 			profileService.storeCv(id,
@@ -100,7 +100,7 @@ class ApplicationServiceTest {
 	void applyingToAnIncompatibleOfferIsRejected() {
 		// Candidate holds the trait but only a BAC; the offer demands a doctorate.
 		Integer candidate = candidateWithProfile("apply4@example.fr", true);
-		profileService.update(candidate, new UpdateProfileRequest(Degree.BAC, null, null,
+		profileService.update(candidate, new UpdateProfileRequest(Degree.BAC, null,
 				List.of(new TraitSelection(aTrait().getId(), null))));
 		OfferDto offer = offerService.create(hrId(), new OfferRequest(
 				"Docteur", "desc", Degree.DOCTORAT, ContractType.PERMANENT, null, null, null, null,

@@ -10,13 +10,13 @@ import jakarta.validation.constraints.Size;
 /**
  * Replaces the editable parts of the candidate profile. The trait list is the
  * complete desired set: whatever it contains becomes the profile.
+ *
+ * Experience level is not here: it is a trait category, chosen in the same list
+ * as every other trait.
  */
 public record UpdateProfileRequest(
 
 		Degree degree,
-
-		@Size(max = 40, message = "Le niveau d'expérience ne peut pas dépasser 40 caractères.")
-		String experienceLevel,
 
 		@Pattern(regexp = "^$|^[0-9+ .-]{6,20}$", message = "Ce numéro de téléphone n'est pas valide.")
 		String phone,

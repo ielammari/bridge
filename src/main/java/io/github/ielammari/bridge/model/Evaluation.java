@@ -103,6 +103,10 @@ public class Evaluation {
 		return date;
 	}
 
+	public Evaluator getEvaluator() {
+		return evaluator;
+	}
+
 	public Application getApplication() {
 		return application;
 	}

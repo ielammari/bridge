@@ -25,6 +25,11 @@ public interface ApplicationRepository extends JpaRepository<Application, Intege
 			+ "WHERE a.offer.id = :offerId ORDER BY a.applicationDate DESC")
 	List<Application> findByOffer(Integer offerId);
 
+	/** Every application nobody can move any further, across all offers. */
+	@Query("SELECT a FROM Application a JOIN FETCH a.candidate JOIN FETCH a.offer "
+			+ "WHERE a.status IN :statuses ORDER BY a.applicationDate DESC")
+	List<Application> findByStatusIn(List<ApplicationStatus> statuses);
+
 	@Query("SELECT a FROM Application a JOIN FETCH a.offer o JOIN FETCH a.candidate c WHERE a.id = :id")
 	Optional<Application> findByIdWithOfferAndCandidate(Integer id);
 

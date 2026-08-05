@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,6 +27,7 @@ import io.github.ielammari.bridge.model.ContractType;
 import io.github.ielammari.bridge.model.Decision;
 import io.github.ielammari.bridge.model.Degree;
 import io.github.ielammari.bridge.model.Trait;
+import io.github.ielammari.bridge.repository.NotificationPreferenceRepository;
 import io.github.ielammari.bridge.repository.TraitRepository;
 import io.github.ielammari.bridge.repository.UserRepository;
 
@@ -43,6 +45,19 @@ class NotificationFlowTest {
 	@Autowired private MessageService messageService;
 	@Autowired private TraitRepository traits;
 	@Autowired private UserRepository users;
+	@Autowired private NotificationPreferenceRepository preferences;
+
+	/**
+	 * These accounts are shared with the development database, where a
+	 * notification may have been silenced by hand. Delivery is what is under
+	 * test, and the surrounding transaction rolls the clearing back.
+	 */
+	@BeforeEach
+	void deliverEverything() {
+		preferences.deleteByUserId(hrId());
+		preferences.deleteByUserId(expertId());
+		preferences.flush();
+	}
 
 	private Integer hrId() {
 		return users.findByEmailIgnoreCase("rh@bridge.local").orElseThrow().getId();
@@ -58,7 +73,7 @@ class NotificationFlowTest {
 
 	private Integer applyingCandidate(String email) {
 		Integer id = authService.register(new RegisterRequest(email, "Motdepasse1!x", "Notif", "Test", null, LocalDate.of(1995, 5, 20), null, null, null)).user().id();
-		profileService.update(id, new UpdateProfileRequest(Degree.BAC_5, null, null,
+		profileService.update(id, new UpdateProfileRequest(Degree.BAC_5, null,
 				List.of(new TraitSelection(aTrait().getId(), null))));
 		profileService.storeCv(id, new MockMultipartFile("file", "cv.pdf", "application/pdf", "%PDF-1.4".getBytes()));
 		return id;

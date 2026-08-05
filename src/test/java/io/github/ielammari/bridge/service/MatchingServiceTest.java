@@ -50,7 +50,7 @@ class MatchingServiceTest {
 	}
 
 	private void giveProfile(Integer candidateId, Degree degree, List<Trait> held) {
-		profileService.update(candidateId, new UpdateProfileRequest(degree, null, null,
+		profileService.update(candidateId, new UpdateProfileRequest(degree, null,
 				held.stream().map(t -> new TraitSelection(t.getId(), null)).toList()));
 	}
 

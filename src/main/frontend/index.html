@@ -4,6 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bridge</title>
+    <script>
+      // Runs before the stylesheet paints, so the page is never shown in one
+      // theme and switched into the other. Mirrors context/ThemeContext.jsx.
+      (function () {
+        try {
+          var stored = localStorage.getItem('bridge.theme');
+          var preference = ['system', 'light', 'dark'].includes(stored) ? stored : 'system';
+          var dark = preference === 'dark'
+            || (preference === 'system'
+              && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        } catch (error) {
+          document.documentElement.dataset.theme = 'light';
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

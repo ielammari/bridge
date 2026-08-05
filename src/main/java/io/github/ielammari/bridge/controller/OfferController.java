@@ -14,8 +14,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.github.ielammari.bridge.dto.OfferDetailDto;
 import io.github.ielammari.bridge.dto.OfferDto;
 import io.github.ielammari.bridge.dto.OfferRequest;
+import io.github.ielammari.bridge.model.Role;
 import io.github.ielammari.bridge.service.MatchingService;
 import io.github.ielammari.bridge.service.OfferService;
 import jakarta.validation.Valid;
@@ -67,6 +69,16 @@ public class OfferController {
 	@PostMapping("/{id}/close")
 	public OfferDto close(@PathVariable Integer id) {
 		return offerService.close(id);
+	}
+
+	/** One offer in full, at its own address, for any signed in reader. */
+	@GetMapping("/{id}/detail")
+	public OfferDetailDto detail(@AuthenticationPrincipal Jwt jwt, @PathVariable Integer id) {
+		return offerService.detail(currentUserId(jwt), currentRole(jwt), id);
+	}
+
+	private Role currentRole(Jwt jwt) {
+		return Role.valueOf(jwt.getClaimAsString("role"));
 	}
 
 	private Integer currentUserId(Jwt jwt) {

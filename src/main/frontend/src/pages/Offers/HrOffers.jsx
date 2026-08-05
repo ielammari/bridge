@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { offersApi } from '../../api/offers.js';
 import Button from '../../components/Button/Button.jsx';
+import CardGrid from '../../components/CardGrid/CardGrid.jsx';
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog.jsx';
 import EmptyState from '../../components/EmptyState/EmptyState.jsx';
 import ErrorState from '../../components/ErrorState/ErrorState.jsx';
+import OfferLink from '../../components/OfferLink/OfferLink.jsx';
 import Skeleton from '../../components/Skeleton/Skeleton.jsx';
 import StatusBadge from '../../components/StatusBadge/StatusBadge.jsx';
 import { useToast } from '../../components/Toast/ToastContext.jsx';
@@ -36,11 +38,12 @@ export default function HrOffers() {
   const navigate = useNavigate();
   const toast = useToast();
 
-  const { status, data, setData, reload } = useResource(() => offersApi.list());
+  const { status, data, setData, reload, pending, leaving } = useResource(() => offersApi.list());
   const [confirming, setConfirming] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  const offers = data ?? [];
+  // Closed offers move to the history.
+  const offers = (data ?? []).filter((offer) => offer.status !== 'CLOTUREE');
 
   async function run() {
     const { offer, action } = confirming;
@@ -59,7 +62,7 @@ export default function HrOffers() {
 
   return (
     <Workspace title="Offres">
-      {status === 'loading' && <Skeleton label="Chargement des offres" />}
+      {pending && <Skeleton leaving={leaving} label="Chargement des offres" />}
 
       {status === 'error' && (
         <ErrorState onRetry={reload}>
@@ -88,40 +91,47 @@ export default function HrOffers() {
               quels candidats la voient.
             </EmptyState>
           ) : (
-            <ul className="hroffers__list">
-              {offers.map((offer) => (
-                <li key={offer.id} className="offercard">
-                  <div className="offercard__main">
-                    <div className="offercard__title-row">
-                      <h2 className="offercard__title">{offer.title}</h2>
+            <CardGrid label="Vos offres">
+              {offers.map((offer) => {
+                const required = offer.requirements.filter((r) => r.mandatory).length;
+                return (
+                  <li key={offer.id} className="tile tile--openable">
+                    <div className="tile__head">
+                      <h2 className="tile__title">
+                        <OfferLink id={offer.id} className="tile__stretch">{offer.title}</OfferLink>
+                      </h2>
                       <StatusBadge status={offer.status} />
                     </div>
-                    <p className="offercard__meta">
+
+                    <p className="tile__facts">
                       <span>{CONTRACT_LABELS[offer.contractType]}</span>
                       {offer.location && <span>{offer.location}</span>}
                       <span className="mono">
-                        {offer.requirements.filter((r) => r.mandatory).length} trait(s) obligatoire(s)
+                        {required} trait{required > 1 ? 's' : ''} obligatoire{required > 1 ? 's' : ''}
                       </span>
                     </p>
-                  </div>
-                  <div className="offercard__actions">
-                    <Button variant="text" onClick={() => navigate(`/offres/${offer.id}/modifier`)}>
-                      Modifier
-                    </Button>
-                    {offer.status === 'BROUILLON' && (
-                      <Button variant="secondary" onClick={() => setConfirming({ offer, action: 'publish' })}>
-                        Publier
+
+                    <p className="tile__desc">{offer.description}</p>
+
+                    <div className="tile__foot">
+                      <Button variant="text" onClick={() => navigate(`/offres/${offer.id}/modifier`)}>
+                        Modifier
                       </Button>
-                    )}
-                    {offer.status === 'PUBLIEE' && (
-                      <Button variant="danger" onClick={() => setConfirming({ offer, action: 'close' })}>
-                        Clôturer
-                      </Button>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
+                      {offer.status === 'BROUILLON' && (
+                        <Button variant="secondary" onClick={() => setConfirming({ offer, action: 'publish' })}>
+                          Publier
+                        </Button>
+                      )}
+                      {offer.status === 'PUBLIEE' && (
+                        <Button variant="danger" onClick={() => setConfirming({ offer, action: 'close' })}>
+                          Clôturer
+                        </Button>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </CardGrid>
           )}
         </>
       )}

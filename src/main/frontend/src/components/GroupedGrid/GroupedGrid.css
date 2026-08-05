@@ -1,0 +1,29 @@
+.grouped {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.grouped__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.grouped__heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--size-lg);
+}
+
+.grouped__count {
+  padding: 1px var(--space-2);
+  background: var(--surface-sunken);
+  border-radius: 999px;
+  font-size: var(--size-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-faint);
+}

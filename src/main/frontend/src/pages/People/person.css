@@ -1,0 +1,92 @@
+/* The facts on the left, what the person claims on the right, and the
+   applications across the foot, where they belong to both. */
+.person {
+  display: grid;
+  grid-template-columns: minmax(0, 24rem) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4);
+}
+
+.person__col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+/* ---- Facts -------------------------------------------------------------- */
+
+.person__facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+/* Label above value rather than beside it: the values are short and a column
+   of aligned labels would leave a channel of empty space down the card. */
+.person__fact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.person__fact-label {
+  font-family: var(--font-mono);
+  font-size: var(--size-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.person__fact-value {
+  margin: 0;
+  font-size: var(--size-sm);
+}
+
+.person__level {
+  font-family: var(--font-display);
+  font-size: var(--size-xl);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-heading);
+}
+
+.person__none {
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+}
+
+/* ---- Traits ------------------------------------------------------------- */
+
+.person__traits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Read only: a chip with no remove control, unlike the picker's. */
+.person__trait {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: var(--size-sm);
+}
+
+.person__trait-level {
+  font-family: var(--font-mono);
+  font-size: var(--size-xs);
+  color: var(--text-faint);
+}
+
+@media (max-width: 64rem) {
+  .person {
+    grid-template-columns: 1fr;
+  }
+}

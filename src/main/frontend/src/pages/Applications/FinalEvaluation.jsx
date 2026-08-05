@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { applicationsApi } from '../../api/applications.js';
 import Alert from '../../components/Alert/Alert.jsx';
 import Button from '../../components/Button/Button.jsx';
+import Checkbox from '../../components/Checkbox/Checkbox.jsx';
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog.jsx';
 import Field from '../../components/Field/Field.jsx';
 import FormErrorSummary from '../../components/FormErrorSummary/FormErrorSummary.jsx';
@@ -149,11 +150,8 @@ export default function FinalEvaluation({ app, offerTitle, onDone }) {
               {...form.field('finalContract')} />
             <Field label="Période d'essai" {...form.field('trialPeriod')} />
           </div>
-          <label className="final__check">
-            <input type="checkbox" checked={form.values.executiveStatus}
-              onChange={(e) => form.setValue('executiveStatus', e.target.checked)} />
-            Statut cadre
-          </label>
+          <Checkbox label="Statut cadre" checked={form.values.executiveStatus}
+            onChange={(e) => form.setValue('executiveStatus', e.target.checked)} />
           <Field label="Avantages" multiline rows={2} {...form.field('benefits')} />
         </div>
       </section>

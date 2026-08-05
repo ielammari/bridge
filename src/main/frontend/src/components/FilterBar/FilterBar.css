@@ -1,0 +1,58 @@
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.filters > * {
+  min-width: 14rem;
+}
+
+.filters__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.filters__search {
+  position: relative;
+  display: flex;
+}
+
+.filters__search-input {
+  width: 100%;
+  padding-left: 36px;
+}
+
+.filters__search-icon {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  translate: 0 -50%;
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+/* Pushed to the end: it reports on the filters rather than setting them. */
+.filters__count {
+  min-width: 0;
+  margin-left: auto;
+  padding-bottom: var(--space-2);
+  font-size: var(--size-sm);
+  color: var(--text-faint);
+}
+
+@media (max-width: 40rem) {
+  .filters > * {
+    min-width: 100%;
+  }
+
+  .filters__count {
+    margin-left: 0;
+  }
+}

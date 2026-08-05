@@ -1,19 +1,22 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { applicationsApi } from '../../api/applications.js';
 import { messagesApi } from '../../api/messages.js';
 import { offersApi } from '../../api/offers.js';
 import Button from '../../components/Button/Button.jsx';
+import CardGrid from '../../components/CardGrid/CardGrid.jsx';
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog.jsx';
 import EmptyState from '../../components/EmptyState/EmptyState.jsx';
 import ErrorState from '../../components/ErrorState/ErrorState.jsx';
 import Field from '../../components/Field/Field.jsx';
 import Icon from '../../components/Icon/Icon.jsx';
+import PersonLink from '../../components/PersonLink/PersonLink.jsx';
 import Scheduler from '../../components/Scheduler/Scheduler.jsx';
 import Select from '../../components/Select/Select.jsx';
 import Skeleton from '../../components/Skeleton/Skeleton.jsx';
 import StatusBadge from '../../components/StatusBadge/StatusBadge.jsx';
 import { useToast } from '../../components/Toast/ToastContext.jsx';
+import { isTerminal } from '../../constants/enums.js';
 import { clockTime, longDate } from '../../constants/format.js';
 import useResource from '../../hooks/useResource.js';
 import Workspace from '../Workspace/Workspace.jsx';
@@ -26,6 +29,9 @@ function interviewText(app) {
 }
 
 // Both outcomes are irreversible, so both are confirmed.
+// Which offer's applications are on screen, kept in the address.
+const OFFER = 'offre';
+
 const DECISIONS = {
   VALIDEE: {
     title: 'Valider cette candidature ?',
@@ -47,21 +53,38 @@ const DECISIONS = {
 
 export default function HrApplications() {
   const navigate = useNavigate();
+  const location = useLocation();
   const toast = useToast();
+  const [params, setParams] = useSearchParams();
 
   const offersRes = useResource(() => offersApi.list());
   const offers = offersRes.data ?? [];
-  const [offerId, setOfferId] = useState('');
 
-  useEffect(() => {
-    if (offers.length > 0 && !offerId) setOfferId(String(offers[0].id));
-  }, [offers, offerId]);
+  // An explicit choice lives in the address; without one the first offer shows.
+  // Derived rather than stored, so there is no second copy of the selection.
+  const chosen = params.get(OFFER) ?? '';
+  const offerId = chosen || (offers.length > 0 ? String(offers[0].id) : '');
+
+  function selectOffer(id) {
+    const next = new URLSearchParams(params);
+    if (id) {
+      next.set(OFFER, id);
+    } else {
+      next.delete(OFFER);
+    }
+    setParams(next, { replace: true });
+  }
+
+  // Where this list currently stands, so an application opened from it can
+  // return to the same offer.
+  const origin = { from: `${location.pathname}${location.search}` };
 
   const appsRes = useResource(
     () => (offerId ? applicationsApi.forOffer(offerId) : Promise.resolve([])),
     [offerId],
   );
-  const applications = appsRes.data ?? [];
+  // Rejected and hired applications move to the history.
+  const applications = (appsRes.data ?? []).filter((app) => !isTerminal(app.status));
 
   const [panel, setPanel] = useState(null); // { id, mode: 'preselect' | 'schedule' }
   const [comment, setComment] = useState('');
@@ -124,7 +147,7 @@ export default function HrApplications() {
   if (offersRes.status === 'loading') {
     return (
       <Workspace title="Candidatures">
-        <Skeleton label="Chargement des candidatures" />
+        {offersRes.pending && <Skeleton leaving={offersRes.leaving} label="Chargement des candidatures" />}
       </Workspace>
     );
   }
@@ -157,11 +180,11 @@ export default function HrApplications() {
   return (
     <Workspace title="Candidatures">
       <div className="hrapps__filter">
-        <Select label="Offre" value={offerId} onChange={(e) => setOfferId(e.target.value)}
+        <Select label="Offre" value={offerId} onChange={(e) => selectOffer(e.target.value)}
           options={offers.map((o) => ({ value: String(o.id), label: o.title }))} />
       </div>
 
-      {appsRes.status === 'loading' && <Skeleton label="Chargement des candidatures" />}
+      {appsRes.pending && <Skeleton leaving={appsRes.leaving} label="Chargement des candidatures" />}
 
       {appsRes.status === 'error' && (
         <ErrorState onRetry={appsRes.reload}>
@@ -170,62 +193,65 @@ export default function HrApplications() {
       )}
 
       {appsRes.status === 'ready' && applications.length === 0 && (
-        <EmptyState title="Aucune candidature pour cette offre.">
-          Seuls les candidats qui possèdent tous les traits obligatoires de cette offre peuvent la
-          voir et y postuler.
+        <EmptyState title="Aucune candidature en cours pour cette offre.">
+          Seuls les candidats qui possèdent tous les traits obligatoires peuvent la voir et y
+          postuler. Les candidatures closes sont dans l'historique.
         </EmptyState>
       )}
 
       {appsRes.status === 'ready' && applications.length > 0 && (
-        <ul className="hrapps__list">
+        <CardGrid label="Candidatures pour cette offre">
           {applications.map((app) => {
             const scheduling = app.status === 'EXAMEN_TECHNIQUE' || app.status === 'ENTRETIEN_RH';
             const screening = app.status === 'NOUVELLE' || app.status === 'EN_REVUE';
             const open = panel?.id === app.id;
             return (
-              <li key={app.id} className="appcard">
-                <div className="appcard__row">
-                  <button type="button" className="appcard__who" onClick={() => markSeen(app)}
-                    aria-label={`Candidature de ${app.candidateFirstName} ${app.candidateLastName}`}>
-                    <span className="appcard__name">{app.candidateFirstName} {app.candidateLastName}</span>
+              <li key={app.id} className={`tile${open ? ' tile--open' : ''}`}>
+                <div className="tile__head">
+                  {/* Opening the person also settles the notices about this
+                      application, which is what looking at it used to do. */}
+                  <PersonLink id={app.candidateId} className="appcard__who">
+                    <span className="appcard__name" onMouseDown={() => markSeen(app)}>
+                      {app.candidateFirstName} {app.candidateLastName}
+                    </span>
                     <span className="appcard__email">{app.candidateEmail}</span>
-                    <span className="appcard__date">Postulé le {longDate(app.applicationDate)}</span>
-                  </button>
+                  </PersonLink>
+                  <StatusBadge status={app.status} />
+                </div>
 
-                  <div className="appcard__state">
-                    <StatusBadge status={app.status} />
-                    {scheduling && <span className="appcard__interview">{interviewText(app)}</span>}
-                  </div>
+                <p className="tile__facts">
+                  <span>Postulé le {longDate(app.applicationDate)}</span>
+                  {scheduling && <span>{interviewText(app)}</span>}
+                </p>
 
-                  <div className="appcard__actions">
-                    <Button variant="text" onClick={() => viewCv(app.id)}>
-                      <Icon name="download" /> CV
+                <div className="tile__foot">
+                  <Button variant="text" onClick={() => viewCv(app.id)}>
+                    <Icon name="download" /> CV
+                  </Button>
+                  {screening && (
+                    <Button variant="secondary"
+                      onClick={() => (open ? setPanel(null) : openPreselection(app))}>
+                      Présélectionner
                     </Button>
-                    {screening && (
-                      <Button variant="secondary"
-                        onClick={() => (open ? setPanel(null) : openPreselection(app))}>
-                        Présélectionner
-                      </Button>
-                    )}
-                    {scheduling && (
-                      <Button variant="secondary"
-                        onClick={() => setPanel(open ? null : { id: app.id, mode: 'schedule' })}>
-                        {app.appointmentDate ? 'Reprogrammer' : 'Planifier'}
-                      </Button>
-                    )}
-                    {app.status === 'ENTRETIEN_RH' && (
-                      <Button onClick={() => navigate(`/candidatures/${app.id}/entretien`)}>
-                        Finaliser l'entretien
-                      </Button>
-                    )}
-                  </div>
+                  )}
+                  {scheduling && (
+                    <Button variant="secondary"
+                      onClick={() => setPanel(open ? null : { id: app.id, mode: 'schedule' })}>
+                      {app.appointmentDate ? 'Reprogrammer' : 'Planifier'}
+                    </Button>
+                  )}
+                  {app.status === 'ENTRETIEN_RH' && (
+                    <Button onClick={() => navigate(`/candidatures/${app.id}/entretien`, { state: origin })}>
+                      Finaliser
+                    </Button>
+                  )}
                 </div>
 
                 {open && panel.mode === 'preselect' && (
                   <div className="appcard__panel">
                     <Field label="Commentaire de présélection" value={comment}
                       onChange={(e) => setComment(e.target.value)} multiline rows={3}
-                      hint="Facultatif, conservé avec l'évaluation." />
+                      hint="Facultatif" />
                     <div className="appcard__decide">
                       <Button variant="danger" onClick={() => setConfirming({ app, decision: 'REFUSEE' })}>
                         Rejeter
@@ -253,7 +279,7 @@ export default function HrApplications() {
               </li>
             );
           })}
-        </ul>
+        </CardGrid>
       )}
 
       {confirming && (

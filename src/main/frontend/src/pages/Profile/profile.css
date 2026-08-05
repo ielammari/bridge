@@ -4,50 +4,96 @@
   font-size: var(--size-sm);
 }
 
-/* ---- Identity -------------------------------------------------------- */
-.profile__identity {
+/* Everything about the candidate on the left, everything they can claim on the
+   right. The left column is wide enough for the path's form to breathe; the
+   right takes what is left, which is still more than the catalogue needs. */
+.profile__columns {
+  display: grid;
+  grid-template-columns: minmax(0, 30rem) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4);
+}
+
+.profile__col {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+/* ---- Adding and editing a qualification ------------------------------- */
+
+.path__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.path__years {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 9rem));
   gap: var(--space-3);
 }
 
-.profile__name {
-  font-weight: var(--weight-semibold);
+.path__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
 }
 
-.profile__email {
-  font-size: var(--size-sm);
-  color: var(--text-faint);
-}
+/* ---- Save bar ---------------------------------------------------------
+   Present only while a change is waiting, and no wider than its own contents:
+   it covers the page for a moment, so it covers as little as it can. */
 
-.profile__grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-4);
-}
-
-/* ---- Save bar -------------------------------------------------------- */
 .profile__savebar {
   position: sticky;
-  bottom: 0;
+  bottom: var(--space-5);
+  align-self: center;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   gap: var(--space-4);
-  padding: var(--space-3) var(--space-4);
+  width: fit-content;
+  max-width: 100%;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-5);
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
   box-shadow: var(--shadow-float);
+  animation: savebar-in var(--duration) var(--ease) both;
 }
 
 .profile__savestate {
-  margin-right: auto;
   font-size: var(--size-sm);
+  white-space: nowrap;
+}
+
+@keyframes savebar-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+@media (max-width: 64rem) {
+  .profile__columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile__savebar {
+    animation: none;
+  }
 }
 
 @media (max-width: 40rem) {
-  .profile__grid {
+  .path__years {
     grid-template-columns: 1fr;
+  }
+
+  .path__item {
+    flex-direction: column;
+    gap: var(--space-2);
   }
 }

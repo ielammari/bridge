@@ -81,4 +81,28 @@ public class Hiring {
 		return startDate;
 	}
 
+	public BigDecimal getNegotiatedSalary() {
+		return negotiatedSalary;
+	}
+
+	public ContractType getFinalContract() {
+		return finalContract;
+	}
+
+	public String getTrialPeriod() {
+		return trialPeriod;
+	}
+
+	public Boolean getExecutiveStatus() {
+		return executiveStatus;
+	}
+
+	public String getBenefits() {
+		return benefits;
+	}
+
+	public Application getApplication() {
+		return application;
+	}
+
 }

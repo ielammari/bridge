@@ -20,6 +20,8 @@ public class Candidate extends User {
 	@Column(name = "chemin_cv", length = 255)
 	private String cvPath;
 
+	// Free text level from the MLD. The trait category of the same name is what
+	// the profile and the matching gate use.
 	@Column(name = "niveau_experience", length = 40)
 	private String experienceLevel;
 

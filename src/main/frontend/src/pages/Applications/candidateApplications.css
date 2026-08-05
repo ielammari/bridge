@@ -1,40 +1,12 @@
-.apps__list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.apptrack {
-  display: flex;
-  flex-direction: column;
+/* The rail wants width, so it takes the room and the alert sits beside it. */
+.apptrack__progress {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  align-items: center;
   gap: var(--space-5);
-  padding: var(--space-5);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-}
-
-.apptrack__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.apptrack__title {
-  font-size: var(--size-lg);
-}
-
-.apptrack__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  margin-top: var(--space-1);
-  font-size: var(--size-sm);
-  color: var(--text-secondary);
+  margin-top: auto;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
 }
 
 .apptrack__alert {
@@ -48,4 +20,11 @@
 .apptrack__alert--refused {
   background: var(--status-refusee-bg);
   color: var(--status-refusee);
+}
+
+@media (max-width: 60rem) {
+  .apptrack__progress {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
 }

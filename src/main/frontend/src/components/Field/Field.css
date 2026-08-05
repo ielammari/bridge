@@ -4,10 +4,18 @@
   gap: var(--space-1);
 }
 
+.field__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  min-height: 1.25rem;
+}
+
 .field__label {
+  flex-shrink: 0;
   font-size: var(--size-sm);
   font-weight: var(--weight-medium);
-  color: var(--text-secondary);
+  color: var(--text);
 }
 
 .field__required {
@@ -16,6 +24,10 @@
 }
 
 .field__hint {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: var(--size-xs);
   color: var(--text-faint);
 }

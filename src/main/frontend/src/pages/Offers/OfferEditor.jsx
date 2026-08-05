@@ -18,7 +18,7 @@ export default function OfferEditor({ mode }) {
   const toast = useToast();
   const [submitting, setSubmitting] = useState(false);
 
-  const { status, data, reload } = useResource(
+  const { status, data, reload, pending, leaving } = useResource(
     async () => {
       const [catalogue, offer] = await Promise.all([
         traitsApi.catalogue(),
@@ -49,10 +49,9 @@ export default function OfferEditor({ mode }) {
 
   if (status !== 'ready') {
     return (
-      <Workspace title={title} back={BACK}>
-        {status === 'loading' ? (
-          <Skeleton count={2} label="Chargement du formulaire" />
-        ) : (
+      <Workspace width="narrow" title={title} back={BACK}>
+        {pending && <Skeleton variant="form" count={6} leaving={leaving} label="Chargement du formulaire" />}
+        {status === 'error' && (
           <ErrorState onRetry={reload}>
             Le formulaire n'a pas pu être chargé. Réessayez dans un instant.
           </ErrorState>
@@ -62,7 +61,7 @@ export default function OfferEditor({ mode }) {
   }
 
   return (
-    <Workspace title={title} subtitle={data.offer?.title} back={BACK}>
+    <Workspace width="narrow" title={title} subtitle={data.offer?.title} back={BACK}>
       <OfferForm
         mode={mode}
         offer={data.offer}

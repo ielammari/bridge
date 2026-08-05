@@ -12,6 +12,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import io.github.ielammari.bridge.dto.CandidateProfileDto;
+import io.github.ielammari.bridge.dto.EducationDto;
+import io.github.ielammari.bridge.dto.EducationRequest;
 import io.github.ielammari.bridge.dto.RegisterRequest;
 import io.github.ielammari.bridge.dto.UpdateProfileRequest;
 import io.github.ielammari.bridge.dto.UpdateProfileRequest.TraitSelection;
@@ -47,10 +49,9 @@ class ProfileServiceTest {
 		Integer traitId = anyTraitId();
 
 		CandidateProfileDto profile = profileService.update(id, new UpdateProfileRequest(
-				Degree.BAC_5, "5 ans", null, List.of(new TraitSelection(traitId, "Avancé"))));
+				Degree.BAC_5, null, List.of(new TraitSelection(traitId, "Avancé"))));
 
 		assertThat(profile.degree()).isEqualTo(Degree.BAC_5);
-		assertThat(profile.experienceLevel()).isEqualTo("5 ans");
 		assertThat(profile.traits()).singleElement()
 				.satisfies(t -> {
 					assertThat(t.traitId()).isEqualTo(traitId);
@@ -63,10 +64,10 @@ class ProfileServiceTest {
 		Integer id = newCandidate("profile2@example.fr");
 		List<Integer> ids = traits.findAll().stream().limit(3).map(t -> t.getId()).toList();
 
-		profileService.update(id, new UpdateProfileRequest(Degree.BAC, null, null,
+		profileService.update(id, new UpdateProfileRequest(Degree.BAC, null,
 				List.of(new TraitSelection(ids.get(0), null), new TraitSelection(ids.get(1), null))));
 
-		CandidateProfileDto after = profileService.update(id, new UpdateProfileRequest(Degree.BAC, null, null,
+		CandidateProfileDto after = profileService.update(id, new UpdateProfileRequest(Degree.BAC, null,
 				List.of(new TraitSelection(ids.get(2), null))));
 
 		assertThat(after.traits()).singleElement()
@@ -79,7 +80,7 @@ class ProfileServiceTest {
 		Integer traitId = anyTraitId();
 
 		CandidateProfileDto profile = profileService.update(id, new UpdateProfileRequest(
-				Degree.BAC, null, null,
+				Degree.BAC, null,
 				List.of(new TraitSelection(traitId, "A"), new TraitSelection(traitId, "B"))));
 
 		assertThat(profile.traits()).hasSize(1);
@@ -90,7 +91,7 @@ class ProfileServiceTest {
 		Integer id = newCandidate("profile4@example.fr");
 
 		assertThatThrownBy(() -> profileService.update(id, new UpdateProfileRequest(
-				Degree.BAC, null, null, List.of(new TraitSelection(999_999, null)))))
+				Degree.BAC, null, List.of(new TraitSelection(999_999, null)))))
 				.isInstanceOf(ApiException.class)
 				.hasFieldOrPropertyWithValue("code", "UNKNOWN_TRAIT");
 	}
@@ -99,13 +100,88 @@ class ProfileServiceTest {
 	void anEmptyTraitListClearsTheProfileTraits() {
 		Integer id = newCandidate("profile5@example.fr");
 		Integer traitId = anyTraitId();
-		profileService.update(id, new UpdateProfileRequest(Degree.BAC, null, null,
+		profileService.update(id, new UpdateProfileRequest(Degree.BAC, null,
 				List.of(new TraitSelection(traitId, null))));
 
 		CandidateProfileDto cleared = profileService.update(id,
-				new UpdateProfileRequest(Degree.BAC, null, null, List.of()));
+				new UpdateProfileRequest(Degree.BAC, null, List.of()));
 
 		assertThat(cleared.traits()).isEmpty();
+	}
+
+	// ---- The academic path ----------------------------------------------
+
+	@Test
+	void theAcademicPathReadsMostRecentFirstWithAnOngoingEntryOnTop() {
+		Integer id = newCandidate("path1@example.fr");
+
+		profileService.addEducation(id, new EducationRequest(
+				"Licence informatique", "Universite de Lyon", "Informatique",
+				(short) 2015, (short) 2018));
+		profileService.addEducation(id, new EducationRequest(
+				"Master informatique", "INSA Lyon", "Genie logiciel",
+				(short) 2018, (short) 2020));
+		CandidateProfileDto profile = profileService.addEducation(id, new EducationRequest(
+				"Doctorat", "ENS Lyon", null, (short) 2021, null));
+
+		assertThat(profile.education()).extracting(EducationDto::title)
+				.containsExactly("Doctorat", "Master informatique", "Licence informatique");
+		assertThat(profile.education().get(0).endYear()).isNull();
+	}
+
+	/** The path describes the level; it does not become the gate. */
+	@Test
+	void addingAQualificationLeavesTheScalarLevelAlone() {
+		Integer id = newCandidate("path2@example.fr");
+		profileService.update(id, new UpdateProfileRequest(Degree.BAC_3, null, List.of()));
+
+		CandidateProfileDto profile = profileService.addEducation(id, new EducationRequest(
+				"Master informatique", "INSA Lyon", null, (short) 2018, (short) 2020));
+
+		assertThat(profile.degree()).isEqualTo(Degree.BAC_3);
+	}
+
+	@Test
+	void aQualificationCannotEndBeforeItBegan() {
+		Integer id = newCandidate("path3@example.fr");
+
+		assertThatThrownBy(() -> profileService.addEducation(id, new EducationRequest(
+				"Master informatique", "INSA Lyon", null, (short) 2020, (short) 2018)))
+				.isInstanceOf(ApiException.class)
+				.hasFieldOrPropertyWithValue("code", "INVALID_PERIOD");
+	}
+
+	@Test
+	void aQualificationIsEditedAndRemoved() {
+		Integer id = newCandidate("path4@example.fr");
+		Integer entryId = profileService.addEducation(id, new EducationRequest(
+				"Licence", "Universite de Lyon", null, (short) 2015, (short) 2018))
+				.education().get(0).id();
+
+		CandidateProfileDto edited = profileService.updateEducation(id, entryId, new EducationRequest(
+				"Licence informatique", "Universite Lyon 1", "Informatique",
+				(short) 2015, (short) 2018));
+		assertThat(edited.education()).singleElement()
+				.satisfies(e -> {
+					assertThat(e.title()).isEqualTo("Licence informatique");
+					assertThat(e.fieldOfStudy()).isEqualTo("Informatique");
+				});
+
+		assertThat(profileService.removeEducation(id, entryId).education()).isEmpty();
+	}
+
+	/** Someone else's entry is not visible, so it cannot be edited either. */
+	@Test
+	void aQualificationBelongingToAnotherCandidateCannotBeTouched() {
+		Integer mine = newCandidate("path5@example.fr");
+		Integer theirs = newCandidate("path6@example.fr");
+		Integer entryId = profileService.addEducation(theirs, new EducationRequest(
+				"Master", "INSA Lyon", null, (short) 2018, (short) 2020))
+				.education().get(0).id();
+
+		assertThatThrownBy(() -> profileService.removeEducation(mine, entryId))
+				.isInstanceOf(ApiException.class)
+				.hasFieldOrPropertyWithValue("code", "RESOURCE_NOT_FOUND");
 	}
 
 }

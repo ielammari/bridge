@@ -1,0 +1,174 @@
+.settings__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+  gap: var(--space-4);
+}
+
+.settings__actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+
+.settings__toggles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.settings__toggle-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 44px;
+  cursor: pointer;
+}
+
+/* Set apart from the choices above: these are stated, not offered. */
+.settings__always {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.settings__always-title {
+  font-family: var(--font-mono);
+  font-size: var(--size-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.settings__note {
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+}
+
+/* ---- Theme ------------------------------------------------------------- */
+
+.theme {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+/* The whole tile is the control, so the target is the card and not a dot. */
+.theme__choice {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    'swatch label check'
+    'swatch hint  check';
+  align-items: center;
+  gap: 0 var(--space-3);
+  padding: var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: border-color var(--duration) var(--ease);
+}
+
+.theme__choice:hover {
+  border-color: var(--border-strong);
+}
+
+.theme__choice--on {
+  border-color: var(--primary);
+}
+
+.theme__choice:has(:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Each swatch shows its own theme's colours, whichever theme is in use, so the
+   values are literal rather than described. */
+.theme__swatch {
+  grid-area: swatch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  width: 2.5rem;
+  height: 2rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.theme__swatch-bar {
+  height: 3px;
+  border-radius: 999px;
+}
+
+.theme__swatch-bar--short {
+  width: 60%;
+}
+
+.theme__swatch--light {
+  background: #ffffff;
+}
+
+.theme__swatch--light .theme__swatch-bar {
+  background: #c3cccc;
+}
+
+.theme__swatch--dark {
+  background: #1a2831;
+}
+
+.theme__swatch--dark .theme__swatch-bar {
+  background: #3b4d59;
+}
+
+/* Split down the middle: following the system is both, not a third look. */
+.theme__swatch--system {
+  background: linear-gradient(to right, #ffffff 50%, #1a2831 50%);
+}
+
+.theme__swatch--system .theme__swatch-bar {
+  background: linear-gradient(to right, #c3cccc 50%, #3b4d59 50%);
+}
+
+.theme__label {
+  grid-area: label;
+  font-size: var(--size-sm);
+  font-weight: var(--weight-medium);
+}
+
+.theme__hint {
+  grid-area: hint;
+  font-size: var(--size-xs);
+  color: var(--text-faint);
+}
+
+.theme__check {
+  grid-area: check;
+  color: var(--primary);
+  opacity: 0;
+  transition: opacity var(--duration) var(--ease);
+}
+
+.theme__choice--on .theme__check {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme__choice,
+  .theme__check {
+    transition: none;
+  }
+}
