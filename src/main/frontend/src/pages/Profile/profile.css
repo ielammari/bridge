@@ -1,26 +1,3 @@
-.profile__intro {
-  max-width: 60ch;
-  color: var(--text-secondary);
-  font-size: var(--size-sm);
-}
-
-/* Everything about the candidate on the left, everything they can claim on the
-   right. The left column is wide enough for the path's form to breathe; the
-   right takes what is left, which is still more than the catalogue needs. */
-.profile__columns {
-  display: grid;
-  grid-template-columns: minmax(0, 30rem) minmax(0, 1fr);
-  align-items: start;
-  gap: var(--space-4);
-}
-
-.profile__col {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  min-width: 0;
-}
-
 /* ---- Adding and editing a qualification ------------------------------- */
 
 .path__form {
@@ -58,7 +35,7 @@
   padding: var(--space-2) var(--space-2) var(--space-2) var(--space-5);
   background: var(--surface);
   border: 1px solid var(--border-strong);
-  border-radius: 999px;
+  border-radius: 10px;
   box-shadow: var(--shadow-float);
   animation: savebar-in var(--duration) var(--ease) both;
 }
@@ -72,12 +49,6 @@
   from {
     opacity: 0;
     transform: translateY(0.5rem);
-  }
-}
-
-@media (max-width: 64rem) {
-  .profile__columns {
-    grid-template-columns: 1fr;
   }
 }
 

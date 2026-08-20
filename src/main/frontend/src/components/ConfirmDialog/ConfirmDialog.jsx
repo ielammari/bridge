@@ -5,10 +5,9 @@ import Icon from '../Icon/Icon.jsx';
 import './ConfirmDialog.css';
 
 /**
- * The second step in front of an action that cannot be taken back.
- *
- * Uses the native dialog element for the focus trap, Escape, and backdrop.
- * `nextStatus` renders the funnel rail at the state the action leads to.
+ * The second step in front of an action that cannot be taken back. The native
+ * dialog carries the focus trap, Escape and backdrop; `nextStatus` renders the
+ * funnel rail at the state the action leads to.
  */
 export default function ConfirmDialog({
   open,

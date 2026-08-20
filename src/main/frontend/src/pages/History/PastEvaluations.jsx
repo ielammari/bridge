@@ -7,7 +7,6 @@ import FilterBar from '../../components/FilterBar/FilterBar.jsx';
 import GroupedGrid from '../../components/GroupedGrid/GroupedGrid.jsx';
 import PersonLink from '../../components/PersonLink/PersonLink.jsx';
 import Skeleton from '../../components/Skeleton/Skeleton.jsx';
-import StarRating from '../../components/StarRating/StarRating.jsx';
 import TabNav from '../../components/TabNav/TabNav.jsx';
 import { DECISION_LABELS, EVALUATION_TYPE_LABELS } from '../../constants/enums.js';
 import { dateTime, monthLabel, monthOf } from '../../constants/format.js';
@@ -18,10 +17,16 @@ import Workspace from '../Workspace/Workspace.jsx';
 import { historyTabs } from './tabs.js';
 import './history.css';
 
-/** With no filter chosen, the record reads stage by stage. */
+/** A recruiter writes at two stages, so their record reads stage by stage. */
 const BY_TYPE = {
   of: (row) => row.evaluation.type,
   labelOf: (key) => EVALUATION_TYPE_LABELS[key] ?? key,
+};
+
+/** An expert writes one kind, so theirs reads offer by offer. */
+const BY_OFFER = {
+  of: (row) => row.offerTitle,
+  labelOf: (key) => key,
 };
 
 /** The evaluations the signed in evaluator has written, with their scores. */
@@ -37,6 +42,10 @@ export default function PastEvaluations() {
   const rows = data ?? [];
   const unique = (read) => [...new Set(rows.map(read))].sort((a, b) => a.localeCompare(b, 'fr'));
 
+  // The stage only cuts a list that holds more than one: an expert runs the
+  // technical exam and nothing else.
+  const writesOneKind = user.role === 'EXPERT';
+
   const dimensions = [
     {
       key: 'offer', label: 'Offre', type: 'select', valueLabel: 'Offre',
@@ -44,13 +53,13 @@ export default function PastEvaluations() {
       labelOf: (key) => key,
       options: unique((row) => row.offerTitle).map((title) => ({ value: title, label: title })),
     },
-    {
+    ...(writesOneKind ? [] : [{
       key: 'type', label: 'Catégorie', type: 'select', valueLabel: 'Étape',
       of: BY_TYPE.of,
       labelOf: BY_TYPE.labelOf,
       options: unique((row) => row.evaluation.type)
         .map((t) => ({ value: t, label: EVALUATION_TYPE_LABELS[t] ?? t })),
-    },
+    }]),
     {
       key: 'decision', label: 'Décision', type: 'select', valueLabel: 'Décision',
       of: (row) => row.evaluation.decision,
@@ -74,7 +83,7 @@ export default function PastEvaluations() {
     },
   ];
 
-  const filtering = useFiltering(rows, dimensions, BY_TYPE);
+  const filtering = useFiltering(rows, dimensions, writesOneKind ? BY_OFFER : BY_TYPE);
 
   const card = (row) => (
     <li key={row.evaluation.id} className="tile">
@@ -90,23 +99,12 @@ export default function PastEvaluations() {
         </span>
       </div>
 
+      {/* What was decided, about whom and when. The comment and the scores are
+          the record itself, and belong to the dossier the button opens. */}
       <p className="tile__facts">
-        <span>{EVALUATION_TYPE_LABELS[row.evaluation.type]}</span>
+        {!writesOneKind && <span>{EVALUATION_TYPE_LABELS[row.evaluation.type]}</span>}
         <span>{dateTime(row.evaluation.date)}</span>
       </p>
-
-      {row.evaluation.comment && <p className="tile__desc">{row.evaluation.comment}</p>}
-
-      {row.evaluation.scores.length > 0 && (
-        <ul className="record__scores">
-          {row.evaluation.scores.map((score) => (
-            <li key={score.traitId} className="record__score">
-              <span className="record__trait">{score.label}</span>
-              <StarRating value={score.note} readOnly label={score.label} />
-            </li>
-          ))}
-        </ul>
-      )}
 
       <div className="tile__foot">
         <Button variant="secondary"
@@ -118,9 +116,24 @@ export default function PastEvaluations() {
   );
 
   return (
-    <Workspace title="Historique">
-      <TabNav items={historyTabs(user.role)} label="Sections de l'historique" />
-
+    <Workspace
+      title="Historique"
+      toolbar={(
+        <>
+          <TabNav items={historyTabs(user.role)} label="Sections de l'historique" />
+          {status === 'ready' && rows.length > 0 && (
+            <FilterBar
+              dimensions={dimensions}
+              dimension={filtering.dimension}
+              value={filtering.value}
+              onDimension={filtering.setDimension}
+              onValue={filtering.setValue}
+              count={`${filtering.kept.length} sur ${rows.length}`}
+            />
+          )}
+        </>
+      )}
+    >
       {pending && <Skeleton leaving={leaving} label="Chargement de vos évaluations" />}
 
       {status === 'error' && (
@@ -137,24 +150,13 @@ export default function PastEvaluations() {
       )}
 
       {status === 'ready' && rows.length > 0 && (
-        <>
-          <FilterBar
-            dimensions={dimensions}
-            dimension={filtering.dimension}
-            value={filtering.value}
-            onDimension={filtering.setDimension}
-            onValue={filtering.setValue}
-            count={`${filtering.kept.length} sur ${rows.length}`}
-          />
-
-          {filtering.kept.length === 0 ? (
-            <EmptyState title="Aucune évaluation ne correspond à ce filtre.">
-              Modifiez la valeur, ou revenez à la liste complète en choisissant « Aucun filtre ».
-            </EmptyState>
-          ) : (
-            <GroupedGrid sections={filtering.sections} size="wide" render={card} />
-          )}
-        </>
+        filtering.kept.length === 0 ? (
+          <EmptyState title="Aucune évaluation ne correspond à ce filtre.">
+            Modifiez la valeur, ou revenez à la liste complète en choisissant « Aucun filtre ».
+          </EmptyState>
+        ) : (
+          <GroupedGrid sections={filtering.sections} size="wide" render={card} />
+        )
       )}
     </Workspace>
   );

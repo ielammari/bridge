@@ -20,7 +20,7 @@ import io.github.ielammari.bridge.security.JwtService;
 @Service
 public class AuthService {
 
-	private static final int MIN_AGE = 16;
+	private static final int MIN_AGE = 18;
 	private static final int MAX_AGE = 100;
 
 	private final UserRepository users;

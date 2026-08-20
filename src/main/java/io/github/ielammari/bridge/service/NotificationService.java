@@ -15,7 +15,6 @@ import io.github.ielammari.bridge.model.NotificationType;
 import io.github.ielammari.bridge.model.User;
 import io.github.ielammari.bridge.repository.MessageRepository;
 import io.github.ielammari.bridge.repository.NotificationPreferenceRepository;
-import io.github.ielammari.bridge.repository.UserRepository;
 
 /**
  * Emits the system notifications the funnel produces. Every call happens inside
@@ -29,13 +28,11 @@ public class NotificationService {
 	private static final DateTimeFormatter HOUR = DateTimeFormatter.ofPattern("HH'h'mm");
 
 	private final MessageRepository messages;
-	private final UserRepository users;
 	private final NotificationPreferenceRepository preferences;
 
-	public NotificationService(MessageRepository messages, UserRepository users,
+	public NotificationService(MessageRepository messages,
 			NotificationPreferenceRepository preferences) {
 		this.messages = messages;
-		this.users = users;
 		this.preferences = preferences;
 	}
 
@@ -51,8 +48,13 @@ public class NotificationService {
 		messages.save(Message.notification(recipient, content, type, application));
 	}
 
-	/** A candidate has applied: tell the HR who published the offer. */
+	/** A candidate has applied: confirm it to them, and tell the publishing HR. */
 	public void applicationReceived(Application application) {
+		deliver(application.getCandidate(),
+				"Votre candidature pour l'offre « " + application.getOffer().getTitle()
+						+ " » a bien été enregistrée.",
+				NotificationType.APPLICATION_SUBMITTED, application);
+
 		HRManager hr = application.getOffer().getPublisher();
 		deliver(hr, "Nouvelle candidature de " + candidateName(application)
 				+ " pour l'offre « " + application.getOffer().getTitle() + " ».",
@@ -68,20 +70,39 @@ public class NotificationService {
 				NotificationType.SCHEDULE_NEEDED, application);
 	}
 
-	/** An interview was booked: tell the candidate, and the experts for an exam. */
-	public void interviewScheduled(Application application, AppointmentType type, LocalDate date, LocalTime time) {
+	/**
+	 * An interview was booked: tell the candidate, and the expert it was handed
+	 * to when it is an exam. An HR interview is run by the recruiter who booked
+	 * it, who needs no notice of their own act.
+	 */
+	public void interviewScheduled(Application application, AppointmentType type, LocalDate date,
+			LocalTime time, User evaluator) {
 		String when = DAY.format(date) + " à " + HOUR.format(time);
 		String what = type == AppointmentType.TECHNIQUE ? "Votre examen technique" : "Votre entretien RH";
 		deliver(application.getCandidate(), what + " est fixé au " + when + ".",
 				NotificationType.INTERVIEW_SCHEDULED, application);
 
 		if (type == AppointmentType.TECHNIQUE) {
-			for (User expert : users.findAllExperts()) {
-				deliver(expert,
-						"Examen technique à faire passer à " + candidateName(application) + " le " + when + ".",
-						NotificationType.INTERVIEW_SCHEDULED, application);
-			}
+			deliver(evaluator, "Examen technique à faire passer à " + candidateName(application)
+					+ " le " + when + " (offre « " + application.getOffer().getTitle() + " »).",
+					NotificationType.INTERVIEW_SCHEDULED, application);
 		}
+	}
+
+	/** The exam went to somebody else: tell the expert who was holding it. */
+	public void examUnassigned(Application application, User previous) {
+		deliver(previous, "L'examen technique de " + candidateName(application)
+				+ " ne vous est plus attribué.",
+				NotificationType.EXAM_UNASSIGNED, application);
+	}
+
+	/** The exam hour went by with nothing recorded: ask the recruiter to hand it on. */
+	public void examOverdue(Application application, LocalDate date, LocalTime time) {
+		HRManager hr = application.getOffer().getPublisher();
+		deliver(hr, "L'examen technique de " + candidateName(application) + " du "
+				+ DAY.format(date) + " à " + HOUR.format(time)
+				+ " n'a pas été évalué. Replanifiez-le, avec un autre expert si besoin.",
+				NotificationType.EXAM_OVERDUE, application);
 	}
 
 	/** The application was closed with a refusal: tell the candidate. */

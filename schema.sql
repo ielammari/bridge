@@ -48,6 +48,24 @@ CREATE SEQUENCE public.categorie_trait_id_categorie_seq
 
 ALTER SEQUENCE public.categorie_trait_id_categorie_seq OWNED BY public.categorie_trait.id_categorie;
 
+CREATE TABLE public.cv (
+    id_cv integer NOT NULL,
+    id_candidat integer NOT NULL,
+    intitule character varying(120) NOT NULL,
+    chemin character varying(255) NOT NULL,
+    date_depot timestamp without time zone NOT NULL
+);
+
+CREATE SEQUENCE public.cv_id_cv_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public.cv_id_cv_seq OWNED BY public.cv.id_cv;
+
 CREATE TABLE public.embauche (
     id_embauche integer NOT NULL,
     salaire_negocie numeric(12,2) NOT NULL,
@@ -192,8 +210,15 @@ CREATE TABLE public.offre (
     date_publication date NOT NULL,
     statut character varying(20) NOT NULL,
     id_rh integer NOT NULL,
+    entreprise character varying(120) DEFAULT 'Bridge'::character varying NOT NULL,
     CONSTRAINT ck_offre_salaire CHECK (((salaire_min IS NULL) OR (salaire_max IS NULL) OR (salaire_min <= salaire_max))),
     CONSTRAINT ck_offre_statut CHECK (((statut)::text = ANY ((ARRAY['BROUILLON'::character varying, 'PUBLIEE'::character varying, 'CLOTUREE'::character varying])::text[])))
+);
+
+CREATE TABLE public.offre_enregistree (
+    id_candidat integer NOT NULL,
+    id_offre integer NOT NULL,
+    date_enregistrement timestamp without time zone NOT NULL
 );
 
 CREATE SEQUENCE public.offre_id_offre_seq
@@ -223,7 +248,7 @@ CREATE TABLE public.posseder (
 CREATE TABLE public.preference_notification (
     id_utilisateur integer NOT NULL,
     type_notification character varying(30) NOT NULL,
-    CONSTRAINT ck_preference_type CHECK (((type_notification)::text = ANY ((ARRAY['APPLICATION_RECEIVED'::character varying, 'SCHEDULE_NEEDED'::character varying, 'INTERVIEW_SCHEDULED'::character varying])::text[])))
+    CONSTRAINT ck_preference_type CHECK (((type_notification)::text = ANY ((ARRAY['APPLICATION_RECEIVED'::character varying, 'APPLICATION_SUBMITTED'::character varying, 'SCHEDULE_NEEDED'::character varying, 'EXAM_OVERDUE'::character varying])::text[])))
 );
 
 CREATE TABLE public.rendez_vous (
@@ -233,6 +258,7 @@ CREATE TABLE public.rendez_vous (
     id_candidature integer NOT NULL,
     date_rendez_vous date NOT NULL,
     heure_rendez_vous time without time zone NOT NULL,
+    id_evaluateur integer NOT NULL,
     CONSTRAINT ck_rdv_statut CHECK (((statut)::text = ANY ((ARRAY['PLANIFIE'::character varying, 'REALISE'::character varying, 'ANNULE'::character varying])::text[]))),
     CONSTRAINT ck_rdv_type CHECK (((type)::text = ANY ((ARRAY['TECHNIQUE'::character varying, 'RH'::character varying])::text[])))
 );
@@ -300,6 +326,8 @@ ALTER TABLE ONLY public.candidature ALTER COLUMN id_candidature SET DEFAULT next
 
 ALTER TABLE ONLY public.categorie_trait ALTER COLUMN id_categorie SET DEFAULT nextval('public.categorie_trait_id_categorie_seq'::regclass);
 
+ALTER TABLE ONLY public.cv ALTER COLUMN id_cv SET DEFAULT nextval('public.cv_id_cv_seq'::regclass);
+
 ALTER TABLE ONLY public.embauche ALTER COLUMN id_embauche SET DEFAULT nextval('public.embauche_id_embauche_seq'::regclass);
 
 ALTER TABLE ONLY public.entretien_rh ALTER COLUMN id_entretien_rh SET DEFAULT nextval('public.entretien_rh_id_entretien_rh_seq'::regclass);
@@ -329,6 +357,9 @@ ALTER TABLE ONLY public.categorie_trait
 
 ALTER TABLE ONLY public.categorie_trait
     ADD CONSTRAINT categorie_trait_pkey PRIMARY KEY (id_categorie);
+
+ALTER TABLE ONLY public.cv
+    ADD CONSTRAINT cv_pkey PRIMARY KEY (id_cv);
 
 ALTER TABLE ONLY public.embauche
     ADD CONSTRAINT embauche_id_candidature_key UNIQUE (id_candidature);
@@ -366,6 +397,9 @@ ALTER TABLE ONLY public.message
 ALTER TABLE ONLY public.noter
     ADD CONSTRAINT noter_pkey PRIMARY KEY (id_evaluation, id_trait);
 
+ALTER TABLE ONLY public.offre_enregistree
+    ADD CONSTRAINT offre_enregistree_pkey PRIMARY KEY (id_candidat, id_offre);
+
 ALTER TABLE ONLY public.offre
     ADD CONSTRAINT offre_pkey PRIMARY KEY (id_offre);
 
@@ -387,14 +421,11 @@ ALTER TABLE ONLY public.responsable_rh
 ALTER TABLE ONLY public.trait
     ADD CONSTRAINT trait_pkey PRIMARY KEY (id_trait);
 
-ALTER TABLE ONLY public.candidature
-    ADD CONSTRAINT uq_candidature_candidat_offre UNIQUE (id_candidat, id_offre);
-
 ALTER TABLE ONLY public.evaluation
     ADD CONSTRAINT uq_evaluation_candidature_type UNIQUE (id_candidature, type);
 
 ALTER TABLE ONLY public.rendez_vous
-    ADD CONSTRAINT uq_rdv_date_heure UNIQUE (date_rendez_vous, heure_rendez_vous);
+    ADD CONSTRAINT uq_rdv_evaluateur_creneau UNIQUE (id_evaluateur, date_rendez_vous, heure_rendez_vous);
 
 ALTER TABLE ONLY public.trait
     ADD CONSTRAINT uq_trait_libelle_categorie UNIQUE (id_categorie, libelle);
@@ -411,6 +442,10 @@ CREATE INDEX idx_candidature_offre ON public.candidature USING btree (id_offre);
 
 CREATE INDEX idx_candidature_statut ON public.candidature USING btree (statut);
 
+CREATE INDEX idx_cv_candidat ON public.cv USING btree (id_candidat);
+
+CREATE INDEX idx_enregistree_candidat ON public.offre_enregistree USING btree (id_candidat);
+
 CREATE INDEX idx_evaluation_candidature ON public.evaluation USING btree (id_candidature);
 
 CREATE INDEX idx_exiger_trait ON public.exiger USING btree (id_trait);
@@ -425,6 +460,8 @@ CREATE INDEX idx_offre_statut ON public.offre USING btree (statut);
 
 CREATE INDEX idx_posseder_trait ON public.posseder USING btree (id_trait);
 
+CREATE UNIQUE INDEX uq_candidature_candidat_offre_active ON public.candidature USING btree (id_candidat, id_offre) WHERE ((statut)::text <> 'REFUSEE'::text);
+
 ALTER TABLE ONLY public.candidat
     ADD CONSTRAINT fk_candidat_utilisateur FOREIGN KEY (id_candidat) REFERENCES public.utilisateur(id_utilisateur) ON DELETE CASCADE;
 
@@ -434,8 +471,17 @@ ALTER TABLE ONLY public.candidature
 ALTER TABLE ONLY public.candidature
     ADD CONSTRAINT fk_candidature_offre FOREIGN KEY (id_offre) REFERENCES public.offre(id_offre) ON DELETE RESTRICT;
 
+ALTER TABLE ONLY public.cv
+    ADD CONSTRAINT fk_cv_candidat FOREIGN KEY (id_candidat) REFERENCES public.candidat(id_candidat) ON DELETE CASCADE;
+
 ALTER TABLE ONLY public.embauche
     ADD CONSTRAINT fk_embauche_candidature FOREIGN KEY (id_candidature) REFERENCES public.candidature(id_candidature) ON DELETE CASCADE;
+
+ALTER TABLE ONLY public.offre_enregistree
+    ADD CONSTRAINT fk_enregistree_candidat FOREIGN KEY (id_candidat) REFERENCES public.candidat(id_candidat) ON DELETE CASCADE;
+
+ALTER TABLE ONLY public.offre_enregistree
+    ADD CONSTRAINT fk_enregistree_offre FOREIGN KEY (id_offre) REFERENCES public.offre(id_offre) ON DELETE CASCADE;
 
 ALTER TABLE ONLY public.entretien_rh
     ADD CONSTRAINT fk_entretien_candidature FOREIGN KEY (id_candidature) REFERENCES public.candidature(id_candidature) ON DELETE CASCADE;
@@ -493,6 +539,9 @@ ALTER TABLE ONLY public.preference_notification
 
 ALTER TABLE ONLY public.rendez_vous
     ADD CONSTRAINT fk_rdv_candidature FOREIGN KEY (id_candidature) REFERENCES public.candidature(id_candidature) ON DELETE CASCADE;
+
+ALTER TABLE ONLY public.rendez_vous
+    ADD CONSTRAINT fk_rdv_evaluateur FOREIGN KEY (id_evaluateur) REFERENCES public.evaluateur(id_evaluateur);
 
 ALTER TABLE ONLY public.responsable_rh
     ADD CONSTRAINT fk_rh_evaluateur FOREIGN KEY (id_rh) REFERENCES public.evaluateur(id_evaluateur) ON DELETE CASCADE;

@@ -1,0 +1,97 @@
+.infohint {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.infohint__trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  background: none;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  /* The glyph is drawn, not set, so it centres on the circle geometrically
+     rather than on a font's baseline. */
+  font-size: 0.875rem;
+  line-height: 1;
+  color: var(--text-faint);
+  cursor: default;
+  transition: color var(--duration) var(--ease), border-color var(--duration) var(--ease);
+}
+
+/* The tap target is larger than the mark, which stays small enough to sit
+   beside a heading without competing with it. */
+.infohint__trigger::before {
+  content: '';
+  position: absolute;
+  inset: -0.625rem;
+}
+
+.infohint__trigger:hover,
+.infohint__trigger:focus-visible {
+  color: var(--text);
+  border-color: var(--text-faint);
+}
+
+/* ---- The bubble --------------------------------------------------------
+   A popover, drawn in the top layer, so no ancestor's overflow, stacking
+   context or transform can clip it. Placement comes from the component. */
+.infohint__bubble {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  width: max-content;
+  max-width: min(22rem, calc(100vw - 1.5rem));
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-float);
+  font-family: var(--font-body);
+  font-size: var(--size-sm);
+  font-weight: var(--weight-normal);
+  font-style: normal;
+  line-height: var(--leading-normal);
+  letter-spacing: 0;
+  text-transform: none;
+  text-align: left;
+  color: var(--text-secondary);
+  overflow: visible;
+}
+
+.infohint__bubble:popover-open {
+  opacity: 0;
+  filter: blur(3px);
+  /* Grows from the edge nearest the mark, so the bubble and what it explains
+     read as one thing. */
+  transform: translateY(4px) scale(0.97);
+  transform-origin: bottom center;
+  transition:
+    opacity 160ms var(--ease),
+    filter 160ms var(--ease),
+    transform 160ms var(--ease);
+}
+
+.infohint__bubble--below {
+  transform: translateY(-4px) scale(0.97);
+  transform-origin: top center;
+}
+
+.infohint__bubble--open:popover-open {
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(0) scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .infohint__bubble:popover-open,
+  .infohint__bubble--below {
+    filter: none;
+    transform: none;
+    transition: opacity 120ms var(--ease);
+  }
+}

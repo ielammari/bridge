@@ -1,0 +1,47 @@
+.saveoffer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: var(--radius);
+  font-size: var(--size-lg);
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: color var(--duration) var(--ease), background-color var(--duration) var(--ease);
+}
+
+.saveoffer:hover {
+  background: var(--surface-sunken);
+  color: var(--text);
+}
+
+/* Filled and in the accent once kept: the mark reads as set rather than as an
+   outline that happens to be a different colour. */
+.saveoffer--on {
+  color: var(--accent);
+}
+
+.saveoffer--on svg {
+  fill: currentColor;
+}
+
+/* A small nod on the press, so keeping something registers physically. */
+.saveoffer:active {
+  scale: 0.9;
+  transition-duration: 90ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .saveoffer {
+    transition: none;
+  }
+
+  .saveoffer:active {
+    scale: 1;
+  }
+}

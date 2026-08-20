@@ -4,15 +4,11 @@ const isEmpty = (value) =>
   value === null || value === undefined || (typeof value === 'string' && value.trim() === '');
 
 /**
- * Form state with two validation timings:
- * emptiness is reported only after a submit attempt, so a form can be filled in
- * any order; a malformed value is reported as soon as the field is left.
- *
- * A rule is { label, required?, format? }. `format` runs only on a value that
- * has content, and returns a message or null.
- *
- * A submit may cover a subset of the keys, for a screen whose actions demand
- * different fields. Only submitted keys start reporting emptiness.
+ * Form state with two validation timings: emptiness is reported only after a
+ * submit attempt, so a form can be filled in any order; a malformed value is
+ * reported as soon as the field is left. A rule is { label, required?, format? }
+ * where `format` runs on a value with content and returns a message or null.
+ * A submit may cover a subset of the keys, and only those report emptiness.
  */
 export default function useForm(initialValues, rules) {
   const [values, setValues] = useState(initialValues);
@@ -67,8 +63,7 @@ export default function useForm(initialValues, rules) {
 
   /**
    * Turns emptiness errors on for the given keys (all by default), focuses the
-   * first offender, and reports whether the form is clean. For a submit with a
-   * step in between, such as a confirmation dialog.
+   * first offender, and reports whether the form is clean.
    */
   function attempt(keys) {
     setScope(keys ?? 'all');

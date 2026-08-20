@@ -32,6 +32,13 @@
   color: var(--text-faint);
 }
 
+/* A failed submit sends focus to the offending field, and the browser scrolls
+   it into view: it has to land under the header rather than behind it. */
+.field__input,
+.select__native {
+  scroll-margin-top: calc(var(--header-h, 0px) + var(--space-4));
+}
+
 .field__input {
   min-height: 44px;
   padding: var(--space-2) var(--space-3);

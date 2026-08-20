@@ -2,7 +2,6 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { peopleApi } from '../../api/people.js';
 import Button from '../../components/Button/Button.jsx';
 import CardGrid from '../../components/CardGrid/CardGrid.jsx';
-import EmptyState from '../../components/EmptyState/EmptyState.jsx';
 import ErrorState from '../../components/ErrorState/ErrorState.jsx';
 import Icon from '../../components/Icon/Icon.jsx';
 import OfferLink from '../../components/OfferLink/OfferLink.jsx';
@@ -22,22 +21,20 @@ const genderLabel = (value) =>
 const period = (entry) =>
   (entry.endYear ? `${entry.startYear} à ${entry.endYear}` : `depuis ${entry.startYear}`);
 
-/** A labelled fact, dropped entirely when there is nothing to show. */
-function Fact({ label, children }) {
-  if (children === null || children === undefined || children === '') return null;
+/** One fact about the person, dropped entirely when it is not on file. */
+function Term({ label, children }) {
+  if (!children) return null;
   return (
-    <div className="person__fact">
-      <dt className="person__fact-label">{label}</dt>
-      <dd className="person__fact-value">{children}</dd>
+    <div className="terms__item">
+      <dt className="terms__value">{children}</dt>
+      <dd className="terms__label">{label}</dd>
     </div>
   );
 }
 
 /**
- * One candidate at their own address, reached from any listing that names them.
- *
- * What arrives has already been filtered by who asked, so the page renders what
- * it is given and makes no judgement of its own about who may see what.
+ * One candidate at their own address. What arrives is already filtered by who
+ * asked, so the page renders what it is given.
  */
 export default function PersonPage() {
   const { id } = useParams();
@@ -83,120 +80,83 @@ export default function PersonPage() {
   const isSelf = user.id === data.id;
 
   return (
-    <Workspace title={name} subtitle={data.email} back={back}>
-      <div className="person">
-        <div className="person__col">
-          <section className="card" aria-labelledby="identity-title">
-            <div className="card__head">
-              <h2 id="identity-title" className="card__title">Coordonnées</h2>
-            </div>
-            <div className="card__body">
-              <dl className="person__facts">
-                <Fact label="Téléphone">{data.phone}</Fact>
-                <Fact label="Date de naissance">
-                  {data.birthDate ? longDate(data.birthDate) : null}
-                </Fact>
-                <Fact label="Sexe">{genderLabel(data.gender)}</Fact>
-                <Fact label="Ville">{data.city}</Fact>
-                <Fact label="Pays">{data.country}</Fact>
-                <Fact label="Inscrit le">
-                  {data.registrationDate ? longDate(data.registrationDate) : null}
-                </Fact>
-              </dl>
-            </div>
-          </section>
+    <Workspace
+      title={name}
+      subtitle={data.email}
+      back={back}
+      stats={[
+        { value: data.applications.length, label: data.applications.length > 1 ? 'candidatures' : 'candidature' },
+        { value: data.traits.length, label: 'traits' },
+      ]}
+      action={data.hasCv && (
+        <Button variant="secondary" onClick={viewCv}>
+          <Icon name="download" /> Ouvrir le CV
+        </Button>
+      )}
+    >
+      <div className="doc">
+        <dl className="terms">
+          <Term label="Niveau d'études">
+            {data.degree ? DEGREE_LABELS[data.degree] : null}
+          </Term>
+          <Term label="Téléphone">{data.phone}</Term>
+          <Term label="Ville">{data.city}</Term>
+          <Term label="Pays">{data.country}</Term>
+          <Term label="Naissance">
+            {data.birthDate ? longDate(data.birthDate) : null}
+          </Term>
+          <Term label="Sexe">{genderLabel(data.gender)}</Term>
+        </dl>
 
-          <section className="card" aria-labelledby="level-title">
-            <div className="card__head">
-              <h2 id="level-title" className="card__title">Niveau d'études</h2>
-            </div>
-            <div className="card__body">
-              <p className="person__level">
-                {data.degree ? DEGREE_LABELS[data.degree] : 'Non renseigné'}
-              </p>
-            </div>
-          </section>
+        <section className="doc__section">
+          <h2 className="doc__heading">Parcours</h2>
+          {data.education.length === 0 ? (
+            <p className="person__none">Aucune formation renseignée.</p>
+          ) : (
+            <ol className="path">
+              {data.education.map((entry) => (
+                <li key={entry.id} className="path__item">
+                  <div className="path__entry">
+                    <p className="path__title">
+                      {entry.title}
+                      {!entry.endYear && <span className="path__ongoing">En cours</span>}
+                    </p>
+                    <p className="path__where">
+                      {entry.institution}
+                      {entry.fieldOfStudy && ` · ${entry.fieldOfStudy}`}
+                    </p>
+                    <p className="path__period">{period(entry)}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
 
-          <section className="card" aria-labelledby="cv-title">
-            <div className="card__head">
-              <h2 id="cv-title" className="card__title">CV</h2>
-            </div>
-            <div className="card__body">
-              {data.hasCv ? (
-                <Button variant="secondary" onClick={viewCv}>
-                  <Icon name="download" /> Ouvrir le CV
-                </Button>
-              ) : (
-                <p className="person__none">Aucun CV déposé.</p>
-              )}
-            </div>
-          </section>
-        </div>
+        <section className="doc__section">
+          <h2 className="doc__heading">Compétences et traits</h2>
+          {data.traits.length === 0 ? (
+            <p className="person__none">Aucun trait renseigné.</p>
+          ) : (
+            <ul className="person__traits">
+              {data.traits.map((trait) => (
+                <li key={trait.traitId} className="person__trait">
+                  {trait.label}
+                  {trait.level && <span className="person__trait-level">{trait.level}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
-        <div className="person__col">
-          <section className="card" aria-labelledby="path-title">
-            <div className="card__head">
-              <h2 id="path-title" className="card__title">Parcours</h2>
-            </div>
-            <div className="card__body">
-              {data.education.length === 0 ? (
-                <p className="person__none">Aucune formation renseignée.</p>
-              ) : (
-                <ol className="path">
-                  {data.education.map((entry) => (
-                    <li key={entry.id} className="path__item">
-                      <div className="path__entry">
-                        <p className="path__title">
-                          {entry.title}
-                          {!entry.endYear && <span className="path__ongoing">En cours</span>}
-                        </p>
-                        <p className="path__where">
-                          {entry.institution}
-                          {entry.fieldOfStudy && ` · ${entry.fieldOfStudy}`}
-                        </p>
-                        <p className="path__period">{period(entry)}</p>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </div>
-          </section>
-
-          <section className="card" aria-labelledby="person-traits-title">
-            <div className="card__head">
-              <h2 id="person-traits-title" className="card__title">Compétences et traits</h2>
-              <p className="card__subtitle">{data.traits.length} au profil.</p>
-            </div>
-            <div className="card__body">
-              {data.traits.length === 0 ? (
-                <p className="person__none">Aucun trait renseigné.</p>
-              ) : (
-                <ul className="person__traits">
-                  {data.traits.map((trait) => (
-                    <li key={trait.traitId} className="person__trait">
-                      {trait.label}
-                      {trait.level && <span className="person__trait-level">{trait.level}</span>}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </section>
-        </div>
-      </div>
-
-      <section className="card" aria-labelledby="person-apps-title">
-        <div className="card__head">
-          <h2 id="person-apps-title" className="card__title">Candidatures</h2>
-        </div>
-        <div className="card__body">
+        <section className="doc__section">
+          <h2 className="doc__heading">Candidatures</h2>
           {data.applications.length === 0 ? (
-            <EmptyState title="Aucune candidature.">
+            <p className="person__none">
               {isSelf
                 ? 'Vos candidatures apparaîtront ici.'
                 : 'Cette personne n\'a encore postulé à aucune offre.'}
-            </EmptyState>
+            </p>
           ) : (
             <CardGrid label={`Candidatures de ${name}`}>
               {data.applications.map((application) => (
@@ -224,8 +184,12 @@ export default function PersonPage() {
               ))}
             </CardGrid>
           )}
-        </div>
-      </section>
+        </section>
+
+        <p className="doc__meta">
+          {data.registrationDate && `Inscrit le ${longDate(data.registrationDate)}`}
+        </p>
+      </div>
     </Workspace>
   );
 }

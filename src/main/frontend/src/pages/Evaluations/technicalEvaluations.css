@@ -3,6 +3,12 @@
   font-size: var(--size-sm);
 }
 
+/* The document and the assessment are two different errands, so they stand
+   further apart than two steps of the same one. */
+.tile__foot.evals__foot {
+  gap: 3.5mm;
+}
+
 /* ---- Scoring grid ---------------------------------------------------- */
 .grid {
   display: flex;

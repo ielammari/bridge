@@ -4,15 +4,10 @@ import Select from '../Select/Select.jsx';
 import './FilterBar.css';
 
 /**
- * Picks one dimension to narrow a listing by, and the value within it.
- *
- * With no dimension chosen the listing is not flat: the caller groups it by its
- * default dimension instead, so the page is organised whether or not a filter
- * is active. A free text dimension gets an input backed by a datalist, which
- * completes as the user types without a bespoke menu.
- *
- * `onDimension` also clears the value, which belongs to the dimension it was
- * chosen under.
+ * Picks one dimension to narrow a listing by, and the value within it. With no
+ * dimension the caller groups by its default instead, so a listing is never a
+ * flat run. A free text dimension gets an input backed by a datalist.
+ * `onDimension` also clears the value, which belongs to its dimension.
  */
 export default function FilterBar({ dimensions, dimension, value, onDimension, onValue, count }) {
   const listId = useId();

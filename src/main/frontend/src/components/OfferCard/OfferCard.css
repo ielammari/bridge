@@ -1,0 +1,83 @@
+.offercard {
+  gap: var(--space-2);
+}
+
+.offercard__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* The clamp comes from .tile__title; an offer title only sets its own face. */
+.offercard__title {
+  font-family: var(--font-display);
+  font-size: var(--size-xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-heading);
+}
+
+/* Who and where, read as one line: the two together say what the job is. */
+.offercard__where {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+}
+
+.offercard__company {
+  font-weight: var(--weight-medium);
+  color: var(--text);
+}
+
+.offercard__location::before {
+  content: '·';
+  margin-right: var(--space-2);
+  color: var(--text-faint);
+}
+
+/* The terms sit apart from the identity above them, on their own rule. */
+.offercard__terms {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: auto;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.offercard__contract {
+  padding: 2px var(--space-3);
+  background: var(--surface-sunken);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: var(--size-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.offercard__salary {
+  font-size: var(--size-sm);
+  font-weight: var(--weight-medium);
+}
+
+/* The actions follow the terms, so the card reads identity, terms, action. */
+.offercard .tile__foot {
+  margin-top: 0;
+}
+
+.offercard__applied {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--size-sm);
+  font-weight: var(--weight-medium);
+  color: var(--status-embauchee);
+}

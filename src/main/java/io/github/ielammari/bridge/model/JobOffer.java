@@ -32,6 +32,9 @@ public class JobOffer {
 	@Column(name = "titre", nullable = false, length = 150)
 	private String title;
 
+	@Column(name = "entreprise", nullable = false, length = 120)
+	private String company;
+
 	@Column(name = "description", nullable = false, columnDefinition = "text")
 	private String description;
 
@@ -121,6 +124,14 @@ public class JobOffer {
 
 	public void setContractType(ContractType contractType) {
 		this.contractType = contractType;
+	}
+
+	public String getCompany() {
+		return company;
+	}
+
+	public void setCompany(String company) {
+		this.company = company;
 	}
 
 	public String getLocation() {

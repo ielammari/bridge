@@ -7,6 +7,12 @@
 /* ---- The stages panel --------------------------------------------------- */
 
 .auth__aside {
+  /* The panel keeps steel as its ground in both themes while steel itself
+     trades places with paper, so its quiet foreground is derived against the
+     panel: the text eased 20 percent toward the ground, which clears 4.5:1
+     either way round. */
+  --on-steel-quiet: color-mix(in srgb, var(--paper) 80%, var(--steel));
+
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
@@ -37,7 +43,7 @@
   font-weight: var(--weight-medium);
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  color: rgb(242 245 245 / 0.7);
+  color: var(--on-steel-quiet);
 }
 
 .auth__journey {
@@ -65,7 +71,7 @@
   top: 1.4rem;
   bottom: calc(var(--space-4) * -1);
   width: 1px;
-  background: rgb(242 245 245 / 0.22);
+  background: color-mix(in srgb, var(--paper) 30%, var(--steel));
 }
 
 .auth__step-index {
@@ -73,7 +79,7 @@
   z-index: 1;
   width: 1.5rem;
   font-size: var(--size-xs);
-  color: var(--accent);
+  color: var(--on-steel-quiet);
   background: var(--steel);
 }
 
@@ -161,9 +167,16 @@
   }
 
   .auth__aside {
-    justify-content: center;
     gap: var(--space-7);
     padding: var(--space-7) var(--space-6);
+  }
+
+  /* The brand holds the top of the panel and the journey centres in what is
+     left, so a tall window opens space around the steps rather than pushing
+     the identity into the middle of the screen. */
+  .auth__journey {
+    flex: 1;
+    justify-content: center;
   }
 
   .auth__panel {

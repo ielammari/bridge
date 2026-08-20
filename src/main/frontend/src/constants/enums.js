@@ -75,7 +75,9 @@ export const STATUS_LABELS = {
 // What each notification is for, so a preference toggle says what it turns off.
 export const NOTIFICATION_LABELS = {
   APPLICATION_RECEIVED: 'Nouvelle candidature reçue',
+  APPLICATION_SUBMITTED: 'Une candidature a bien été enregistrée',
   SCHEDULE_NEEDED: 'Un entretien reste à planifier',
+  EXAM_OVERDUE: 'Un examen technique est resté sans compte rendu',
   INTERVIEW_SCHEDULED: 'Un entretien a été fixé',
   REJECTED: 'Une candidature n\'a pas été retenue',
   HIRED: 'Une embauche est confirmée',

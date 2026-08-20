@@ -10,9 +10,8 @@ export const HOME_BY_ROLE = {
 };
 
 /**
- * Gates a route on authentication and, optionally, on role.
- * The attempted location is carried along so the user lands where they were
- * headed after signing in, rather than on a generic home page.
+ * Gates a route on authentication and, optionally, on role. The attempted
+ * location travels with the redirect, so signing in lands where it was headed.
  */
 export default function ProtectedRoute({ roles, children }) {
   const { user, loading, expired } = useAuth();

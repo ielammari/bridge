@@ -1,9 +1,8 @@
 import Icon from '../Icon/Icon.jsx';
 import './FunnelRail.css';
 
-// The application lifecycle is a fixed sequence of four stages plus a terminal
-// decision. Order carries real meaning here, which is what makes the rail
-// content rather than decoration.
+// The application lifecycle: four stages in a fixed order, then a terminal
+// decision.
 const STAGES = [
   { key: 'NOUVELLE', label: 'Reçue' },
   { key: 'EN_REVUE', label: 'Présélection' },
@@ -21,10 +20,9 @@ const POSITION = {
   REFUSEE: 4,
 };
 
-// Rejection can happen at several points and the status alone does not say
-// which, so a refused application shows the stages as inactive and only the
-// terminal node carries the outcome, rather than claiming a stage it may not
-// have reached.
+// A refusal can happen at several stages and the status alone does not say
+// which, so a refused application shows every stage inactive and carries the
+// outcome on the terminal node.
 function stateFor(index, status) {
   const isTerminal = index === STAGES.length - 1;
 

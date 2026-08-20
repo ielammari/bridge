@@ -18,5 +18,7 @@ public record HrApplicationDto(
 		Instant applicationDate,
 		ApplicationStatus status,
 		LocalDate appointmentDate,
-		LocalTime appointmentTime) {
+		LocalTime appointmentTime,
+		Integer appointmentEvaluatorId,
+		String appointmentEvaluatorName) {
 }

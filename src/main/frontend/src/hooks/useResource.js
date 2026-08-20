@@ -6,18 +6,15 @@ const SHOW_AFTER = 300;
 // Once shown, a placeholder stays this long, so a load landing just past
 // SHOW_AFTER cannot leave a single stray frame of it.
 const MIN_VISIBLE = 400;
-// Kept in step with the exit duration in Skeleton.css.
+// In step with the exit duration in Skeleton.css.
 const LEAVE = 120;
 
 /**
- * One asynchronous load, with a retry. The loader is read through a ref so an
+ * One asynchronous load, with a retry. The loader is read through a ref, so an
  * inline function does not restart the request on every render; `keys` decides
- * when to reload.
- *
- * `pending` asks whether to render a placeholder, which is not the same as
- * whether the request is outstanding: it is false through a fast load and true
- * while the placeholder leaves. `status` turns to 'ready' only once that exit
- * has finished, so a page never holds both at once.
+ * when to reload. `pending` asks whether to render a placeholder, which a fast
+ * load never does, and `status` turns to 'ready' only once that placeholder has
+ * left, so a page never holds both at once.
  */
 export default function useResource(loader, keys = []) {
   const [status, setStatus] = useState('loading');

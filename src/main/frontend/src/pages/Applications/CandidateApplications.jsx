@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { applicationsApi } from '../../api/applications.js';
 import CardGrid from '../../components/CardGrid/CardGrid.jsx';
 import EmptyState from '../../components/EmptyState/EmptyState.jsx';
@@ -26,10 +28,19 @@ function alertText(app) {
 }
 
 export default function CandidateApplications() {
+  const [params] = useSearchParams();
   const { status, data, reload, pending, leaving } = useResource(() => applicationsApi.mine());
 
   // Closed applications move to the history, where their full record lives.
   const active = (data ?? []).filter((app) => !isTerminal(app.status));
+
+  // Followed from a notice, which names one application among several.
+  const named = Number(params.get('candidature')) || null;
+
+  useEffect(() => {
+    if (!named || status !== 'ready') return;
+    document.getElementById(`candidature-${named}`)?.scrollIntoView({ block: 'nearest' });
+  }, [named, status]);
 
   return (
     <Workspace title="Mes candidatures">
@@ -55,7 +66,8 @@ export default function CandidateApplications() {
       {status === 'ready' && active.length > 0 && (
         <CardGrid size="full" label="Vos candidatures">
           {active.map((app) => (
-            <li key={app.id} className="tile">
+            <li key={app.id} id={`candidature-${app.id}`}
+              className={`tile${app.id === named ? ' tile--named' : ''}`}>
               <div className="tile__head">
                 <div>
                   <h2 className="tile__title">

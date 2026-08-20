@@ -2,6 +2,8 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { applicationsApi } from '../../api/applications.js';
 import EmptyState from '../../components/EmptyState/EmptyState.jsx';
 import ErrorState from '../../components/ErrorState/ErrorState.jsx';
+import OfferLink from '../../components/OfferLink/OfferLink.jsx';
+import PersonLink from '../../components/PersonLink/PersonLink.jsx';
 import Skeleton from '../../components/Skeleton/Skeleton.jsx';
 import { useToast } from '../../components/Toast/ToastContext.jsx';
 import useResource from '../../hooks/useResource.js';
@@ -56,8 +58,30 @@ export default function FinalEvaluationPage() {
     );
   }
 
+  // The bilan reports an interview, so the interview needs a date first.
+  if (!data.appointmentDate) {
+    return (
+      <Workspace width="narrow" title={title} subtitle={name} back={back}>
+        <EmptyState
+          title="L'entretien RH n'est pas encore planifié."
+          actionLabel="Planifier l'entretien"
+          actionTo={returnTo}
+        >
+          Fixez sa date depuis la liste des candidatures, puis revenez saisir le bilan.
+        </EmptyState>
+      </Workspace>
+    );
+  }
+
   return (
-    <Workspace width="narrow" title={title} subtitle={`${name} · ${data.offerTitle}`} back={back}>
+    <Workspace title={title} back={back}
+      subtitle={(
+        <>
+          <PersonLink id={data.candidateId}>{name}</PersonLink>
+          {' · '}
+          <OfferLink id={data.offerId}>{data.offerTitle}</OfferLink>
+        </>
+      )}>
       <FinalEvaluation
         app={data}
         offerTitle={data.offerTitle}

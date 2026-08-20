@@ -8,9 +8,8 @@ import { NOTIFICATION_LABELS } from '../../constants/enums.js';
 import useResource from '../../hooks/useResource.js';
 
 /**
- * Which notifications reach the inbox. The list is scoped to the role, so it
- * only ever offers what this account actually receives, and a notification the
- * account cannot turn off is shown as such rather than hidden.
+ * Which notifications reach the inbox. The list is scoped to the role, and one
+ * the account cannot turn off is shown as such rather than hidden.
  */
 export default function NotificationSection() {
   const toast = useToast();
@@ -39,7 +38,6 @@ export default function NotificationSection() {
     <section className="card">
       <div className="card__head">
         <h2 className="card__title">Notifications</h2>
-        <p className="card__subtitle">Ce qui vous est signalé dans votre boîte de réception.</p>
       </div>
       <div className="card__body">
         {pending && (

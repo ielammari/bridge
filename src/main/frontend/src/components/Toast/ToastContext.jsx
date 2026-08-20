@@ -10,8 +10,8 @@ const EXIT = 160;
 const ICONS = { success: 'check', error: 'warning', info: 'bell' };
 
 /**
- * Transient confirmations, anchored bottom left, dismissed after five seconds
- * or on click. Anything the user must act on stays inline instead.
+ * Transient confirmations, dismissed after five seconds or on click. Anything
+ * the reader must act on stays inline instead.
  */
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);

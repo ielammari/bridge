@@ -123,26 +123,3 @@
   margin: var(--space-1) 0 0;
 }
 
-/* ---- Hire card ---------------------------------------------------------- */
-
-.hire__email {
-  font-size: var(--size-sm);
-  color: var(--text-faint);
-}
-
-.hire__terms {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--space-1) var(--space-4);
-  margin: 0;
-  font-size: var(--size-sm);
-}
-
-.hire__terms dt {
-  color: var(--text-faint);
-}
-
-.hire__terms dd {
-  margin: 0;
-  text-align: right;
-}

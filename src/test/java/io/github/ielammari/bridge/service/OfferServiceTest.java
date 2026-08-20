@@ -38,7 +38,7 @@ class OfferServiceTest {
 	}
 
 	private OfferRequest offer(boolean publishNow, List<RequirementSelection> reqs, BigDecimal min, BigDecimal max) {
-		return new OfferRequest("Titre", "Description", Degree.BAC_3, ContractType.PERMANENT,
+		return new OfferRequest("Titre", null, "Description", Degree.BAC_3, ContractType.PERMANENT,
 				"Lyon", null, min, max, reqs, publishNow);
 	}
 
@@ -80,17 +80,17 @@ class OfferServiceTest {
 		Integer id = offerService.create(hrId(),
 				offer(false, List.of(new RequirementSelection(aTraitId(), true)), null, null)).id();
 
-		assertThat(offerService.publish(id).status()).isEqualTo(OfferStatus.PUBLIEE);
-		assertThat(offerService.close(id).status()).isEqualTo(OfferStatus.CLOTUREE);
+		assertThat(offerService.publish(hrId(), id).status()).isEqualTo(OfferStatus.PUBLIEE);
+		assertThat(offerService.close(hrId(), id).status()).isEqualTo(OfferStatus.CLOTUREE);
 	}
 
 	@Test
 	void aClosedOfferCannotBePublishedAgain() {
 		Integer id = offerService.create(hrId(),
 				offer(true, List.of(new RequirementSelection(aTraitId(), true)), null, null)).id();
-		offerService.close(id);
+		offerService.close(hrId(), id);
 
-		assertThatThrownBy(() -> offerService.publish(id))
+		assertThatThrownBy(() -> offerService.publish(hrId(), id))
 				.isInstanceOf(ApiException.class)
 				.hasFieldOrPropertyWithValue("code", "OFFER_CLOSED");
 	}
@@ -102,7 +102,7 @@ class OfferServiceTest {
 				List.of(new RequirementSelection(ids.get(0), true), new RequirementSelection(ids.get(1), false)),
 				null, null)).id();
 
-		OfferDto updated = offerService.update(id, offer(false,
+		OfferDto updated = offerService.update(hrId(), id, offer(false,
 				List.of(new RequirementSelection(ids.get(2), true)), null, null));
 
 		assertThat(updated.requirements()).singleElement()

@@ -3,6 +3,7 @@ import { settingsApi } from '../../api/settings.js';
 import Button from '../../components/Button/Button.jsx';
 import ErrorState from '../../components/ErrorState/ErrorState.jsx';
 import Field from '../../components/Field/Field.jsx';
+import InfoHint from '../../components/InfoHint/InfoHint.jsx';
 import Skeleton from '../../components/Skeleton/Skeleton.jsx';
 import { useToast } from '../../components/Toast/ToastContext.jsx';
 import useResource from '../../hooks/useResource.js';
@@ -38,10 +39,12 @@ export default function OrganisationSection() {
   return (
     <form className="card" onSubmit={save} noValidate>
       <div className="card__head">
-        <h2 className="card__title">Plage des entretiens</h2>
-        <p className="card__subtitle">
-          Les heures proposées lors de la planification, pour toute l'entreprise.
-        </p>
+        <h2 className="card__title">
+          Plage des entretiens
+          <InfoHint label="À propos de la plage">
+            Les heures proposées lors de la planification, pour toute l'entreprise.
+          </InfoHint>
+        </h2>
       </div>
       <div className="card__body">
         {pending && <Skeleton variant="form" count={2} leaving={leaving} label="Chargement de la plage horaire" />}

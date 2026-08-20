@@ -4,6 +4,7 @@ import java.util.List;
 
 import io.github.ielammari.bridge.dto.CandidateProfileDto;
 import io.github.ielammari.bridge.dto.CandidateTraitDto;
+import io.github.ielammari.bridge.dto.CvDto;
 import io.github.ielammari.bridge.dto.EducationDto;
 import io.github.ielammari.bridge.model.Candidate;
 import io.github.ielammari.bridge.model.CandidateTrait;
@@ -21,7 +22,7 @@ public final class ProfileMapper {
 	}
 
 	public static CandidateProfileDto toProfile(Candidate candidate, List<CandidateTrait> traits,
-			List<Education> education) {
+			List<Education> education, List<CvDto> cvs) {
 		List<CandidateTraitDto> traitDtos = traits.stream()
 				.map(TraitMapper::toDto)
 				.toList();
@@ -34,6 +35,7 @@ public final class ProfileMapper {
 				candidate.getPhone(),
 				candidate.getDegree(),
 				candidate.getCvPath() != null,
+				cvs,
 				education.stream().map(ProfileMapper::toDto).toList(),
 				traitDtos);
 	}

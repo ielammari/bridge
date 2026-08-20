@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { applicationsApi } from '../../api/applications.js';
 import { offersApi } from '../../api/offers.js';
+import { profileApi } from '../../api/profile.js';
+import ApplyDialog from '../../components/ApplyDialog/ApplyDialog.jsx';
 import Button from '../../components/Button/Button.jsx';
 import CardGrid from '../../components/CardGrid/CardGrid.jsx';
 import EmptyState from '../../components/EmptyState/EmptyState.jsx';
 import ErrorState from '../../components/ErrorState/ErrorState.jsx';
-import OfferLink from '../../components/OfferLink/OfferLink.jsx';
+import OfferCard from '../../components/OfferCard/OfferCard.jsx';
+import SaveOffer from '../../components/SaveOffer/SaveOffer.jsx';
 import Skeleton from '../../components/Skeleton/Skeleton.jsx';
 import { useToast } from '../../components/Toast/ToastContext.jsx';
-import { CONTRACT_LABELS, DEGREE_LABELS, REMOTE_LABELS } from '../../constants/enums.js';
-import { salaryText } from '../../constants/format.js';
 import useResource from '../../hooks/useResource.js';
 import Workspace from '../Workspace/Workspace.jsx';
 import './candidateFeed.css';
@@ -17,33 +18,46 @@ import './candidateFeed.css';
 export default function CandidateFeed() {
   const toast = useToast();
   const [applied, setApplied] = useState(() => new Set());
-  const [pending, setPending] = useState(null);
+  const [documents, setDocuments] = useState([]);
+  const [saved, setSaved] = useState(() => new Set());
+  const [choosing, setChoosing] = useState(null);
+  const [sending, setSending] = useState(false);
 
   const { status, data, reload, pending: loading, leaving } = useResource(async () => {
-    const [feed, mine] = await Promise.all([offersApi.feed(), applicationsApi.mine()]);
+    const [feed, mine, profile, kept] = await Promise.all([
+      offersApi.feed(), applicationsApi.mine(), profileApi.read(), offersApi.saved(),
+    ]);
     setApplied(new Set(mine.map((a) => a.offerId)));
+    setDocuments(profile.cvs);
+    setSaved(new Set(kept.map((o) => o.id)));
     return feed;
   });
 
-  async function apply(offer) {
-    setPending(offer.id);
+  async function apply(cvId) {
+    const offer = choosing;
+    setSending(true);
     try {
-      await applicationsApi.apply(offer.id);
+      await applicationsApi.apply(offer.id, cvId);
       setApplied((current) => new Set(current).add(offer.id));
+      setChoosing(null);
       toast.success(`Candidature envoyée pour « ${offer.title} ».`);
     } catch (apiError) {
       toast.error(apiError.message);
     } finally {
-      setPending(null);
+      setSending(false);
     }
   }
 
   return (
-    <Workspace title="Offres">
-      <p className="feed__intro">
-        Ces offres correspondent à votre profil : vous possédez chaque trait obligatoire et le
-        niveau d'études requis.
-      </p>
+    <Workspace
+      title="Offres"
+      info="Une offre apparaît ici lorsque vous possédez tous ses traits obligatoires et au moins le niveau d'études demandé."
+      // How many match, and how many of those are still open to you.
+      stats={status === 'ready' ? [
+        { value: data.length, label: data.length > 1 ? 'compatibles' : 'compatible' },
+        { value: data.filter((offer) => !applied.has(offer.id)).length, label: 'à postuler' },
+      ] : []}
+    >
 
       {loading && <Skeleton leaving={leaving} label="Recherche des offres compatibles" />}
 
@@ -66,51 +80,29 @@ export default function CandidateFeed() {
 
       {status === 'ready' && data.length > 0 && (
         <CardGrid label="Offres compatibles">
-          {data.map((offer) => {
-            const required = offer.requirements.filter((r) => r.mandatory);
-            const plus = offer.requirements.filter((r) => !r.mandatory);
-            const salary = salaryText(offer.salaryMin, offer.salaryMax);
-            const hasApplied = applied.has(offer.id);
-            return (
-              <li key={offer.id} className="tile tile--openable">
-                <div className="tile__head">
-                  <h2 className="tile__title">
-                    <OfferLink id={offer.id} className="tile__stretch">{offer.title}</OfferLink>
-                  </h2>
-                  <span className="feedcard__contract">{CONTRACT_LABELS[offer.contractType]}</span>
-                </div>
-
-                <p className="tile__facts">
-                  {offer.location && <span>{offer.location}</span>}
-                  {offer.remoteMode && <span>{REMOTE_LABELS[offer.remoteMode]}</span>}
-                  <span>Niveau d'études : {DEGREE_LABELS[offer.requiredDegree]}</span>
-                  {salary && <span className="mono">{salary}</span>}
-                </p>
-
-                <p className="tile__desc">{offer.description}</p>
-
-                <div className="feedcard__traits">
-                  {required.map((r) => (
-                    <span key={r.traitId} className="tag tag--required">{r.label}</span>
-                  ))}
-                  {plus.map((r) => (
-                    <span key={r.traitId} className="tag tag--plus">{r.label}</span>
-                  ))}
-                </div>
-
-                <div className="tile__foot">
-                  {hasApplied ? (
-                    <span className="feedcard__applied">Candidature envoyée</span>
-                  ) : (
-                    <Button onClick={() => apply(offer)} loading={pending === offer.id}>
-                      Postuler
-                    </Button>
-                  )}
-                </div>
-              </li>
-            );
-          })}
+          {data.map((offer) => (
+            <OfferCard
+              key={offer.id}
+              offer={offer}
+              badge={<SaveOffer offerId={offer.id} saved={saved.has(offer.id)} />}
+            >
+              {applied.has(offer.id) ? (
+                <span className="offercard__applied">Candidature envoyée</span>
+              ) : (
+                <Button onClick={() => setChoosing(offer)}>Postuler</Button>
+              )}
+            </OfferCard>
+          ))}
         </CardGrid>
+      )}
+      {choosing && (
+        <ApplyDialog
+          offer={choosing}
+          documents={documents}
+          busy={sending}
+          onConfirm={apply}
+          onCancel={() => setChoosing(null)}
+        />
       )}
     </Workspace>
   );

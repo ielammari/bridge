@@ -37,7 +37,7 @@ class AppointmentSlotTest {
 		assertThat(isPast(TODAY, LocalTime.of(15, 0))).isFalse();
 	}
 
-	/** The current hour has started, so it is no longer bookable. */
+	/** The current hour has started, so it is not bookable. */
 	@Test
 	void theCurrentMomentIsPast() {
 		assertThat(isPast(TODAY, NOW)).isTrue();

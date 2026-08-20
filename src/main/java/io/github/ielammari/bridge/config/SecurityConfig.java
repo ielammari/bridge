@@ -54,6 +54,9 @@ public class SecurityConfig {
 						// read which offer is a question the service answers, not a
 						// question of which role is asking.
 						.requestMatchers(HttpMethod.GET, "/api/v1/offers/*/detail").authenticated()
+						.requestMatchers(HttpMethod.GET, "/api/v1/offers/saved").hasRole("CANDIDAT")
+						.requestMatchers(HttpMethod.PUT, "/api/v1/offers/*/saved").hasRole("CANDIDAT")
+						.requestMatchers(HttpMethod.DELETE, "/api/v1/offers/*/saved").hasRole("CANDIDAT")
 						.requestMatchers("/api/v1/offers", "/api/v1/offers/**").hasRole("RH")
 						// Applying and tracking are the candidate's; listing an offer's
 						// applications and reading an attached CV are HR's.

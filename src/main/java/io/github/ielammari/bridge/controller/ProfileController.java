@@ -67,10 +67,20 @@ public class ProfileController {
 
 	@PostMapping("/cv")
 	public CandidateProfileDto uploadCv(@AuthenticationPrincipal Jwt jwt,
-			@RequestParam("file") MultipartFile file) {
-		Integer candidateId = currentUserId(jwt);
-		profileService.storeCv(candidateId, file);
-		return profileService.read(candidateId);
+			@RequestParam("file") MultipartFile file,
+			@RequestParam(value = "label", required = false) String label) {
+		return profileService.storeCv(currentUserId(jwt), file, label);
+	}
+
+	/** Chooses which CV is proposed the next time the candidate applies. */
+	@PutMapping("/cv/{id}")
+	public CandidateProfileDto chooseCv(@AuthenticationPrincipal Jwt jwt, @PathVariable Integer id) {
+		return profileService.chooseCv(currentUserId(jwt), id);
+	}
+
+	@DeleteMapping("/cv/{id}")
+	public CandidateProfileDto removeCv(@AuthenticationPrincipal Jwt jwt, @PathVariable Integer id) {
+		return profileService.removeCv(currentUserId(jwt), id);
 	}
 
 	@GetMapping("/cv")

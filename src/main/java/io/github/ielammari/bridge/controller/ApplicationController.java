@@ -47,7 +47,7 @@ public class ApplicationController {
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public ApplicationDto apply(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody ApplyRequest request) {
-		return applicationService.apply(currentUserId(jwt), request.offerId());
+		return applicationService.apply(currentUserId(jwt), request.offerId(), request.cvId());
 	}
 
 	/** The candidate's own applications, for the tracking page. */
@@ -58,20 +58,20 @@ public class ApplicationController {
 
 	/** HR: the applications for one offer. */
 	@GetMapping
-	public List<HrApplicationDto> byOffer(@RequestParam Integer offerId) {
-		return applicationService.forOffer(offerId);
+	public List<HrApplicationDto> byOffer(@AuthenticationPrincipal Jwt jwt, @RequestParam Integer offerId) {
+		return applicationService.forOffer(currentUserId(jwt), offerId);
 	}
 
 	/** HR: one application, so a review in progress has its own address. */
 	@GetMapping("/{id}")
-	public HrApplicationDto one(@PathVariable Integer id) {
-		return applicationService.hrView(id);
+	public HrApplicationDto one(@AuthenticationPrincipal Jwt jwt, @PathVariable Integer id) {
+		return applicationService.hrView(currentUserId(jwt), id);
 	}
 
 	/** HR: the CV attached to an application. */
 	@GetMapping("/{id}/cv")
-	public ResponseEntity<Resource> cv(@PathVariable Integer id) {
-		Resource cv = applicationService.loadCv(id);
+	public ResponseEntity<Resource> cv(@AuthenticationPrincipal Jwt jwt, @PathVariable Integer id) {
+		Resource cv = applicationService.loadCv(currentUserId(jwt), id);
 		return ResponseEntity.ok()
 				.contentType(MediaType.APPLICATION_PDF)
 				.header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"cv.pdf\"")
@@ -80,8 +80,8 @@ public class ApplicationController {
 
 	/** HR: opening an application to inspect it moves it into review. */
 	@PostMapping("/{id}/review")
-	public HrApplicationDto review(@PathVariable Integer id) {
-		return evaluationService.review(id);
+	public HrApplicationDto review(@AuthenticationPrincipal Jwt jwt, @PathVariable Integer id) {
+		return evaluationService.review(currentUserId(jwt), id);
 	}
 
 	/** HR: the first screening decision. */
@@ -93,8 +93,10 @@ public class ApplicationController {
 
 	/** HR: book or move the interview this application is waiting on. */
 	@PostMapping("/{id}/schedule")
-	public HrApplicationDto schedule(@PathVariable Integer id, @Valid @RequestBody ScheduleRequest request) {
-		return appointmentService.schedule(id, request.date(), request.time());
+	public HrApplicationDto schedule(@AuthenticationPrincipal Jwt jwt, @PathVariable Integer id,
+			@Valid @RequestBody ScheduleRequest request) {
+		return appointmentService.schedule(currentUserId(jwt), id, request.date(), request.time(),
+				request.expertId());
 	}
 
 	/** HR: record the final interview and close the application. */

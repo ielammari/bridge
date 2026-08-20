@@ -8,5 +8,6 @@ public record DaySlotDto(
 		boolean taken,
 		Integer applicationId,
 		String candidateName,
+		String offerTitle,
 		AppointmentType type) {
 }

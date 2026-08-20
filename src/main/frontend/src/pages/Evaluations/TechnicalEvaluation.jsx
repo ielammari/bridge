@@ -7,6 +7,9 @@ import Checkbox from '../../components/Checkbox/Checkbox.jsx';
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog.jsx';
 import ErrorState from '../../components/ErrorState/ErrorState.jsx';
 import Field from '../../components/Field/Field.jsx';
+import InfoHint from '../../components/InfoHint/InfoHint.jsx';
+import OfferLink from '../../components/OfferLink/OfferLink.jsx';
+import PersonLink from '../../components/PersonLink/PersonLink.jsx';
 import Skeleton from '../../components/Skeleton/Skeleton.jsx';
 import StarRating from '../../components/StarRating/StarRating.jsx';
 import { useToast } from '../../components/Toast/ToastContext.jsx';
@@ -111,13 +114,24 @@ export default function TechnicalEvaluation() {
     : [...unrated, { key: 'comment', label: 'Commentaire global' }];
 
   return (
-    <Workspace width="narrow" title="Évaluation technique" subtitle={`${name} · ${data.offerTitle}`} back={back}>
+    <Workspace width="narrow" title="Évaluation technique" back={back}
+      subtitle={(
+        <>
+          <PersonLink id={data.candidateId}>{name}</PersonLink>
+          {' · '}
+          <OfferLink id={data.offerId}>{data.offerTitle}</OfferLink>
+        </>
+      )}>
       {failure && <Alert>{failure}</Alert>}
 
       <section className="card">
         <div className="card__head">
-          <h2 className="card__title">Notation des traits</h2>
-          <p className="card__subtitle">Notez chaque trait de 0 à 5 étoiles (demi-étoiles possibles).</p>
+          <h2 className="card__title">
+            Notation des traits
+            <InfoHint label="Comment noter">
+              Notez chaque trait de 0 à 5 étoiles (demi-étoiles possibles).
+            </InfoHint>
+          </h2>
         </div>
         <div className="card__body">
           <ul className="grid">

@@ -107,7 +107,7 @@ class AuthServiceTest {
 	@Test
 	void signupIsRefusedBelowTheMinimumAge() {
 		assertThatThrownBy(() -> authService.register(
-				signup("jeune@example.fr", LocalDate.now().minusYears(14))))
+				signup("jeune@example.fr", LocalDate.now().minusYears(17))))
 				.isInstanceOf(ApiException.class)
 				.hasFieldOrPropertyWithValue("code", "AGE_TOO_LOW");
 	}

@@ -11,11 +11,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 /**
- * One qualification on a candidate's academic path.
- *
- * Descriptive, not a gate: an offer's requirement is still checked against the
- * candidate's single scalar level ({@link Candidate#getDegree()}), because an
- * ordered comparison needs one value. This is what a recruiter reads behind it.
+ * One qualification on a candidate's academic path. Descriptive, not a gate: an
+ * offer's requirement is checked against the single scalar level
+ * ({@link Candidate#getDegree()}), which an ordered comparison needs.
  */
 @Entity
 @Table(name = "formation")

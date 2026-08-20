@@ -4,6 +4,15 @@
   gap: var(--space-4);
 }
 
+/* The bilan and the terms are peers: side by side where the page has the room,
+   stacked where it does not. */
+.final__sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(26rem, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
 .final__grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

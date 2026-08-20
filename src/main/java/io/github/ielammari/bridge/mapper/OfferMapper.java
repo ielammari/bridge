@@ -26,6 +26,7 @@ public final class OfferMapper {
 		return new OfferDto(
 				offer.getId(),
 				offer.getTitle(),
+				offer.getCompany(),
 				offer.getDescription(),
 				offer.getRequiredDegree(),
 				offer.getContractType(),

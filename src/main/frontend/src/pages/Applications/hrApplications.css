@@ -3,53 +3,61 @@
   max-width: 28rem;
 }
 
-/* The identity block is a button: clicking it marks the application seen. */
-.appcard__who {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  min-width: 0;
-  padding: var(--space-1) var(--space-2);
-  margin: calc(var(--space-1) * -1) 0 0 calc(var(--space-2) * -1);
-  background: none;
-  border: none;
-  border-radius: var(--radius);
-  text-align: left;
-  cursor: pointer;
-  transition: background-color var(--duration) var(--ease);
-}
-
-.appcard__who:hover {
-  background: var(--surface-sunken);
-}
-
-.appcard__name {
-  font-weight: var(--weight-medium);
-}
-
-.appcard__who:hover .appcard__name {
-  color: var(--primary);
-}
-
-.appcard__email {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-  font-size: var(--size-sm);
-  color: var(--text-faint);
-}
-
-/* Opens below the card's own content. The card takes the whole row first, so
-   the panel has the canvas width the slot grid needs. */
+/* Opens below the card's own content, which takes the whole row first so the
+   panel has the width the slot grid needs. The body holds what it opened for;
+   the corner beside it holds the way out. */
 .appcard__panel {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+  align-items: flex-start;
+  gap: var(--space-3);
   margin: var(--space-2) calc(var(--space-5) * -1) calc(var(--space-5) * -1);
   padding: var(--space-4) var(--space-5);
   background: var(--surface-sunken);
   border-top: 1px solid var(--border);
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.appcard__panel-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Backs out of the panel, level with its first row. It carries the panel's own
+   ground, so only its border and glyph show, and declares the focus ring's
+   motion alongside its own, which setting `transition` would otherwise drop. */
+.appcard__cancel {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    color var(--duration) var(--ease),
+    border-color var(--duration) var(--ease),
+    outline-color var(--duration) var(--ease);
+}
+
+/* Cancelling is the destructive half of the panel, so the glyph and the border
+   take the refusal colour under the pointer. The press takes it with no
+   transition, answering on the way down. */
+.appcard__cancel:hover,
+.appcard__cancel:active {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.appcard__cancel:active {
+  transition: none;
 }
 
 .appcard__decide {

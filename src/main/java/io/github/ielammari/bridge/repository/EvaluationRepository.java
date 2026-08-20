@@ -24,6 +24,16 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Integer>
 			+ "WHERE e.evaluator.id = :evaluatorId ORDER BY e.date DESC")
 	List<Evaluation> findAuthoredBy(Integer evaluatorId);
 
+	/**
+	 * The evaluations one recruiter authored on their own offers. A recruiter's
+	 * record follows the offers they run, so an assessment written on an offer
+	 * that is no longer theirs to read is not listed back to them.
+	 */
+	@Query("SELECT DISTINCT e FROM Evaluation e LEFT JOIN FETCH e.scores s LEFT JOIN FETCH s.trait "
+			+ "JOIN FETCH e.application a JOIN FETCH a.candidate JOIN FETCH a.offer o "
+			+ "WHERE e.evaluator.id = :publisherId AND o.publisher.id = :publisherId ORDER BY e.date DESC")
+	List<Evaluation> findAuthoredForOwnOffers(Integer publisherId);
+
 	boolean existsByApplicationIdAndEvaluatorId(Integer applicationId, Integer evaluatorId);
 
 	/**

@@ -11,15 +11,18 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import io.github.ielammari.bridge.dto.CandidateProfileDto;
+import io.github.ielammari.bridge.dto.CvDto;
 import io.github.ielammari.bridge.dto.EducationRequest;
 import io.github.ielammari.bridge.dto.UpdateProfileRequest;
 import io.github.ielammari.bridge.exception.ApiException;
 import io.github.ielammari.bridge.mapper.ProfileMapper;
 import io.github.ielammari.bridge.model.Candidate;
 import io.github.ielammari.bridge.model.CandidateTrait;
+import io.github.ielammari.bridge.model.Cv;
 import io.github.ielammari.bridge.model.Education;
 import io.github.ielammari.bridge.model.Trait;
 import io.github.ielammari.bridge.repository.CandidateTraitRepository;
+import io.github.ielammari.bridge.repository.CvRepository;
 import io.github.ielammari.bridge.repository.EducationRepository;
 import io.github.ielammari.bridge.repository.TraitRepository;
 import io.github.ielammari.bridge.repository.UserRepository;
@@ -31,15 +34,17 @@ public class ProfileService {
 	private final TraitRepository traits;
 	private final CandidateTraitRepository candidateTraits;
 	private final EducationRepository education;
+	private final CvRepository cvs;
 	private final StorageService storage;
 
 	public ProfileService(UserRepository users, TraitRepository traits,
 			CandidateTraitRepository candidateTraits, EducationRepository education,
-			StorageService storage) {
+			CvRepository cvs, StorageService storage) {
 		this.users = users;
 		this.traits = traits;
 		this.candidateTraits = candidateTraits;
 		this.education = education;
+		this.cvs = cvs;
 		this.storage = storage;
 	}
 
@@ -119,21 +124,73 @@ public class ProfileService {
 
 	private CandidateProfileDto profileOf(Candidate candidate) {
 		Integer id = candidate.getId();
+		List<CvDto> documents = cvs.findByCandidateIdOrderByUploadedAtDesc(id).stream()
+				.map(cv -> new CvDto(cv.getId(), cv.getLabel(), cv.getUploadedAt(),
+						cv.getPath().equals(candidate.getCvPath())))
+				.toList();
 		return ProfileMapper.toProfile(candidate, candidateTraits.findByCandidate(id),
-				education.findPath(id));
+				education.findPath(id), documents);
+	}
+
+	// ---- Documents ------------------------------------------------------
+
+	/**
+	 * Files a CV under the candidate and makes it the one proposed at apply
+	 * time. Earlier documents stay: an application points at the file it was
+	 * sent with.
+	 */
+	@Transactional
+	public CandidateProfileDto storeCv(Integer candidateId, MultipartFile file, String label) {
+		Candidate candidate = requireCandidate(candidateId);
+
+		String path = storage.storeCv(candidateId, file);
+		String name = blankToNull(label);
+		cvs.save(new Cv(candidate, name == null ? defaultLabel(candidateId) : name, path));
+		candidate.setCvPath(path);
+
+		return profileOf(candidate);
 	}
 
 	@Transactional
-	public void storeCv(Integer candidateId, MultipartFile file) {
+	public CandidateProfileDto chooseCv(Integer candidateId, Integer cvId) {
 		Candidate candidate = requireCandidate(candidateId);
-		String previous = candidate.getCvPath();
+		candidate.setCvPath(requireOwnedCv(candidateId, cvId).getPath());
+		return profileOf(candidate);
+	}
 
-		candidate.setCvPath(storage.storeCv(candidateId, file));
+	@Transactional
+	public CandidateProfileDto removeCv(Integer candidateId, Integer cvId) {
+		Candidate candidate = requireCandidate(candidateId);
+		Cv cv = requireOwnedCv(candidateId, cvId);
 
-		// The new file is committed to the row, so the old one can go.
-		if (previous != null) {
-			storage.deleteCv(previous);
+		cvs.delete(cv);
+		cvs.flush();
+
+		// The default has to land somewhere, so removing the proposed document
+		// promotes the most recent of those left.
+		if (cv.getPath().equals(candidate.getCvPath())) {
+			candidate.setCvPath(cvs.findByCandidateIdOrderByUploadedAtDesc(candidateId).stream()
+					.findFirst().map(Cv::getPath).orElse(null));
 		}
+		storage.deleteCv(cv.getPath());
+
+		return profileOf(candidate);
+	}
+
+	/** The path behind one of the candidate's documents, for an application. */
+	@Transactional(readOnly = true)
+	public String cvPath(Integer candidateId, Integer cvId) {
+		return requireOwnedCv(candidateId, cvId).getPath();
+	}
+
+	private String defaultLabel(Integer candidateId) {
+		return "CV " + (cvs.countByCandidateId(candidateId) + 1);
+	}
+
+	private Cv requireOwnedCv(Integer candidateId, Integer cvId) {
+		return cvs.findById(cvId)
+				.filter(cv -> cv.getCandidate().getId().equals(candidateId))
+				.orElseThrow(() -> ApiException.notFound("Ce CV est introuvable."));
 	}
 
 	@Transactional(readOnly = true)

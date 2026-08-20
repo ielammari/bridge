@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -44,6 +45,7 @@ class FinalEvaluationTest {
 	@Autowired private OfferService offerService;
 	@Autowired private ApplicationService applicationService;
 	@Autowired private EvaluationService evaluationService;
+	@Autowired private AppointmentService appointmentService;
 	@Autowired private TraitRepository traits;
 	@Autowired private UserRepository users;
 	@Autowired private HiringRepository hirings;
@@ -56,25 +58,38 @@ class FinalEvaluationTest {
 		return users.findByEmailIgnoreCase("expert@bridge.local").orElseThrow().getId();
 	}
 
+	/** Books the exam the technical evaluation requires. */
+	private void bookExam(Integer app) {
+		appointmentService.schedule(hrId(), app, LocalDate.of(2099, 1, 1).plusDays(app % 1000),
+				LocalTime.of(9, 0), expertId());
+	}
+
 	private Trait aTrait() {
 		return traits.findAll().get(0);
 	}
 
-	/** Carries an application all the way to the ENTRETIEN_RH stage. */
-	private Integer atHrInterview(String email) {
+	/** Carries an application to the ENTRETIEN_RH stage, interview unscheduled. */
+	private Integer awaitingHrInterview(String email) {
 		Integer candidate = authService.register(
 				new RegisterRequest(email, "Motdepasse1!x", "Fin", "Test", null, LocalDate.of(1995, 5, 20), null, null, null)).user().id();
 		profileService.update(candidate, new UpdateProfileRequest(Degree.BAC_5, null,
 				List.of(new TraitSelection(aTrait().getId(), null))));
-		profileService.storeCv(candidate,
-				new MockMultipartFile("file", "cv.pdf", "application/pdf", "%PDF-1.4".getBytes()));
-		OfferDto offer = offerService.create(hrId(), new OfferRequest("Poste", "d", Degree.BAC,
+		profileService.storeCv(candidate, new MockMultipartFile("file", "cv.pdf", "application/pdf", "%PDF-1.4".getBytes()), null);
+		OfferDto offer = offerService.create(hrId(), new OfferRequest("Poste", null, "d", Degree.BAC,
 				ContractType.PERMANENT, "Paris", null, null, null,
 				List.of(new RequirementSelection(aTrait().getId(), true)), true));
-		Integer app = applicationService.apply(candidate, offer.id()).id();
+		Integer app = applicationService.apply(candidate, offer.id(), null).id();
 		evaluationService.preselect(hrId(), app, Decision.VALIDEE, null);
+		bookExam(app);
 		evaluationService.evaluateTechnical(expertId(), app, new TechnicalEvaluationRequest(
 				Decision.VALIDEE, "ok", List.of(new Score(aTrait().getId(), (short) 8))));
+		return app;
+	}
+
+	/** The same, with the HR interview booked, which the final decision demands. */
+	private Integer atHrInterview(String email) {
+		Integer app = awaitingHrInterview(email);
+		appointmentService.schedule(hrId(), app, LocalDate.of(2099, 3, 4), LocalTime.of(11, 0), expertId());
 		return app;
 	}
 
@@ -129,17 +144,27 @@ class FinalEvaluationTest {
 				new RegisterRequest("fin4@example.fr", "Motdepasse1!x", "Too", "Early", null, LocalDate.of(1995, 5, 20), null, null, null)).user().id();
 		profileService.update(candidate, new UpdateProfileRequest(Degree.BAC_5, null,
 				List.of(new TraitSelection(aTrait().getId(), null))));
-		profileService.storeCv(candidate,
-				new MockMultipartFile("file", "cv.pdf", "application/pdf", "%PDF-1.4".getBytes()));
-		OfferDto offer = offerService.create(hrId(), new OfferRequest("P", "d", Degree.BAC,
+		profileService.storeCv(candidate, new MockMultipartFile("file", "cv.pdf", "application/pdf", "%PDF-1.4".getBytes()), null);
+		OfferDto offer = offerService.create(hrId(), new OfferRequest("P", null, "d", Degree.BAC,
 				ContractType.PERMANENT, null, null, null, null,
 				List.of(new RequirementSelection(aTrait().getId(), true)), true));
-		Integer app = applicationService.apply(candidate, offer.id()).id(); // still NOUVELLE
+		Integer app = applicationService.apply(candidate, offer.id(), null).id(); // still NOUVELLE
 
 		assertThatThrownBy(() -> evaluationService.finalize(hrId(), app, new FinalEvaluationRequest(
 				Decision.REFUSEE, null, interview(), null)))
 				.isInstanceOf(ApiException.class)
 				.hasFieldOrPropertyWithValue("code", "INVALID_STATE");
+	}
+
+	/** A bilan reports a meeting, so there has to be one on the calendar. */
+	@Test
+	void finalizingBeforeTheInterviewIsScheduledIsRejected() {
+		Integer app = awaitingHrInterview("fin6@example.fr");
+
+		assertThatThrownBy(() -> evaluationService.finalize(hrId(), app, new FinalEvaluationRequest(
+				Decision.REFUSEE, null, interview(), null)))
+				.isInstanceOf(ApiException.class)
+				.hasFieldOrPropertyWithValue("code", "INTERVIEW_NOT_SCHEDULED");
 	}
 
 	@Test

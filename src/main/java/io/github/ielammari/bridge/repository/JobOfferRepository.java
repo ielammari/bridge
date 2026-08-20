@@ -21,6 +21,12 @@ public interface JobOfferRepository extends JpaRepository<JobOffer, Integer> {
 			+ "WHERE o.status = :status ORDER BY o.publicationDate DESC, o.id DESC")
 	List<JobOffer> findByStatusWithRequirements(OfferStatus status);
 
+	/** The offers one recruiter published, which are the only ones they run. */
+	@Query("SELECT DISTINCT o FROM JobOffer o "
+			+ "LEFT JOIN FETCH o.requirements r LEFT JOIN FETCH r.trait t LEFT JOIN FETCH t.category "
+			+ "WHERE o.publisher.id = :publisherId ORDER BY o.publicationDate DESC, o.id DESC")
+	List<JobOffer> findByPublisherWithRequirements(Integer publisherId);
+
 	@Query("SELECT o FROM JobOffer o "
 			+ "LEFT JOIN FETCH o.requirements r LEFT JOIN FETCH r.trait t LEFT JOIN FETCH t.category "
 			+ "WHERE o.id = :id")

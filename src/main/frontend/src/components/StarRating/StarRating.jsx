@@ -13,9 +13,8 @@ function Star({ className }) {
 }
 
 /**
- * Half star rating. The value is in half star units (0 to 10) but it is
- * announced and shown in stars (0 to 5), and never conveyed by fill alone: a
- * numeric readout sits beside it.
+ * Half star rating. The value is in half star units (0 to 10), announced and
+ * shown in stars, with a numeric readout beside it.
  */
 export default function StarRating({ value = 0, onChange, readOnly = false, label = 'Note' }) {
   const stars = value / 2;

@@ -18,6 +18,7 @@ import io.github.ielammari.bridge.dto.OfferDto;
 import io.github.ielammari.bridge.dto.OfferRequest;
 import io.github.ielammari.bridge.dto.OfferRequest.RequirementSelection;
 import io.github.ielammari.bridge.dto.RegisterRequest;
+import io.github.ielammari.bridge.dto.ProvisionAccountRequest;
 import io.github.ielammari.bridge.dto.TechnicalEvaluationRequest;
 import io.github.ielammari.bridge.dto.TechnicalEvaluationRequest.Score;
 import io.github.ielammari.bridge.dto.UpdateProfileRequest;
@@ -27,6 +28,7 @@ import io.github.ielammari.bridge.model.ApplicationStatus;
 import io.github.ielammari.bridge.model.ContractType;
 import io.github.ielammari.bridge.model.Decision;
 import io.github.ielammari.bridge.model.Degree;
+import io.github.ielammari.bridge.model.Role;
 import io.github.ielammari.bridge.model.Trait;
 import io.github.ielammari.bridge.repository.TraitRepository;
 import io.github.ielammari.bridge.repository.UserRepository;
@@ -42,6 +44,7 @@ class EvaluationFlowTest {
 	@Autowired private ApplicationService applicationService;
 	@Autowired private EvaluationService evaluationService;
 	@Autowired private AppointmentService appointmentService;
+	@Autowired private SettingsService settingsService;
 	@Autowired private TraitRepository traits;
 	@Autowired private UserRepository users;
 
@@ -51,6 +54,12 @@ class EvaluationFlowTest {
 
 	private Integer expertId() {
 		return users.findByEmailIgnoreCase("expert@bridge.local").orElseThrow().getId();
+	}
+
+	/** Books the exam the technical evaluation requires. */
+	private void bookExam(Integer app) {
+		appointmentService.schedule(hrId(), app, LocalDate.of(2099, 1, 1).plusDays(app % 1000),
+				LocalTime.of(9, 0), expertId());
 	}
 
 	private Trait aTrait() {
@@ -63,13 +72,12 @@ class EvaluationFlowTest {
 				new RegisterRequest(email, "Motdepasse1!x", "Eval", "Test", null, LocalDate.of(1995, 5, 20), null, null, null)).user().id();
 		profileService.update(candidate, new UpdateProfileRequest(Degree.BAC_5, null,
 				List.of(new TraitSelection(aTrait().getId(), null))));
-		profileService.storeCv(candidate,
-				new MockMultipartFile("file", "cv.pdf", "application/pdf", "%PDF-1.4".getBytes()));
+		profileService.storeCv(candidate, new MockMultipartFile("file", "cv.pdf", "application/pdf", "%PDF-1.4".getBytes()), null);
 
-		OfferDto offer = offerService.create(hrId(), new OfferRequest("Poste", "d", Degree.BAC,
+		OfferDto offer = offerService.create(hrId(), new OfferRequest("Poste", null, "d", Degree.BAC,
 				ContractType.PERMANENT, "Paris", null, null, null,
 				List.of(new RequirementSelection(aTrait().getId(), true)), true));
-		return applicationService.apply(candidate, offer.id()).id();
+		return applicationService.apply(candidate, offer.id(), null).id();
 	}
 
 	@Test
@@ -108,7 +116,7 @@ class EvaluationFlowTest {
 		// The company wide calendar allows one interview per date and time, so a
 		// far future slot keeps this off any appointment already in the database.
 		LocalDate date = LocalDate.of(2099, 1, 1);
-		HrApplicationDto scheduled = appointmentService.schedule(app, date, LocalTime.of(10, 0));
+		HrApplicationDto scheduled = appointmentService.schedule(hrId(), app, date, LocalTime.of(10, 0), expertId());
 
 		assertThat(scheduled.appointmentDate()).isEqualTo(date);
 		assertThat(scheduled.appointmentTime()).isEqualTo(LocalTime.of(10, 0));
@@ -122,9 +130,9 @@ class EvaluationFlowTest {
 		evaluationService.preselect(hrId(), app2, Decision.VALIDEE, null);
 
 		LocalDate date = LocalDate.of(2099, 1, 2);
-		appointmentService.schedule(app1, date, LocalTime.of(11, 0));
+		appointmentService.schedule(hrId(), app1, date, LocalTime.of(11, 0), expertId());
 
-		assertThatThrownBy(() -> appointmentService.schedule(app2, date, LocalTime.of(11, 0)))
+		assertThatThrownBy(() -> appointmentService.schedule(hrId(), app2, date, LocalTime.of(11, 0), expertId()))
 				.isInstanceOf(ApiException.class)
 				.hasFieldOrPropertyWithValue("code", "SLOT_TAKEN");
 	}
@@ -133,7 +141,7 @@ class EvaluationFlowTest {
 	void schedulingAnApplicationThatIsNotWaitingIsRejected() {
 		Integer app = applyToFreshOffer("ev6@example.fr"); // still NOUVELLE
 
-		assertThatThrownBy(() -> appointmentService.schedule(app, LocalDate.now().plusDays(1), LocalTime.of(9, 0)))
+		assertThatThrownBy(() -> appointmentService.schedule(hrId(), app, LocalDate.now().plusDays(1), LocalTime.of(9, 0), expertId()))
 				.isInstanceOf(ApiException.class)
 				.hasFieldOrPropertyWithValue("code", "NOTHING_TO_SCHEDULE");
 	}
@@ -143,7 +151,7 @@ class EvaluationFlowTest {
 		Integer app = applyToFreshOffer("ev7@example.fr");
 		evaluationService.preselect(hrId(), app, Decision.VALIDEE, null);
 
-		assertThatThrownBy(() -> appointmentService.schedule(app, LocalDate.now().plusDays(1), LocalTime.of(17, 30)))
+		assertThatThrownBy(() -> appointmentService.schedule(hrId(), app, LocalDate.now().plusDays(1), LocalTime.of(17, 30), expertId()))
 				.isInstanceOf(ApiException.class)
 				.hasFieldOrPropertyWithValue("code", "SLOT_INVALID");
 	}
@@ -153,6 +161,7 @@ class EvaluationFlowTest {
 		Integer app = applyToFreshOffer("ev8@example.fr");
 		evaluationService.preselect(hrId(), app, Decision.VALIDEE, null);
 
+		bookExam(app);
 		evaluationService.evaluateTechnical(expertId(), app, new TechnicalEvaluationRequest(
 				Decision.VALIDEE, "Solide", List.of(new Score(aTrait().getId(), (short) 8))));
 
@@ -167,6 +176,7 @@ class EvaluationFlowTest {
 		Integer app = applyToFreshOffer("ev9@example.fr");
 		evaluationService.preselect(hrId(), app, Decision.VALIDEE, null);
 
+		bookExam(app);
 		evaluationService.evaluateTechnical(expertId(), app, new TechnicalEvaluationRequest(
 				Decision.REFUSEE, "Insuffisant", List.of(new Score(aTrait().getId(), (short) 2))));
 
@@ -182,6 +192,7 @@ class EvaluationFlowTest {
 		evaluationService.preselect(hrId(), app, Decision.VALIDEE, null);
 		Integer otherTrait = traits.findAll().get(50).getId();
 
+		bookExam(app);
 		assertThatThrownBy(() -> evaluationService.evaluateTechnical(expertId(), app,
 				new TechnicalEvaluationRequest(Decision.VALIDEE, null,
 						List.of(new Score(otherTrait, (short) 5)))))
@@ -194,6 +205,7 @@ class EvaluationFlowTest {
 		Integer app = applyToFreshOffer("ev11@example.fr");
 		evaluationService.preselect(hrId(), app, Decision.VALIDEE, null);
 
+		bookExam(app);
 		assertThatThrownBy(() -> evaluationService.evaluateTechnical(expertId(), app,
 				new TechnicalEvaluationRequest(Decision.VALIDEE, null,
 						List.of(new Score(aTrait().getId(), (short) 11)))))
@@ -202,11 +214,35 @@ class EvaluationFlowTest {
 	}
 
 	@Test
+	void theCvIsReadableByTheExpertTheExamWasHandedTo() {
+		Integer app = applyToFreshOffer("ev13@example.fr");
+		evaluationService.preselect(hrId(), app, Decision.VALIDEE, null);
+		bookExam(app);
+
+		assertThat(evaluationService.loadCv(expertId(), app).exists()).isTrue();
+	}
+
+	@Test
+	void anotherExpertCannotReadTheCv() {
+		Integer app = applyToFreshOffer("ev14@example.fr");
+		evaluationService.preselect(hrId(), app, Decision.VALIDEE, null);
+		bookExam(app);
+
+		Integer other = settingsService.provision(new ProvisionAccountRequest(
+				"expert.cv@bridge.local", "Autre", "Expert", "Motdepasse1!x", Role.EXPERT)).id();
+
+		assertThatThrownBy(() -> evaluationService.loadCv(other, app))
+				.isInstanceOf(ApiException.class)
+				.hasFieldOrPropertyWithValue("code", "RESOURCE_NOT_FOUND");
+	}
+
+	@Test
 	void theTechnicalGridExposesTheOffersTraits() {
 		Integer app = applyToFreshOffer("ev12@example.fr");
 		evaluationService.preselect(hrId(), app, Decision.VALIDEE, null);
 
-		assertThat(evaluationService.technicalContext(app).traits())
+		bookExam(app);
+		assertThat(evaluationService.technicalContext(expertId(), app).traits())
 				.anySatisfy(t -> assertThat(t.traitId()).isEqualTo(aTrait().getId()));
 	}
 

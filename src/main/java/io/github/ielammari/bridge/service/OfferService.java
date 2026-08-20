@@ -18,29 +18,39 @@ import io.github.ielammari.bridge.model.HRManager;
 import io.github.ielammari.bridge.model.JobOffer;
 import io.github.ielammari.bridge.model.OfferStatus;
 import io.github.ielammari.bridge.model.Role;
+import io.github.ielammari.bridge.model.SavedOffer;
 import io.github.ielammari.bridge.model.Trait;
 import io.github.ielammari.bridge.repository.ApplicationRepository;
+import io.github.ielammari.bridge.repository.AppointmentRepository;
 import io.github.ielammari.bridge.repository.EvaluationRepository;
 import io.github.ielammari.bridge.repository.JobOfferRepository;
+import io.github.ielammari.bridge.repository.SavedOfferRepository;
 import io.github.ielammari.bridge.repository.TraitRepository;
 import io.github.ielammari.bridge.repository.UserRepository;
 
 @Service
 public class OfferService {
 
+	private static final String DEFAULT_COMPANY = "Bridge";
+
 	private final JobOfferRepository offers;
 	private final TraitRepository traits;
 	private final UserRepository users;
 	private final ApplicationRepository applications;
+	private final AppointmentRepository appointments;
 	private final EvaluationRepository evaluations;
+	private final SavedOfferRepository saved;
 
 	public OfferService(JobOfferRepository offers, TraitRepository traits, UserRepository users,
-			ApplicationRepository applications, EvaluationRepository evaluations) {
+			ApplicationRepository applications, AppointmentRepository appointments,
+			EvaluationRepository evaluations, SavedOfferRepository saved) {
 		this.offers = offers;
 		this.traits = traits;
 		this.users = users;
 		this.applications = applications;
+		this.appointments = appointments;
 		this.evaluations = evaluations;
+		this.saved = saved;
 	}
 
 	@Transactional
@@ -59,9 +69,9 @@ public class OfferService {
 	}
 
 	@Transactional
-	public OfferDto update(Integer offerId, OfferRequest request) {
+	public OfferDto update(Integer hrId, Integer offerId, OfferRequest request) {
 		validate(request);
-		JobOffer offer = requireOffer(offerId);
+		JobOffer offer = requireOwnOffer(hrId, offerId);
 
 		applyFields(offer, request);
 
@@ -75,8 +85,8 @@ public class OfferService {
 	}
 
 	@Transactional
-	public OfferDto publish(Integer offerId) {
-		JobOffer offer = requireOffer(offerId);
+	public OfferDto publish(Integer hrId, Integer offerId) {
+		JobOffer offer = requireOwnOffer(hrId, offerId);
 		if (offer.getStatus() == OfferStatus.CLOTUREE) {
 			throw ApiException.badRequest("OFFER_CLOSED", "Une offre clôturée ne peut pas être publiée.");
 		}
@@ -86,29 +96,27 @@ public class OfferService {
 	}
 
 	@Transactional
-	public OfferDto close(Integer offerId) {
-		JobOffer offer = requireOffer(offerId);
+	public OfferDto close(Integer hrId, Integer offerId) {
+		JobOffer offer = requireOwnOffer(hrId, offerId);
 		offer.setStatus(OfferStatus.CLOTUREE);
 		return OfferMapper.toDto(offer);
 	}
 
+	/** The offers this recruiter published, which are the only ones they run. */
 	@Transactional(readOnly = true)
-	public List<OfferDto> listAll() {
-		return offers.findAllWithRequirements().stream().map(OfferMapper::toDto).toList();
+	public List<OfferDto> listFor(Integer hrId) {
+		return offers.findByPublisherWithRequirements(hrId).stream().map(OfferMapper::toDto).toList();
 	}
 
 	@Transactional(readOnly = true)
-	public OfferDto get(Integer offerId) {
-		return OfferMapper.toDto(requireOffer(offerId));
+	public OfferDto get(Integer hrId, Integer offerId) {
+		return OfferMapper.toDto(requireOwnOffer(hrId, offerId));
 	}
 
 	/**
-	 * One offer in full, for whoever is entitled to read it.
-	 *
-	 * A recruiter runs every offer and reads any of them. A candidate reads one
-	 * that is published, or one they have already applied to, so an offer that
-	 * closes behind them does not take their own application's subject with it.
-	 * An expert reads an offer they have assessed someone for.
+	 * One offer in full, for whoever is entitled to read it: the recruiter who
+	 * published it, a candidate while it is published or once they have applied
+	 * to it, and an expert who holds an exam or has assessed someone for it.
 	 */
 	@Transactional(readOnly = true)
 	public OfferDetailDto detail(Integer viewerId, Role viewerRole, Integer offerId) {
@@ -116,9 +124,10 @@ public class OfferService {
 		boolean applied = applications.existsByCandidateIdAndOfferId(viewerId, offerId);
 
 		boolean allowed = switch (viewerRole) {
-			case RH -> true;
+			case RH -> offer.getPublisher() != null && offer.getPublisher().getId().equals(viewerId);
 			case CANDIDAT -> offer.getStatus() == OfferStatus.PUBLIEE || applied;
-			case EXPERT -> evaluations.hasAssessedForOffer(viewerId, offerId);
+			case EXPERT -> evaluations.hasAssessedForOffer(viewerId, offerId)
+					|| appointments.existsByApplicationOfferIdAndEvaluatorId(offerId, viewerId);
 		};
 		if (!allowed) {
 			throw ApiException.notFound("Cette offre est introuvable.");
@@ -127,13 +136,51 @@ public class OfferService {
 		HRManager publisher = offer.getPublisher();
 		return new OfferDetailDto(
 				OfferMapper.toDto(offer),
+				viewerRole == Role.CANDIDAT && saved.existsByCandidateIdAndOfferId(viewerId, offerId),
 				publisher == null ? null : publisher.getFirstName() + " " + publisher.getLastName(),
 				viewerRole == Role.CANDIDAT && applied,
 				viewerRole == Role.RH ? applications.findByOffer(offerId).size() : null);
 	}
 
+	// ---- Saved offers ---------------------------------------------------
+
+	/** The offers this candidate kept, most recently saved first. */
+	@Transactional(readOnly = true)
+	public List<OfferDto> savedFor(Integer candidateId) {
+		return saved.findByCandidateIdOrderBySavedAtDesc(candidateId).stream()
+				.map(entry -> offers.findByIdWithRequirements(entry.getOfferId()).orElse(null))
+				.filter(java.util.Objects::nonNull)
+				.map(OfferMapper::toDto)
+				.toList();
+	}
+
+	/**
+	 * Keeps or releases an offer, reporting where it ended up. Saving one
+	 * already saved is not an error: the button states an intent.
+	 */
+	@Transactional
+	public boolean setSaved(Integer candidateId, Integer offerId, boolean keep) {
+		requireOffer(offerId);
+		if (keep) {
+			if (!saved.existsByCandidateIdAndOfferId(candidateId, offerId)) {
+				saved.save(new SavedOffer(candidateId, offerId));
+			}
+		} else {
+			saved.deleteByCandidateIdAndOfferId(candidateId, offerId);
+		}
+		return keep;
+	}
+
+	@Transactional(readOnly = true)
+	public boolean isSaved(Integer candidateId, Integer offerId) {
+		return saved.existsByCandidateIdAndOfferId(candidateId, offerId);
+	}
+
 	private void applyFields(JobOffer offer, OfferRequest request) {
 		offer.setTitle(request.title().trim());
+		// The deployment's own name stands in when the recruiter leaves it empty.
+		String company = blankToNull(request.company());
+		offer.setCompany(company == null ? DEFAULT_COMPANY : company);
 		offer.setDescription(request.description().trim());
 		offer.setRequiredDegree(request.requiredDegree());
 		offer.setContractType(request.contractType());
@@ -181,6 +228,10 @@ public class OfferService {
 	private JobOffer requireOffer(Integer offerId) {
 		return offers.findByIdWithRequirements(offerId)
 				.orElseThrow(() -> ApiException.notFound("Cette offre est introuvable."));
+	}
+
+	private JobOffer requireOwnOffer(Integer hrId, Integer offerId) {
+		return Ownership.requireOwnOffer(requireOffer(offerId), hrId);
 	}
 
 	private String blankToNull(String value) {

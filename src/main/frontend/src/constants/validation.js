@@ -17,10 +17,10 @@ export function phoneFormat(value) {
 }
 
 export function positiveNumber(value) {
-  return Number(value) >= 0 ? null : 'Indiquez un montant positif.';
+  return Number(value) > 0 ? null : 'Indiquez un montant supérieur à zéro.';
 }
 
-const MIN_AGE = 16;
+const MIN_AGE = 18;
 const MAX_AGE = 100;
 
 /** Mirrors the age range AuthService enforces. */

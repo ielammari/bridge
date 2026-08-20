@@ -133,18 +133,20 @@ class SettingsServiceTest {
 		Integer candidate = account("s7@example.fr");
 
 		assertThat(settingsService.notifications(hr).silenceable())
-				.containsExactly(NotificationType.APPLICATION_RECEIVED, NotificationType.SCHEDULE_NEEDED);
-		assertThat(settingsService.notifications(expert).silenceable())
-				.containsExactly(NotificationType.INTERVIEW_SCHEDULED);
-		assertThat(settingsService.notifications(candidate).silenceable()).isEmpty();
+				.containsExactly(NotificationType.APPLICATION_RECEIVED, NotificationType.SCHEDULE_NEEDED,
+						NotificationType.EXAM_OVERDUE);
+		// An exam is addressed to one expert, so nothing they receive is optional.
+		assertThat(settingsService.notifications(expert).silenceable()).isEmpty();
+		assertThat(settingsService.notifications(candidate).silenceable())
+				.containsExactly(NotificationType.APPLICATION_SUBMITTED);
 	}
 
 	/**
-	 * The same notification is a work queue to the expert and the candidate's own
-	 * appointment: only one of them may turn it off.
+	 * An interview names who must be there, so neither the candidate expected at
+	 * it nor the expert holding it can turn it off.
 	 */
 	@Test
-	void aCandidateCannotSilenceTheirOwnInterview() {
+	void anInterviewNoticeCannotBeSilenced() {
 		Integer candidate = account("s9@example.fr");
 		Integer expert = provisioned("expert.mute@example.fr", Role.EXPERT);
 
@@ -157,9 +159,13 @@ class SettingsServiceTest {
 				.containsExactly(NotificationType.INTERVIEW_SCHEDULED,
 						NotificationType.REJECTED, NotificationType.HIRED);
 
-		settingsService.silence(expert, List.of(NotificationType.INTERVIEW_SCHEDULED));
-		assertThat(settingsService.notifications(expert).silenced())
-				.containsExactly(NotificationType.INTERVIEW_SCHEDULED);
+		assertThatThrownBy(() -> settingsService.silence(expert,
+				List.of(NotificationType.INTERVIEW_SCHEDULED)))
+				.isInstanceOf(ApiException.class)
+				.hasFieldOrPropertyWithValue("code", "NOTIFICATION_REQUIRED");
+
+		assertThat(settingsService.notifications(expert).always())
+				.containsExactly(NotificationType.INTERVIEW_SCHEDULED, NotificationType.EXAM_UNASSIGNED);
 	}
 
 	/** A decision about someone is not a prompt they can opt out of. */

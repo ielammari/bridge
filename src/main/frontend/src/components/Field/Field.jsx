@@ -2,9 +2,8 @@ import { useId } from 'react';
 import './Field.css';
 
 /**
- * Labelled input with helper text and inline error.
- * The label is always visible: a placeholder disappears the moment someone
- * starts typing, which is when they most need to know what the field is.
+ * Labelled input with helper text and inline error. The label stays visible,
+ * unlike a placeholder, which leaves as soon as typing starts.
  */
 export default function Field({
   label,

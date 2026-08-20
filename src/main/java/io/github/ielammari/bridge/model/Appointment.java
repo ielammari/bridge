@@ -16,9 +16,10 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 /**
- * A scheduled interview (technical exam or HR interview). HR sets its date and
- * time directly; there is one company wide calendar, so a given date and time
- * holds at most one interview.
+ * A scheduled interview (technical exam or HR interview). HR sets its date,
+ * time and evaluator directly: the expert they picked for a technical exam, and
+ * themselves for the HR interview. The calendar belongs to the evaluator, so
+ * two of them may hold an interview at the same hour and neither may hold two.
  */
 @Entity
 @Table(name = "rendez_vous")
@@ -47,14 +48,20 @@ public class Appointment {
 	@JoinColumn(name = "id_candidature", nullable = false)
 	private Application application;
 
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "id_evaluateur", nullable = false)
+	private Evaluator evaluator;
+
 	protected Appointment() {
 	}
 
-	public Appointment(Application application, AppointmentType type, LocalDate date, LocalTime time) {
+	public Appointment(Application application, AppointmentType type, LocalDate date, LocalTime time,
+			Evaluator evaluator) {
 		this.application = application;
 		this.type = type;
 		this.date = date;
 		this.time = time;
+		this.evaluator = evaluator;
 		this.status = AppointmentStatus.PLANIFIE;
 	}
 
@@ -85,6 +92,15 @@ public class Appointment {
 	public void reschedule(LocalDate date, LocalTime time) {
 		this.date = date;
 		this.time = time;
+	}
+
+	public Evaluator getEvaluator() {
+		return evaluator;
+	}
+
+	/** Hands the interview to another evaluator, who then holds that hour. */
+	public void assignTo(Evaluator evaluator) {
+		this.evaluator = evaluator;
 	}
 
 	public Application getApplication() {

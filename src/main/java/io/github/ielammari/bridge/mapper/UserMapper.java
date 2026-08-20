@@ -4,10 +4,8 @@ import io.github.ielammari.bridge.dto.UserSummary;
 import io.github.ielammari.bridge.model.User;
 
 /**
- * Maps a user onto the shape returned at the API boundary.
- * <p>
- * A pure transformation with no dependencies, so it is a final utility rather
- * than an injected bean: there is nothing here worth substituting in a test.
+ * Maps a user onto the shape returned at the API boundary. A pure
+ * transformation with no dependencies, so it is a utility rather than a bean.
  */
 public final class UserMapper {
 

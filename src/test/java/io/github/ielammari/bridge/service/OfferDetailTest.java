@@ -21,6 +21,7 @@ import io.github.ielammari.bridge.dto.UpdateProfileRequest;
 import io.github.ielammari.bridge.dto.UpdateProfileRequest.TraitSelection;
 import io.github.ielammari.bridge.exception.ApiException;
 import io.github.ielammari.bridge.model.ContractType;
+import io.github.ielammari.bridge.model.Decision;
 import io.github.ielammari.bridge.model.Degree;
 import io.github.ielammari.bridge.model.Role;
 import io.github.ielammari.bridge.model.Trait;
@@ -36,6 +37,7 @@ class OfferDetailTest {
 	@Autowired private ProfileService profileService;
 	@Autowired private OfferService offerService;
 	@Autowired private ApplicationService applicationService;
+	@Autowired private EvaluationService evaluationService;
 	@Autowired private TraitRepository traits;
 	@Autowired private UserRepository users;
 
@@ -56,13 +58,12 @@ class OfferDetailTest {
 				null, LocalDate.of(1995, 5, 20), null, null, null)).user().id();
 		profileService.update(id, new UpdateProfileRequest(Degree.BAC_5,
 				null, List.of(new TraitSelection(aTrait().getId(), null))));
-		profileService.storeCv(id,
-				new MockMultipartFile("file", "cv.pdf", "application/pdf", "%PDF-1.4".getBytes()));
+		profileService.storeCv(id, new MockMultipartFile("file", "cv.pdf", "application/pdf", "%PDF-1.4".getBytes()), null);
 		return id;
 	}
 
 	private OfferDto offer(boolean published) {
-		return offerService.create(hrId(), new OfferRequest("Ingenieur logiciel", "Description longue",
+		return offerService.create(hrId(), new OfferRequest("Ingenieur logiciel", null, "Description longue",
 				Degree.BAC, ContractType.PERMANENT, "Paris", null, null, null,
 				List.of(new RequirementSelection(aTrait().getId(), true)), published));
 	}
@@ -81,7 +82,7 @@ class OfferDetailTest {
 	void onlyTheRecruiterIsToldHowManyApplied() {
 		Integer offerId = offer(true).id();
 		Integer id = candidate("od1@example.fr");
-		applicationService.apply(id, offerId);
+		applicationService.apply(id, offerId, null);
 
 		assertThat(offerService.detail(hrId(), Role.RH, offerId).applicationCount()).isEqualTo(1);
 		assertThat(offerService.detail(id, Role.CANDIDAT, offerId).applicationCount()).isNull();
@@ -92,7 +93,7 @@ class OfferDetailTest {
 		Integer offerId = offer(true).id();
 		Integer applicant = candidate("od2@example.fr");
 		Integer other = candidate("od3@example.fr");
-		applicationService.apply(applicant, offerId);
+		applicationService.apply(applicant, offerId, null);
 
 		assertThat(offerService.detail(applicant, Role.CANDIDAT, offerId).alreadyApplied()).isTrue();
 		assertThat(offerService.detail(other, Role.CANDIDAT, offerId).alreadyApplied()).isFalse();
@@ -113,10 +114,52 @@ class OfferDetailTest {
 	void anApplicantStillReadsAnOfferAfterItCloses() {
 		Integer offerId = offer(true).id();
 		Integer id = candidate("od5@example.fr");
-		applicationService.apply(id, offerId);
-		offerService.close(offerId);
+		applicationService.apply(id, offerId, null);
+		offerService.close(hrId(), offerId);
 
 		assertThat(offerService.detail(id, Role.CANDIDAT, offerId).offer().id()).isEqualTo(offerId);
+	}
+
+	/** A refusal closes an attempt, not the offer. */
+	@Test
+	void aRefusedCandidateMayApplyAgain() {
+		Integer offerId = offer(true).id();
+		Integer id = candidate("od6@example.fr");
+		Integer first = applicationService.apply(id, offerId, null).id();
+		evaluationService.preselect(hrId(), first, Decision.REFUSEE, "Pas cette fois");
+
+		Integer second = applicationService.apply(id, offerId, null).id();
+
+		assertThat(second).isNotEqualTo(first);
+	}
+
+	/** Two live applications on one offer stay impossible. */
+	@Test
+	void aLiveApplicationStillBlocksAnother() {
+		Integer offerId = offer(true).id();
+		Integer id = candidate("od7@example.fr");
+		applicationService.apply(id, offerId, null);
+
+		assertThatThrownBy(() -> applicationService.apply(id, offerId, null))
+				.isInstanceOf(ApiException.class)
+				.hasFieldOrPropertyWithValue("code", "ALREADY_APPLIED");
+	}
+
+	@Test
+	void anOfferIsKeptAndReleased() {
+		Integer offerId = offer(true).id();
+		Integer id = candidate("od8@example.fr");
+
+		offerService.setSaved(id, offerId, true);
+		assertThat(offerService.savedFor(id)).extracting(OfferDto::id).containsExactly(offerId);
+		assertThat(offerService.detail(id, Role.CANDIDAT, offerId).saved()).isTrue();
+
+		// Pressing save twice states the same intent, and is not an error.
+		offerService.setSaved(id, offerId, true);
+		assertThat(offerService.savedFor(id)).hasSize(1);
+
+		offerService.setSaved(id, offerId, false);
+		assertThat(offerService.savedFor(id)).isEmpty();
 	}
 
 	@Test

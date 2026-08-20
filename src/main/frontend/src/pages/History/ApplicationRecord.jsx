@@ -2,6 +2,7 @@ import { useLocation, useParams } from 'react-router-dom';
 import { historyApi } from '../../api/history.js';
 import ErrorState from '../../components/ErrorState/ErrorState.jsx';
 import FunnelRail from '../../components/FunnelRail/FunnelRail.jsx';
+import OfferLink from '../../components/OfferLink/OfferLink.jsx';
 import Skeleton from '../../components/Skeleton/Skeleton.jsx';
 import StarRating from '../../components/StarRating/StarRating.jsx';
 import StatusBadge from '../../components/StatusBadge/StatusBadge.jsx';
@@ -41,11 +42,9 @@ function Terms({ title, subtitle, rows }) {
 }
 
 /**
- * One closed application in full.
- *
- * A candidate reads the facts about their own: the stages, the interviews, and
- * the terms if it ended in a hire. Whoever ran the funnel reads that plus the
- * evaluations, which are assessments and never travel to the candidate.
+ * One closed application in full. A candidate reads the facts about their own:
+ * the stages, the interviews, and the terms if it ended in a hire. Whoever ran
+ * the funnel also reads the evaluations, which never travel to the candidate.
  */
 export default function ApplicationRecord() {
   const { id } = useParams();
@@ -81,107 +80,130 @@ export default function ApplicationRecord() {
 
   const app = data.application;
   const title = isCandidate ? app.offerTitle : `${app.candidateFirstName} ${app.candidateLastName}`;
-  const subtitle = isCandidate ? CONTRACT_LABELS[app.contractType] : app.offerTitle;
+  // A name is not an identity: two candidates can share one, so the title is
+  // the way into the profile that settles which of them this is.
+  const titleTo = isCandidate ? `/offres/${app.offerId}` : `/personnes/${app.candidateId}`;
+  const subtitle = isCandidate
+    ? CONTRACT_LABELS[app.contractType]
+    : <OfferLink id={app.offerId}>{app.offerTitle}</OfferLink>;
+
+  // A candidate's record carries no assessment, so it has nothing to set
+  // beside the facts and reads as one column.
+  const split = !isCandidate;
 
   return (
-    <Workspace width="narrow" title={title} subtitle={subtitle} back={back}>
-      <section className="card">
-        <div className="card__body">
-          <div className="record__status">
-            <StatusBadge status={app.status} />
-            <span className="record__meta">Déposée le {longDate(app.applicationDate)}</span>
-          </div>
-          <FunnelRail status={app.status} />
-        </div>
-      </section>
-
-      {data.appointments.length > 0 && (
-        <section className="card">
-          <div className="card__head">
-            <h2 className="card__title">Entretiens</h2>
-          </div>
+    <Workspace width={split ? 'wide' : 'narrow'} title={title} titleTo={titleTo}
+      subtitle={subtitle} back={back}>
+      <div className={`doc${split ? ' doc--split' : ''}`}>
+        {/* Where the application stands is the record's first fact, and the
+            rail wants the width of the page rather than of a column. */}
+        <section className="card doc__lead">
           <div className="card__body">
-            <ul className="record__list">
-              {data.appointments.map((appointment) => (
-                <li key={appointment.id} className="record__row">
-                  <span>{APPOINTMENT_TYPE_LABELS[appointment.type] ?? appointment.type}</span>
-                  <span className="mono">
-                    {longDate(appointment.date)} à {clockTime(appointment.time)}
-                  </span>
-                </li>
+            <div className="record__status">
+              <StatusBadge status={app.status} />
+              <span className="record__meta">Déposée le {longDate(app.applicationDate)}</span>
+            </div>
+            <FunnelRail status={app.status} />
+          </div>
+        </section>
+
+        <aside className="doc__side">
+        {data.appointments.length > 0 && (
+          <section className="card">
+            <div className="card__head">
+              <h2 className="card__title">Entretiens</h2>
+            </div>
+            <div className="card__body">
+              <ul className="record__list">
+                {data.appointments.map((appointment) => (
+                  <li key={appointment.id} className="record__row">
+                    <span>
+                      {APPOINTMENT_TYPE_LABELS[appointment.type] ?? appointment.type}
+                      {appointment.evaluatorName && (
+                        <span className="record__meta"> avec {appointment.evaluatorName}</span>
+                      )}
+                    </span>
+                    <span className="mono">
+                      {longDate(appointment.date)} à {clockTime(appointment.time)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
+
+        {data.hiring && (
+          <Terms
+            title="Conditions d'embauche"
+            rows={[
+              ['Salaire négocié', euros(data.hiring.negotiatedSalary)],
+              ['Prise de poste', longDate(data.hiring.startDate)],
+              ['Contrat', CONTRACT_LABELS[data.hiring.finalContract]],
+              ['Période d\'essai', data.hiring.trialPeriod],
+              ['Statut cadre', data.hiring.executiveStatus ? 'Oui' : null],
+              ['Avantages', data.hiring.benefits],
+            ]}
+          />
+        )}
+        </aside>
+
+        <div className="doc__main">
+        {/* Assessments of the candidate: served to the evaluating roles only. */}
+        {!isCandidate && data.evaluations.length > 0 && (
+          <section className="card">
+            <div className="card__head">
+              <h2 className="card__title">Évaluations</h2>
+            </div>
+            <div className="card__body">
+              {data.evaluations.map((evaluation) => (
+                <article key={evaluation.id} className="record__eval">
+                  <div className="record__eval-head">
+                    <h3 className="record__eval-title">
+                      {EVALUATION_TYPE_LABELS[evaluation.type] ?? evaluation.type}
+                    </h3>
+                    <span className={`verdict verdict--${evaluation.decision.toLowerCase()}`}>
+                      {DECISION_LABELS[evaluation.decision]}
+                    </span>
+                  </div>
+                  <p className="record__meta">
+                    {evaluation.evaluatorName} · {dateTime(evaluation.date)}
+                  </p>
+                  {evaluation.comment && <p className="record__comment">{evaluation.comment}</p>}
+                  {evaluation.scores.length > 0 && (
+                    <ul className="record__scores">
+                      {evaluation.scores.map((score) => (
+                        <li key={score.traitId} className="record__score">
+                          <span className="record__trait">{score.label}</span>
+                          <StarRating value={score.note} readOnly label={score.label} />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </article>
               ))}
-            </ul>
-          </div>
-        </section>
-      )}
+            </div>
+          </section>
+        )}
 
-      {/* Assessments of the candidate: served to the evaluating roles only. */}
-      {!isCandidate && data.evaluations.length > 0 && (
-        <section className="card">
-          <div className="card__head">
-            <h2 className="card__title">Évaluations</h2>
-            <p className="card__subtitle">Dans l'ordre où elles ont été rendues.</p>
-          </div>
-          <div className="card__body">
-            {data.evaluations.map((evaluation) => (
-              <article key={evaluation.id} className="record__eval">
-                <div className="record__eval-head">
-                  <h3 className="record__eval-title">
-                    {EVALUATION_TYPE_LABELS[evaluation.type] ?? evaluation.type}
-                  </h3>
-                  <span className={`verdict verdict--${evaluation.decision.toLowerCase()}`}>
-                    {DECISION_LABELS[evaluation.decision]}
-                  </span>
-                </div>
-                <p className="record__meta">
-                  {evaluation.evaluatorName} · {dateTime(evaluation.date)}
-                </p>
-                {evaluation.comment && <p className="record__comment">{evaluation.comment}</p>}
-                {evaluation.scores.length > 0 && (
-                  <ul className="record__scores">
-                    {evaluation.scores.map((score) => (
-                      <li key={score.traitId} className="record__score">
-                        <span className="record__trait">{score.label}</span>
-                        <StarRating value={score.note} readOnly label={score.label} />
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
+        {!isCandidate && data.interview && (
+          <Terms
+            title="Bilan de l'entretien final"
+            subtitle="Conservé quelle que soit la décision."
+            rows={[
+              ['Salaire attendu', data.interview.expectedSalary && euros(data.interview.expectedSalary)],
+              ['Disponibilité', data.interview.availabilityDate && longDate(data.interview.availabilityDate)],
+              ['Contrat envisagé', CONTRACT_LABELS[data.interview.envisagedContract]],
+              ['Préavis', data.interview.noticePeriod],
+              ['Flexibilité horaire', data.interview.scheduleFlexibility],
+              ['Attentes télétravail', REMOTE_LABELS[data.interview.remoteExpectation]],
+              ['Adéquation avec la culture', data.interview.cultureFit],
+            ]}
+          />
+        )}
 
-      {!isCandidate && data.interview && (
-        <Terms
-          title="Bilan de l'entretien final"
-          subtitle="Conservé quelle que soit la décision."
-          rows={[
-            ['Salaire attendu', data.interview.expectedSalary && euros(data.interview.expectedSalary)],
-            ['Disponibilité', data.interview.availabilityDate && longDate(data.interview.availabilityDate)],
-            ['Contrat envisagé', CONTRACT_LABELS[data.interview.envisagedContract]],
-            ['Préavis', data.interview.noticePeriod],
-            ['Flexibilité horaire', data.interview.scheduleFlexibility],
-            ['Attentes télétravail', REMOTE_LABELS[data.interview.remoteExpectation]],
-            ['Adéquation avec la culture', data.interview.cultureFit],
-          ]}
-        />
-      )}
-
-      {data.hiring && (
-        <Terms
-          title="Conditions d'embauche"
-          rows={[
-            ['Salaire négocié', euros(data.hiring.negotiatedSalary)],
-            ['Prise de poste', longDate(data.hiring.startDate)],
-            ['Contrat', CONTRACT_LABELS[data.hiring.finalContract]],
-            ['Période d\'essai', data.hiring.trialPeriod],
-            ['Statut cadre', data.hiring.executiveStatus ? 'Oui' : null],
-            ['Avantages', data.hiring.benefits],
-          ]}
-        />
-      )}
+        </div>
+      </div>
     </Workspace>
   );
 }

@@ -2,8 +2,12 @@ import { useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { applicationsApi } from '../../api/applications.js';
 import { offersApi } from '../../api/offers.js';
+import { profileApi } from '../../api/profile.js';
+import ApplyDialog from '../../components/ApplyDialog/ApplyDialog.jsx';
 import Button from '../../components/Button/Button.jsx';
 import ErrorState from '../../components/ErrorState/ErrorState.jsx';
+import InfoHint from '../../components/InfoHint/InfoHint.jsx';
+import SaveOffer from '../../components/SaveOffer/SaveOffer.jsx';
 import Skeleton from '../../components/Skeleton/Skeleton.jsx';
 import StatusBadge from '../../components/StatusBadge/StatusBadge.jsx';
 import { useToast } from '../../components/Toast/ToastContext.jsx';
@@ -14,23 +18,21 @@ import useResource from '../../hooks/useResource.js';
 import Workspace from '../Workspace/Workspace.jsx';
 import './offerPage.css';
 
-/** A labelled fact, dropped entirely when the offer does not state it. */
-function Fact({ label, children }) {
-  if (children === null || children === undefined || children === '') return null;
+/** One hard fact, dropped entirely when the offer does not state it. */
+function Term({ label, children }) {
+  if (!children) return null;
   return (
-    <div className="vitrine__fact">
-      <dt className="vitrine__fact-label">{label}</dt>
-      <dd className="vitrine__fact-value">{children}</dd>
+    <div className="terms__item">
+      <dt className="terms__value">{children}</dt>
+      <dd className="terms__label">{label}</dd>
     </div>
   );
 }
 
 /**
- * One offer at full length, which a listing card only summarises.
- *
- * The description runs unclipped, the requirements separate what an applicant
- * must hold from what counts in their favour, and applying sits where the
- * reading ends rather than competing with it.
+ * One offer at full length. The description and the profile sought run in the
+ * main column, with the terms and the way to act on the offer beside them, so
+ * the decision stays in reach at any depth of the page.
  */
 export default function OfferPage() {
   const { id } = useParams();
@@ -41,19 +43,28 @@ export default function OfferPage() {
 
   const [applying, setApplying] = useState(false);
   const [applied, setApplied] = useState(false);
+  const [choosing, setChoosing] = useState(false);
+  const [documents, setDocuments] = useState([]);
 
-  const { status, data, reload, pending, leaving } = useResource(
-    () => offersApi.detail(id),
-    [id],
-  );
+  const isCandidate = user.role === 'CANDIDAT';
+
+  const { status, data, reload, pending, leaving } = useResource(async () => {
+    const detail = await offersApi.detail(id);
+    // Only a candidate can apply, so only a candidate needs their documents.
+    if (isCandidate) {
+      setDocuments((await profileApi.read()).cvs);
+    }
+    return detail;
+  }, [id]);
 
   const back = location.state?.from ? { to: location.state.from, label: 'Retour' } : null;
 
-  async function apply() {
+  async function apply(cvId) {
     setApplying(true);
     try {
-      await applicationsApi.apply(Number(id));
+      await applicationsApi.apply(Number(id), cvId);
       setApplied(true);
+      setChoosing(false);
       toast.success('Candidature envoyée. Suivez-la dans « Mes candidatures ».');
     } catch (apiError) {
       toast.error(apiError.message);
@@ -75,110 +86,122 @@ export default function OfferPage() {
     );
   }
 
-  const { offer, publisherName, alreadyApplied, applicationCount } = data;
+  const { offer, saved, publisherName, alreadyApplied, applicationCount } = data;
   const required = offer.requirements.filter((r) => r.mandatory);
   const plus = offer.requirements.filter((r) => !r.mandatory);
-  const salary = salaryText(offer.salaryMin, offer.salaryMax);
-  const isCandidate = user.role === 'CANDIDAT';
   const hasApplied = alreadyApplied || applied;
+  const chosen = documents.find((cv) => cv.isDefault) ?? documents[0];
 
   return (
-    <Workspace width="narrow" title={offer.title} back={back}>
-      <div className="vitrine">
-        <div className="vitrine__banner">
-          <span className="vitrine__contract">{CONTRACT_LABELS[offer.contractType]}</span>
+    <Workspace
+      title={offer.title}
+      subtitle={[offer.company, offer.location].filter(Boolean).join(' · ')}
+      back={back}
+      // How many applied is the recruiter's business; the DTO already withholds
+      // it from anyone else, so an absent count simply shows nothing.
+      stats={applicationCount == null ? [] : [
+        { value: applicationCount, label: applicationCount > 1 ? 'candidatures' : 'candidature' },
+      ]}
+      action={(
+        <div className="vitrine__marks">
           <StatusBadge status={offer.status} />
+          {isCandidate && <SaveOffer offerId={offer.id} saved={saved} />}
         </div>
+      )}
+    >
+      <div className="doc doc--split doc--side-first">
+        {/* What the offer is worth deciding on: the terms, the way to act on
+            them, and who published it. */}
+        <aside className="doc__side">
+          <dl className="terms terms--stacked">
+            <Term label="Contrat">{CONTRACT_LABELS[offer.contractType]}</Term>
+            <Term label="Lieu">{offer.location}</Term>
+            <Term label="Télétravail">{REMOTE_LABELS[offer.remoteMode]}</Term>
+            <Term label="Niveau minimum">{DEGREE_LABELS[offer.requiredDegree]}</Term>
+            <Term label="Rémunération">{salaryText(offer.salaryMin, offer.salaryMax)}</Term>
+          </dl>
 
-        <section className="card">
-          <div className="card__body">
-            <dl className="vitrine__facts">
-              <Fact label="Lieu">{offer.location}</Fact>
-              <Fact label="Télétravail">{REMOTE_LABELS[offer.remoteMode]}</Fact>
-              <Fact label="Niveau d'études">{DEGREE_LABELS[offer.requiredDegree]}</Fact>
-              <Fact label="Rémunération">
-                {salary ? <span className="mono">{salary}</span> : null}
-              </Fact>
-              <Fact label="Publiée le">
-                {offer.publicationDate ? longDate(offer.publicationDate) : null}
-              </Fact>
-              <Fact label="Publiée par">{publisherName}</Fact>
-              <Fact label="Candidatures reçues">
-                {applicationCount === null || applicationCount === undefined
-                  ? null
-                  : String(applicationCount)}
-              </Fact>
-            </dl>
-          </div>
+          {isCandidate && (
+            <div className="actionbar">
+              {hasApplied ? (
+                <>
+                  <p className="vitrine__applied">Vous avez postulé à cette offre.</p>
+                  <Button variant="secondary" onClick={() => navigate('/mes-candidatures')}>
+                    Suivre
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="actionbar__note">
+                    {chosen ? `CV : ${chosen.label}` : 'Aucun CV déposé'}
+                  </p>
+                  <Button onClick={() => setChoosing(true)}>Postuler</Button>
+                </>
+              )}
+            </div>
+          )}
+
+          <p className="doc__meta">
+            {offer.publicationDate ? `Publiée le ${longDate(offer.publicationDate)}` : 'Non publiée'}
+            {publisherName && ` par ${publisherName}`}
+          </p>
+        </aside>
+
+        <div className="doc__main">
+        <section className="doc__section">
+          <h2 className="doc__heading">Le poste</h2>
+          {/* Runs at full length: this is the reason the page exists. */}
+          <p className="vitrine__desc">{offer.description}</p>
         </section>
 
-        <section className="card" aria-labelledby="offer-desc-title">
-          <div className="card__head">
-            <h2 id="offer-desc-title" className="card__title">Le poste</h2>
-          </div>
-          <div className="card__body">
-            {/* Runs at full length: this is the reason the page exists. */}
-            <p className="vitrine__desc">{offer.description}</p>
-          </div>
-        </section>
-
-        <section className="card" aria-labelledby="offer-traits-title">
-          <div className="card__head">
-            <h2 id="offer-traits-title" className="card__title">Profil recherché</h2>
-            <p className="card__subtitle">
+        <section className="doc__section">
+          <h2 className="doc__heading">
+            Profil recherché
+            <InfoHint label="Obligatoire ou atout">
               Les traits obligatoires conditionnent la candidature. Les autres comptent en votre
               faveur sans être exigés.
-            </p>
-          </div>
-          <div className="card__body">
-            <div className="vitrine__group">
-              <h3 className="vitrine__group-title">Obligatoires</h3>
-              {required.length === 0 ? (
-                <p className="vitrine__none">Aucun trait obligatoire.</p>
-              ) : (
-                <ul className="vitrine__tags">
-                  {required.map((r) => (
-                    <li key={r.traitId} className="tag tag--required">{r.label}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            </InfoHint>
+          </h2>
 
-            <div className="vitrine__group">
-              <h3 className="vitrine__group-title">Atouts</h3>
-              {plus.length === 0 ? (
-                <p className="vitrine__none">Aucun atout déclaré.</p>
-              ) : (
-                <ul className="vitrine__tags">
-                  {plus.map((r) => (
-                    <li key={r.traitId} className="tag tag--plus">{r.label}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
+          <div className="vitrine__group">
+            <h3 className="vitrine__group-title">Obligatoires</h3>
+            {required.length === 0 ? (
+              <p className="vitrine__none">Aucun trait obligatoire.</p>
+            ) : (
+              <ul className="vitrine__tags">
+                {required.map((r) => (
+                  <li key={r.traitId} className="tag tag--required">{r.label}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="vitrine__group">
+            <h3 className="vitrine__group-title">Atouts</h3>
+            {plus.length === 0 ? (
+              <p className="vitrine__none">Aucun atout déclaré.</p>
+            ) : (
+              <ul className="vitrine__tags">
+                {plus.map((r) => (
+                  <li key={r.traitId} className="tag tag--plus">{r.label}</li>
+                ))}
+              </ul>
+            )}
           </div>
         </section>
 
-        {isCandidate && (
-          <div className="vitrine__act">
-            {hasApplied ? (
-              <>
-                <p className="vitrine__applied">Vous avez postulé à cette offre.</p>
-                <Button variant="secondary" onClick={() => navigate('/mes-candidatures')}>
-                  Suivre ma candidature
-                </Button>
-              </>
-            ) : (
-              <>
-                <p className="vitrine__note">
-                  Votre CV et votre profil seront joints à la candidature.
-                </p>
-                <Button onClick={apply} loading={applying}>Envoyer la candidature</Button>
-              </>
-            )}
-          </div>
-        )}
+        </div>
       </div>
+
+      {choosing && (
+        <ApplyDialog
+          offer={offer}
+          documents={documents}
+          busy={applying}
+          onConfirm={apply}
+          onCancel={() => setChoosing(false)}
+        />
+      )}
     </Workspace>
   );
 }

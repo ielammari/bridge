@@ -4,22 +4,24 @@ import Button from '../../components/Button/Button.jsx';
 import CardGrid from '../../components/CardGrid/CardGrid.jsx';
 import EmptyState from '../../components/EmptyState/EmptyState.jsx';
 import ErrorState from '../../components/ErrorState/ErrorState.jsx';
+import Icon from '../../components/Icon/Icon.jsx';
 import PersonLink from '../../components/PersonLink/PersonLink.jsx';
 import OfferLink from '../../components/OfferLink/OfferLink.jsx';
 import Skeleton from '../../components/Skeleton/Skeleton.jsx';
+import { useToast } from '../../components/Toast/ToastContext.jsx';
 import { clockTime, shortDate } from '../../constants/format.js';
 import useResource from '../../hooks/useResource.js';
 import Workspace from '../Workspace/Workspace.jsx';
 import './technicalEvaluations.css';
 
 function whenText(app) {
-  if (!app.appointmentDate) return 'Examen non planifié';
   return `Examen le ${shortDate(app.appointmentDate)} à ${clockTime(app.appointmentTime)}`;
 }
 
 export default function TechnicalEvaluations() {
   const navigate = useNavigate();
   const location = useLocation();
+  const toast = useToast();
   // Where this list currently stands, so an evaluation opened from it can
   // return to the same view.
   const origin = { from: `${location.pathname}${location.search}` };
@@ -29,9 +31,20 @@ export default function TechnicalEvaluations() {
 
   const pending = data ?? [];
 
+  // The CV attached to the application, opened from the exam itself.
+  async function viewCv(applicationId) {
+    try {
+      const blob = await evaluationsApi.cv(applicationId);
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener');
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    } catch (apiError) {
+      toast.error(apiError.message);
+    }
+  }
+
   return (
     <Workspace title="Évaluations">
-      <p className="tech__intro">Candidats à évaluer après leur examen technique.</p>
 
       {loading && <Skeleton leaving={leaving} label="Chargement des évaluations" />}
 
@@ -42,9 +55,9 @@ export default function TechnicalEvaluations() {
       )}
 
       {status === 'ready' && pending.length === 0 && (
-        <EmptyState title="Aucune évaluation technique en attente.">
-          Les candidats validés par les RH apparaîtront ici dès que leur examen technique sera
-          planifié.
+        <EmptyState title="Aucun examen ne vous est attribué.">
+          Un examen apparaît ici lorsqu'un recruteur vous le confie en fixant sa date. Vous serez
+          prévenu à ce moment.
         </EmptyState>
       )}
 
@@ -61,7 +74,10 @@ export default function TechnicalEvaluations() {
                 <span><OfferLink id={app.offerId}>{app.offerTitle}</OfferLink></span>
                 <span>{whenText(app)}</span>
               </p>
-              <div className="tile__foot">
+              <div className="tile__foot evals__foot">
+                <Button variant="secondary" onClick={() => viewCv(app.applicationId)}>
+                  <Icon name="download" /> CV
+                </Button>
                 <Button onClick={() => navigate(`/evaluations/${app.applicationId}`, { state: origin })}>Évaluer</Button>
               </div>
             </li>

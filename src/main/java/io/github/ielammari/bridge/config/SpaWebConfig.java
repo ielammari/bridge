@@ -10,12 +10,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.resource.PathResourceResolver;
 
 /**
- * Serves the bundled React SPA from the jar.
- * <p>
- * Client side routes such as /offres or /profil are not real files, so any
- * request that does not match a static asset falls back to index.html and lets
- * React Router resolve it. API paths are excluded, so an unknown endpoint still
- * returns a proper 404 instead of the HTML shell.
+ * Serves the bundled React SPA from the jar. A request that matches no static
+ * asset falls back to index.html, so React Router resolves the client side
+ * routes; API paths are excluded, so an unknown endpoint still returns 404.
  */
 @Configuration
 public class SpaWebConfig implements WebMvcConfigurer {

@@ -2,10 +2,9 @@ import CardGrid from '../CardGrid/CardGrid.jsx';
 import './GroupedGrid.css';
 
 /**
- * A listing split into labelled sections. A single group shows no visible
- * heading, since naming it adds nothing next to the filter that produced it,
- * but the heading still exists for the document outline: without it the cards
- * would follow the page title with a level missing between them.
+ * A listing split into labelled sections. A single group hides its heading but
+ * still renders it, so the document outline keeps a level between the page
+ * title and the cards.
  */
 export default function GroupedGrid({ sections, size, render }) {
   if (sections.length === 1) {

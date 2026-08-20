@@ -2,12 +2,9 @@ import Icon from '../Icon/Icon.jsx';
 import './Checkbox.css';
 
 /**
- * A checkbox drawn from the design tokens. The native input stays in place and
- * keeps its semantics, focus, and keyboard behaviour; it is only made invisible
- * so the box beside it can be drawn instead.
- *
- * `hint` reads under the label, for a choice whose consequence is not obvious
- * from its name.
+ * A checkbox drawn from the design tokens: the native input keeps its
+ * semantics, focus and keyboard behaviour and is only made invisible. `hint`
+ * reads under the label.
  */
 export default function Checkbox({ label, hint, disabled, ...input }) {
   return (

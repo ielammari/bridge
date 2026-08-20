@@ -24,6 +24,9 @@ public record OfferRequest(
 		@Size(max = 150, message = "Le titre ne peut pas dépasser 150 caractères.")
 		String title,
 
+		@Size(max = 120, message = "Le nom de l'entreprise ne peut pas dépasser 120 caractères.")
+		String company,
+
 		@NotBlank(message = "La description est obligatoire.")
 		String description,
 

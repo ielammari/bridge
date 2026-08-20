@@ -1,9 +1,8 @@
 package io.github.ielammari.bridge.model;
 
 /**
- * Outcome of an evaluation. Names match the CHECK constraint on
- * evaluation.decision. The sequence diagrams narrate these as favorable and
- * unfavorable, but the stored values are VALIDEE and REFUSEE.
+ * Outcome of an evaluation. The names match the CHECK constraint on
+ * evaluation.decision, so the constraint and the enum cannot drift.
  */
 public enum Decision {
 	VALIDEE,

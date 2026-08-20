@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { applicationsApi } from '../../api/applications.js';
 import { scheduleApi } from '../../api/schedule.js';
+import Select from '../Select/Select.jsx';
 import { clockTime, localDate } from '../../constants/format.js';
 import useResource from '../../hooks/useResource.js';
 import './Scheduler.css';
@@ -12,22 +13,54 @@ function isPast(date, time) {
   return Number(time.slice(0, 2)) <= now.getHours();
 }
 
+const KIND = { TECHNIQUE: 'examen technique', RH: 'entretien RH' };
+
+/** Who a booked slot belongs to, named fully enough to tell two people apart. */
+function occupant(slot) {
+  return `${KIND[slot.type] ?? 'Entretien'} de ${slot.candidateName} pour l'offre « ${slot.offerTitle} »`;
+}
+
+/** An expert, with what they already hold that week. */
+function expertLabel(expert) {
+  const load = expert.load === 0 ? 'aucun entretien'
+    : `${expert.load} entretien${expert.load > 1 ? 's' : ''}`;
+  return `${expert.firstName} ${expert.lastName} (${load} cette semaine)`;
+}
+
 /**
- * HR books an interview from an hourly grid. A slot taken by another interview
- * is disabled and names its occupant; this application's own slot is marked.
+ * HR books an interview on an hourly grid. The calendar belongs to whoever runs
+ * it, so an exam names its expert first and then shows that expert's day, with
+ * a taken hour disabled and named. The final interview is the recruiter's own
+ * and opens straight on the grid.
  */
-export default function Scheduler({ applicationId, current, onScheduled }) {
+export default function Scheduler({ applicationId, kind, current, onScheduled }) {
+  const needsExpert = kind === 'TECHNIQUE';
   const [date, setDate] = useState(current?.date ?? localDate(1));
+  const [expertId, setExpertId] = useState(current?.evaluatorId ? String(current.evaluatorId) : '');
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
 
-  const { status, data, reload } = useResource(() => scheduleApi.day(date), [date]);
+  const experts = useResource(
+    () => (needsExpert ? scheduleApi.experts(date) : Promise.resolve([])),
+    [needsExpert, date],
+  );
+
+  // Without an expert there is no day to show: the hours belong to them.
+  const ready = !needsExpert || Boolean(expertId);
+  const { status, data, reload } = useResource(
+    () => (ready ? scheduleApi.day(date, expertId || undefined) : Promise.resolve(null)),
+    [date, expertId, ready],
+  );
 
   async function pick(time) {
     setError(null);
     setBusy(time);
     try {
-      onScheduled(await applicationsApi.schedule(applicationId, { date, time }));
+      onScheduled(await applicationsApi.schedule(applicationId, {
+        date,
+        time,
+        expertId: expertId ? Number(expertId) : null,
+      }));
     } catch (apiError) {
       setError(apiError.message);
     } finally {
@@ -37,24 +70,48 @@ export default function Scheduler({ applicationId, current, onScheduled }) {
 
   return (
     <div className="scheduler">
-      <label className="scheduler__date">
-        <span>Date</span>
-        <input type="date" value={date} min={localDate()}
-          onChange={(event) => setDate(event.target.value)} />
-      </label>
+      <div className="scheduler__who">
+        {needsExpert && (
+          <Select
+            label="Expert technique"
+            value={expertId}
+            onChange={(event) => setExpertId(event.target.value)}
+            options={(experts.data ?? []).map((expert) => ({
+              value: String(expert.id),
+              label: expertLabel(expert),
+            }))}
+            placeholder="Choisir un expert"
+            hint={experts.status === 'ready' && (experts.data ?? []).length === 0
+              ? 'Aucun expert : créez un compte expert dans Paramètres.'
+              : undefined}
+          />
+        )}
+
+        <label className="scheduler__date">
+          <span>Date</span>
+          <input type="date" value={date} min={localDate()}
+            onChange={(event) => setDate(event.target.value)} />
+        </label>
+      </div>
 
       {error && <p className="scheduler__error" role="alert">{error}</p>}
 
-      {status === 'loading' && <p className="scheduler__muted">Chargement des créneaux...</p>}
+      {!ready && (
+        <p className="scheduler__muted">
+          Choisissez l'expert pour voir les créneaux dont il dispose.
+        </p>
+      )}
 
-      {status === 'error' && (
+      {ready && status === 'loading' && <p className="scheduler__muted">Chargement des créneaux...</p>}
+
+      {ready && status === 'error' && (
         <p className="scheduler__error" role="alert">
           La journée n'a pas pu être chargée.{' '}
           <button type="button" className="scheduler__retry" onClick={reload}>Réessayer</button>
         </p>
       )}
 
-      {status === 'ready' && (
+      {ready && status === 'ready' && data && (
         <div className="scheduler__grid" role="group" aria-label="Créneaux de la journée">
           {data.slots.map((slot) => {
             const mine = slot.taken && slot.applicationId === applicationId;
@@ -68,7 +125,10 @@ export default function Scheduler({ applicationId, current, onScheduled }) {
                 className={`slot${mine ? ' slot--current' : ''}${blocked ? ' slot--taken' : ''}`}
                 disabled={blocked || busy === slot.time}
                 onClick={() => pick(slot.time)}
-                title={takenByOther ? `Pris par ${slot.candidateName}` : undefined}
+                title={takenByOther ? occupant(slot) : undefined}
+                aria-label={takenByOther
+                  ? `${clockTime(slot.time)}, pris : ${occupant(slot)}`
+                  : undefined}
               >
                 <span className="slot__time mono">{clockTime(slot.time)}</span>
                 {mine && <span className="slot__note">Actuel</span>}

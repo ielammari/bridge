@@ -17,6 +17,10 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* The page keeps the scroll position it is put at. The header is in flow and
+     changes height as the page moves, and scroll anchoring would answer that by
+     shifting the scroll by the same amount. */
+  overflow-anchor: none;
 }
 
 body {
@@ -80,13 +84,14 @@ textarea {
   color: inherit;
 }
 
-/* Animated focus ring. */
+/* Animated focus ring. The tabindex arm carries no specificity of its own, so
+   an element given one keeps whatever transitions it declares for itself. */
 a,
 button,
 input,
 select,
 textarea,
-[tabindex] {
+:where([tabindex]) {
   outline: 2px solid transparent;
   outline-offset: -1px;
   transition: outline-color var(--duration) var(--ease);
@@ -124,7 +129,11 @@ textarea,
   border-bottom: 1px solid var(--border);
 }
 
+/* The heading carries its own explanation mark, so it lays out as a row. */
 .card__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   font-size: var(--size-lg);
 }
 
@@ -166,7 +175,15 @@ textarea,
   gap: var(--space-3);
 }
 
+/* A card is a preview, so its title stops at two lines. `anywhere` is what
+   makes that true of a title with no spaces in it: the clamp alone still counts
+   one unbreakable line and the word runs past the card. */
 .tile__title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
   font-size: var(--size-lg);
 }
 
@@ -181,14 +198,41 @@ textarea,
 
 /* ---- A card that opens something ---------------------------------------
    One real link, the title, with its hit area stretched over the card by an
-   overlay, so the whole card is the target and no control nests inside
-   another. Anything else interactive sits above that overlay.
-
-   Reaching the card by keyboard means reaching the title, so the ring goes
-   around the card rather than the words. */
+   overlay, so the whole card is the target and no control nests inside another.
+   Anything else interactive sits above that overlay. Approaching lifts the card
+   and warms the title, shallow enough that a listing does not move as the
+   pointer crosses it. */
 .tile--openable {
   position: relative;
   cursor: pointer;
+  transition:
+    transform var(--duration-lift) var(--ease-lift),
+    box-shadow var(--duration-lift) var(--ease-lift),
+    border-color var(--duration-lift) var(--ease-lift);
+}
+
+/* Keyboard focus lifts the card, since the ring alone lands on the title. A
+   pointer press leaves focus on whatever it hit, so a card is held up by the
+   pointer being there and drops the moment it leaves. */
+.tile--openable:hover,
+.tile--openable:has(:focus-visible) {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-float);
+}
+
+/* Settles under the finger, on the press rather than the release. */
+.tile--openable:active {
+  transform: translateY(0) scale(0.995);
+  transition-duration: 90ms;
+}
+
+.tile--openable .tile__title {
+  transition: color var(--duration-lift) var(--ease-lift);
+}
+
+.tile--openable:hover .tile__title {
+  color: var(--primary);
 }
 
 .tile__stretch::after {
@@ -197,6 +241,8 @@ textarea,
   inset: 0;
 }
 
+/* Reaching the card by keyboard means reaching the title, so the ring goes
+   around the card rather than the words. */
 .tile--openable:has(.tile__stretch:focus-visible) {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
@@ -207,9 +253,30 @@ textarea,
 }
 
 .tile--openable .tile__foot,
-.tile--openable .tile__head > :not(.tile__title) {
+.tile--openable .tile__head > :not(.tile__title),
+.tile--openable .offercard__head > :not(.tile__title) {
   position: relative;
   z-index: 1;
+}
+
+/* The lift is the affordance here; without motion the border carries it. */
+@media (prefers-reduced-motion: reduce) {
+  .tile--openable,
+  .tile--openable .tile__title {
+    transition: none;
+  }
+
+  .tile--openable:hover,
+  .tile--openable:has(:focus-visible),
+  .tile--openable:active {
+    transform: none;
+  }
+}
+
+/* The one card a notice points at, marked by its border so it is found without
+   the page moving or flashing. */
+.tile--named {
+  border-color: var(--accent);
 }
 
 /* Clamped, so one verbose description cannot set the height of its whole row. */
@@ -312,11 +379,10 @@ textarea,
 
 /* ---- Content entrance ---------------------------------------------------
    A short rise and fade, staggered across a listing so the eye follows the
-   first row in. It runs on every mount, so a load too fast for a placeholder
-   still arrives rather than appearing.
-
-   Entering is slower than the placeholder's exit, 200ms against 120ms, which is
-   what gives the handover its direction. */
+   first row in, on every mount. `backwards`, not `both`: the fill covers the
+   stagger delay, and a filling animation outranks a transition on the same
+   property, so holding transform for the element's life would freeze any later
+   motion. It runs slower than the placeholder's exit, 200ms against 120ms. */
 @keyframes content-in {
   from {
     opacity: 0;
@@ -327,7 +393,7 @@ textarea,
 .cardgrid > *,
 .msg__list > *,
 .card {
-  animation: content-in 200ms var(--ease) both;
+  animation: content-in 200ms var(--ease) backwards;
 }
 
 /* Capped at eight: past that the stagger stops paying for itself and a long
@@ -345,5 +411,222 @@ textarea,
   .msg__list > *,
   .card {
     animation: none;
+  }
+}
+
+/* ---- A document -------------------------------------------------------
+   A detail page is read rather than operated, so its parts are sections of one
+   document. Only a real object keeps a surface: the strip of facts, and the
+   action bar. */
+.doc {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.doc__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.doc__heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--size-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* The rule runs from the heading to the edge, bounding the section without
+   drawing a box around it. */
+.doc__heading::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Provenance, at the foot and out of the way of what the page is selling. */
+.doc__meta {
+  font-size: var(--size-sm);
+  color: var(--text-faint);
+}
+
+/* ---- A document with a column beside it --------------------------------
+   The reading runs in the main column; the facts, the actions and the record
+   stand beside it as blocks, in reach while the prose scrolls. Below the split
+   the side comes first, the facts being wanted before the description. */
+.doc--split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 21rem);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.doc__main,
+.doc__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.doc--split > .doc__main {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+/* A block that belongs to the whole document rather than to either column,
+   such as where an application currently stands. */
+.doc--split > .doc__lead {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+.doc--split:has(> .doc__lead) > .doc__main,
+.doc--split:has(> .doc__lead) > .doc__side {
+  grid-row: 2;
+}
+
+/* Holds its place while the main column scrolls, clearing the header. */
+.doc--split > .doc__side {
+  grid-column: 2;
+  grid-row: 1;
+  position: sticky;
+  top: calc(var(--header-h, 0px) + var(--space-4));
+}
+
+/* An offer leads with its terms: the facts take the left and the reading runs
+   beside them, further apart than two sections of the same column would be. */
+.doc--side-first {
+  grid-template-columns: minmax(0, 21rem) minmax(0, 1fr);
+  column-gap: 14mm;
+}
+
+.doc--side-first > .doc__side {
+  grid-column: 1;
+}
+
+.doc--side-first > .doc__main {
+  grid-column: 2;
+}
+
+/* In the side column the bar is the block itself, not a raft floating over
+   the page. */
+.doc__side .actionbar {
+  position: static;
+  width: 100%;
+  justify-content: space-between;
+}
+
+@media (max-width: 64rem) {
+  .doc--split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .doc--split > .doc__lead {
+    grid-row: 1;
+  }
+
+  .doc--split > .doc__side {
+    position: static;
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  /* One column: the column each part was given side by side is spent, so
+     both take the only one there is. */
+  .doc--split > .doc__main {
+    grid-column: 1;
+    grid-row: 3;
+  }
+}
+
+/* ---- A strip of hard facts ---------------------------------------------
+   What gets scanned before a word of prose is read, so the values carry and
+   the labels only name them. */
+.terms {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(9rem, 100%), 1fr));
+  gap: var(--space-4) var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+/* Stacked when it stands in the side column, where the width is the reading
+   width of one value rather than of a row of them. */
+.terms--stacked {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.terms__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.terms__value {
+  font-family: var(--font-display);
+  font-size: var(--size-xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-heading);
+  overflow-wrap: anywhere;
+}
+
+.terms__label {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--size-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* ---- A sticky action bar ------------------------------------------------
+   Follows the reader down a long page, so the decision is reachable at any
+   depth without a second copy of the button higher up. */
+.actionbar {
+  position: sticky;
+  bottom: var(--space-5);
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: fit-content;
+  max-width: 100%;
+  margin-top: var(--space-4);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  box-shadow: var(--shadow-float);
+}
+
+.actionbar__note {
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+@media (max-width: 40rem) {
+  .actionbar {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    padding: var(--space-3);
+  }
+
+  .actionbar__note {
+    white-space: normal;
   }
 }

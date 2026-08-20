@@ -34,10 +34,10 @@ public class HistoryController {
 		return historyService.mine(currentUserId(jwt), applicationId);
 	}
 
-	/** Every closed application, across every offer. */
+	/** Every closed application on this recruiter's own offers. */
 	@GetMapping("/applications")
-	public List<HrApplicationDto> closed() {
-		return historyService.closedApplications();
+	public List<HrApplicationDto> closed(@AuthenticationPrincipal Jwt jwt) {
+		return historyService.closedApplications(currentUserId(jwt));
 	}
 
 	/** Every hire, for HR. */
@@ -49,7 +49,7 @@ public class HistoryController {
 	/** The evaluations the caller has written. */
 	@GetMapping("/evaluations")
 	public List<AuthoredEvaluationDto> authored(@AuthenticationPrincipal Jwt jwt) {
-		return historyService.authored(currentUserId(jwt));
+		return historyService.authored(currentUserId(jwt), currentRole(jwt));
 	}
 
 	/** The full trail of one application, for the actors who ran it. */

@@ -9,10 +9,8 @@ import jakarta.validation.constraints.Size;
 
 /**
  * Replaces the editable parts of the candidate profile. The trait list is the
- * complete desired set: whatever it contains becomes the profile.
- *
- * Experience level is not here: it is a trait category, chosen in the same list
- * as every other trait.
+ * complete desired set, experience level included: it is a trait category
+ * chosen in the same list as every other trait.
  */
 public record UpdateProfileRequest(
 

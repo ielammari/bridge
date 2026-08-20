@@ -56,7 +56,7 @@ class MatchingServiceTest {
 
 	private Integer publishOffer(Degree required, List<RequirementSelection> reqs) {
 		OfferDto dto = offerService.create(hrId(), new OfferRequest(
-				"Ingénieur", "Description", required, ContractType.PERMANENT,
+				"Ingénieur", null, "Description", required, ContractType.PERMANENT,
 				"Paris", null, null, null, reqs, true));
 		return dto.id();
 	}
@@ -124,12 +124,12 @@ class MatchingServiceTest {
 		giveProfile(candidate, Degree.BAC_5, t);
 
 		// A draft (publishNow = false).
-		offerService.create(hrId(), new OfferRequest("Brouillon", "d", Degree.BAC,
+		offerService.create(hrId(), new OfferRequest("Brouillon", null, "d", Degree.BAC,
 				ContractType.PERMANENT, null, null, null, null,
 				List.of(new RequirementSelection(t.get(0).getId(), true)), false));
 		// A published then closed offer.
 		Integer published = publishOffer(Degree.BAC, List.of(new RequirementSelection(t.get(0).getId(), true)));
-		offerService.close(published);
+		offerService.close(hrId(), published);
 
 		assertThat(matchingService.feed(candidate)).isEmpty();
 	}

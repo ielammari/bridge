@@ -4,9 +4,8 @@ import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * Stores and retrieves candidate CV files. The local disk implementation can be
- * swapped for object storage without touching callers, which is why this is an
- * interface rather than a concrete class.
+ * Stores and retrieves candidate CV files. An interface because the local disk
+ * implementation can be swapped for object storage without touching callers.
  */
 public interface StorageService {
 

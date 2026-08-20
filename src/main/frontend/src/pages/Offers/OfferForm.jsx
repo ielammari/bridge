@@ -1,19 +1,22 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import Alert from '../../components/Alert/Alert.jsx';
 import Button from '../../components/Button/Button.jsx';
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog.jsx';
 import Field from '../../components/Field/Field.jsx';
 import FormErrorSummary from '../../components/FormErrorSummary/FormErrorSummary.jsx';
 import Icon from '../../components/Icon/Icon.jsx';
+import InfoHint from '../../components/InfoHint/InfoHint.jsx';
 import Select from '../../components/Select/Select.jsx';
 import TraitPicker from '../../components/TraitPicker/TraitPicker.jsx';
 import { CONTRACT_OPTIONS, DEGREE_OPTIONS, REMOTE_OPTIONS } from '../../constants/enums.js';
 import { positiveNumber } from '../../constants/validation.js';
 import useForm from '../../hooks/useForm.js';
+import useMediaQuery from '../../hooks/useMediaQuery.js';
 import './offerForm.css';
 
 const RULES = {
   title: { label: 'Titre du poste', required: 'Donnez un titre à l\'offre.' },
+  company: { label: 'Entreprise' },
   description: { label: 'Description', required: 'Décrivez le poste.' },
   requiredDegree: { label: 'Niveau d\'études requis', required: 'Choisissez le niveau d\'études requis.' },
   contractType: { label: 'Type de contrat', required: 'Choisissez le type de contrat.' },
@@ -35,12 +38,13 @@ const RULES = {
 function initialFrom(offer) {
   if (!offer) {
     return {
-      title: '', description: '', requiredDegree: '', contractType: '',
+      title: '', company: '', description: '', requiredDegree: '', contractType: '',
       location: '', remoteMode: '', salaryMin: '', salaryMax: '',
     };
   }
   return {
     title: offer.title,
+    company: offer.company ?? '',
     description: offer.description,
     requiredDegree: offer.requiredDegree ?? '',
     contractType: offer.contractType ?? '',
@@ -60,9 +64,9 @@ function initialTraits(offer) {
 }
 
 /**
- * Create or edit an offer. On create, the two actions decide draft against
- * publish; on edit, a single save keeps the current status. New traits default
- * to required, since an offer needs at least one.
+ * Create or edit an offer. On create the two actions decide draft against
+ * publish; on edit a single save keeps the current status. New traits default
+ * to required.
  */
 export default function OfferForm({ mode, offer, catalogue, onSubmit, onCancel, submitting }) {
   const form = useForm(initialFrom(offer), RULES);
@@ -70,6 +74,8 @@ export default function OfferForm({ mode, offer, catalogue, onSubmit, onCancel, 
   const [confirming, setConfirming] = useState(null);
   const [failure, setFailure] = useState(null);
   const [attempted, setAttempted] = useState(false);
+  const traitsRef = useRef(null);
+  const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
 
   const published = offer?.status === 'PUBLIEE';
 
@@ -80,8 +86,8 @@ export default function OfferForm({ mode, offer, catalogue, onSubmit, onCancel, 
     return map;
   }, [catalogue]);
 
-  // A form level rule, kept to the same timing as the field ones: silent until
-  // the first submit attempt.
+  // A form level rule on the same timing as the field ones: silent until the
+  // first submit attempt.
   function traitProblem() {
     if (traits.traitIds.length === 0) return 'Sélectionnez au moins un trait pour l\'offre.';
     if (!traits.traitIds.some((id) => traits.mandatoryById[id])) {
@@ -114,6 +120,7 @@ export default function OfferForm({ mode, offer, catalogue, onSubmit, onCancel, 
     const { values } = form;
     return {
       title: values.title.trim(),
+      company: values.company.trim() || null,
       description: values.description.trim(),
       requiredDegree: values.requiredDegree,
       contractType: values.contractType,
@@ -143,7 +150,18 @@ export default function OfferForm({ mode, offer, catalogue, onSubmit, onCancel, 
   // confirmed first.
   function attempt(intent) {
     setAttempted(true);
-    if (!form.attempt() || traitProblem()) return;
+    const fieldsOk = form.attempt();
+
+    // The trait rule sits above the buttons that raise it, so the page brings
+    // the section's top on screen. A field summary higher up takes precedence.
+    if (fieldsOk && traitProblem()) {
+      traitsRef.current?.scrollIntoView({
+        block: 'start',
+        behavior: reduceMotion ? 'auto' : 'smooth',
+      });
+    }
+
+    if (!fieldsOk || traitProblem()) return;
     if (intent === 'draft') {
       send(false);
       return;
@@ -160,7 +178,10 @@ export default function OfferForm({ mode, offer, catalogue, onSubmit, onCancel, 
 
       <section className="card">
         <div className="card__body">
-          <Field label="Titre du poste" {...form.field('title')} />
+          <div className="offerform__grid">
+            <Field label="Titre du poste" {...form.field('title')} />
+            <Field label="Entreprise" hint="Bridge par défaut" {...form.field('company')} />
+          </div>
           <Field label="Description" multiline rows={6} {...form.field('description')} />
           <div className="offerform__grid">
             <Select label="Niveau d'études requis" options={DEGREE_OPTIONS} placeholder="Choisir"
@@ -170,25 +191,27 @@ export default function OfferForm({ mode, offer, catalogue, onSubmit, onCancel, 
             <Field label="Localisation" hint="Facultatif" {...form.field('location')} />
             <Select label="Télétravail" options={REMOTE_OPTIONS} placeholder="Non précisé"
               {...form.field('remoteMode')} />
-            <Field label="Salaire minimum (€)" type="number" hint="Facultatif"
+            <Field label="Salaire minimum (€)" type="number" min="0" hint="Facultatif"
               {...form.field('salaryMin')} />
-            <Field label="Salaire maximum (€)" type="number" hint="Facultatif"
+            <Field label="Salaire maximum (€)" type="number" min="0" hint="Facultatif"
               {...form.field('salaryMax')} />
           </div>
         </div>
       </section>
 
-      <section className="card">
+      <section className="card offerform__traits" ref={traitsRef}>
         <div className="card__head">
-          <h2 className="card__title">Traits recherchés</h2>
-          <p className="card__subtitle">
-            Choisissez les traits, puis marquez chacun comme obligatoire (filtre les candidats) ou
-            atout (utilisé pour le classement).
-          </p>
+          <h2 className="card__title">
+            Traits recherchés
+            <InfoHint label="Obligatoire ou atout">
+              Choisissez les traits, puis marquez chacun comme obligatoire (filtre les candidats) ou atout (utilisé pour le classement).
+            </InfoHint>
+          </h2>
         </div>
         <div className="card__body">
           {traitError && <Alert>{traitError}</Alert>}
-          <TraitPicker catalogue={catalogue} value={traits.traitIds} onChange={setTraitIds} />
+          <TraitPicker catalogue={catalogue} value={traits.traitIds} onChange={setTraitIds}
+            chipNote={(id) => (traits.mandatoryById[id] ? 'Obligatoire' : 'Atout')} />
 
           {traits.traitIds.length > 0 && (
             <ul className="reqlist">

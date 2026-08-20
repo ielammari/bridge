@@ -6,6 +6,7 @@ import Checkbox from '../../components/Checkbox/Checkbox.jsx';
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog.jsx';
 import Field from '../../components/Field/Field.jsx';
 import FormErrorSummary from '../../components/FormErrorSummary/FormErrorSummary.jsx';
+import InfoHint from '../../components/InfoHint/InfoHint.jsx';
 import Select from '../../components/Select/Select.jsx';
 import { CONTRACT_OPTIONS, REMOTE_OPTIONS } from '../../constants/enums.js';
 import { localDate } from '../../constants/format.js';
@@ -58,9 +59,9 @@ const num = (v) => (v === '' ? null : Number(v));
 const str = (v) => (v.trim() === '' ? null : v.trim());
 
 /**
- * The final HR decision. Interview data is recorded whatever the outcome; the
- * hiring terms are demanded only when hiring, so each action validates its own
- * set of fields.
+ * The final HR decision. Interview data is recorded whatever the outcome and
+ * the hiring terms only when hiring, so each action validates its own fields.
+ * The two stand side by side where there is room.
  */
 export default function FinalEvaluation({ app, offerTitle, onDone }) {
   const form = useForm(EMPTY, RULES);
@@ -115,6 +116,7 @@ export default function FinalEvaluation({ app, offerTitle, onDone }) {
       {failure && <Alert>{failure}</Alert>}
       <FormErrorSummary errors={form.currentErrors()} rules={RULES} />
 
+      <div className="final__sections">
       <section className="card">
         <div className="card__head">
           <h2 className="card__title">Bilan de l'entretien</h2>
@@ -123,12 +125,14 @@ export default function FinalEvaluation({ app, offerTitle, onDone }) {
         <div className="card__body">
           <Field label="Commentaire global" multiline rows={3} {...form.field('comment')} />
           <div className="final__grid">
-            <Field label="Salaire attendu (€)" type="number" {...form.field('expectedSalary')} />
+            <Field label="Salaire attendu (€)" type="number" min="0"
+              {...form.field('expectedSalary')} />
             <Field label="Disponibilité" type="date" {...form.field('availabilityDate')} />
             <Select label="Contrat envisagé" options={CONTRACT_OPTIONS} placeholder="Non précisé"
               {...form.field('envisagedContract')} />
-            <Field label="Préavis" {...form.field('noticePeriod')} />
-            <Field label="Flexibilité horaire" {...form.field('scheduleFlexibility')} />
+            <Field label="Préavis" hint="Par exemple : 2 mois" {...form.field('noticePeriod')} />
+            <Field label="Flexibilité horaire" hint="Par exemple : horaires décalés"
+              {...form.field('scheduleFlexibility')} />
             <Select label="Attentes télétravail" options={REMOTE_OPTIONS} placeholder="Non précisé"
               {...form.field('remoteExpectation')} />
           </div>
@@ -138,12 +142,17 @@ export default function FinalEvaluation({ app, offerTitle, onDone }) {
 
       <section className="card">
         <div className="card__head">
-          <h2 className="card__title">Conditions d'embauche</h2>
-          <p className="card__subtitle">Demandées uniquement si vous validez l'embauche.</p>
+          <h2 className="card__title">
+            Conditions d'embauche
+            <InfoHint label="Quand ces champs servent">
+              Demandées uniquement si vous validez l'embauche.
+            </InfoHint>
+          </h2>
         </div>
         <div className="card__body">
           <div className="final__grid">
-            <Field label="Salaire négocié (€)" type="number" {...form.field('negotiatedSalary')} />
+            <Field label="Salaire négocié (€)" type="number" min="0"
+              {...form.field('negotiatedSalary')} />
             <Field label="Date de prise de poste" type="date" min={localDate()}
               {...form.field('startDate')} />
             <Select label="Contrat final" options={CONTRACT_OPTIONS} placeholder="Choisir"
@@ -155,6 +164,7 @@ export default function FinalEvaluation({ app, offerTitle, onDone }) {
           <Field label="Avantages" multiline rows={2} {...form.field('benefits')} />
         </div>
       </section>
+      </div>
 
       <div className="final__decide">
         <Button variant="danger" onClick={() => attempt('REFUSEE')}>

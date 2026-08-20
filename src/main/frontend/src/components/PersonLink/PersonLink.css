@@ -1,14 +1,13 @@
-/* Underlined only on approach: a listing full of permanently underlined names
-   reads as a page of links rather than a page of people. */
+/* A name reads as a name until it is approached, when colour alone marks it as
+   the way in: a listing full of underlines reads as markup rather than people.
+   The step is large enough to register on its own, since nothing else moves. */
 .personlink {
   color: inherit;
   text-decoration: none;
-  text-underline-offset: 3px;
   border-radius: var(--radius-sm);
   transition: color var(--duration) var(--ease);
 }
 
 .personlink:hover {
-  color: var(--primary);
-  text-decoration: underline;
+  color: var(--accent);
 }

@@ -81,37 +81,64 @@
   color: var(--danger);
 }
 
+/* What the caller has settled about the trait, set apart by a rule so the
+   label still reads first. */
+.chip__note {
+  padding-inline-start: var(--space-2);
+  border-inline-start: 1px solid var(--border);
+  font-size: var(--size-xs);
+  letter-spacing: 0.02em;
+  color: var(--text-faint);
+  transition: color var(--duration) var(--ease), border-color var(--duration) var(--ease);
+}
+
 .chip__remove {
   color: var(--text-faint);
 }
 
+.chip:hover .chip__note,
 .chip:hover .chip__remove {
   color: var(--danger);
 }
 
+.chip:hover .chip__note {
+  border-inline-start-color: var(--danger);
+}
+
 /* ---- Categories ------------------------------------------------------ */
-/* Two columns: eighteen categories stacked in one make a very tall card for
-   what is a list of headings. Each is its own grid item and grows in place, so
-   opening one never moves the others. */
+/* Two columns laid out by useMasonry: each category sits under the shortest
+   column, so opening one lets the ones beneath it rise instead of leaving a
+   hole. Positions are transforms, which is what animates the rearrangement. */
 .picker__categories {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
-  gap: var(--space-2);
+  position: relative;
+  display: flow-root;
   margin: 0;
   padding: 0;
   list-style: none;
+  transition: height var(--duration-slow) var(--ease);
 }
 
-@media (max-width: 48rem) {
-  .picker__categories {
-    grid-template-columns: 1fr;
-  }
+.picker__category {
+  top: 0;
+  left: 0;
+  transition: transform var(--duration-slow) var(--ease);
 }
 
-/* A message about the whole search spans both columns. */
+/* Nothing is positioned until the layout has measured, so a single column and
+   the first paint both fall back to ordinary flow. */
+.picker__category:not([style*='position']) + .picker__category {
+  margin-top: var(--space-2);
+}
+
 .picker__empty {
-  grid-column: 1 / -1;
+  padding: var(--space-3) 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .picker__categories,
+  .picker__category {
+    transition: none;
+  }
 }
 
 .picker__category {

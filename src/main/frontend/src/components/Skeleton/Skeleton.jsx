@@ -2,15 +2,10 @@ import CardGrid from '../CardGrid/CardGrid.jsx';
 import './Skeleton.css';
 
 /**
- * The placeholder a page shows while its data loads, in the shape of that
- * page's own content.
- *
- * Each variant is built from the classes the real screen uses, inheriting the
- * grid, the card, and the spacing rather than restating them, so it cannot
- * drift out of step when a page is restyled.
- *
- * `leaving` plays the exit. The content mounts only after it finishes, so the
- * two never overlap.
+ * The placeholder a page shows while it loads, in the shape of that page's own
+ * content: each variant is built from the classes the real screen uses, so it
+ * cannot drift when a page is restyled. `leaving` plays the exit, which
+ * finishes before the content mounts.
  */
 export default function Skeleton({
   variant = 'cards',

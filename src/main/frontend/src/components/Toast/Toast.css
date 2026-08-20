@@ -1,7 +1,6 @@
-/* Top centre. A confirmation answers something the user just did, so it belongs
-   where they are already looking rather than in the corner furthest from the
-   page. Anchored to the viewport, not to the content column, so it lands the
-   same way on the signed out pages, which have no sidebar to clear. */
+/* Top centre, where the reader is already looking. Anchored to the viewport
+   rather than the content column, so it lands the same way on the signed out
+   pages, which have no sidebar to clear. */
 .toasts {
   position: fixed;
   top: var(--space-4);

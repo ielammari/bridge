@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Button from '../../components/Button/Button.jsx';
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog.jsx';
 import Field from '../../components/Field/Field.jsx';
+import InfoHint from '../../components/InfoHint/InfoHint.jsx';
 import useForm from '../../hooks/useForm.js';
 
 const THIS_YEAR = new Date().getFullYear();
@@ -46,9 +47,8 @@ const period = (entry) =>
   (entry.endYear ? `${entry.startYear} à ${entry.endYear}` : `depuis ${entry.startYear}`);
 
 /**
- * One qualification being added or changed. It owns its own form state, so the
- * caller remounts it with a key rather than resetting it: moving to another
- * entry then starts clean, with no validation carried over from the last one.
+ * One qualification being added or changed. It owns its form state, so the
+ * caller remounts it with a key and another entry starts clean.
  */
 function EducationForm({ initial, submitLabel, onSubmit, onCancel, busy }) {
   const form = useForm(initial, RULES);
@@ -88,12 +88,9 @@ function EducationForm({ initial, submitLabel, onSubmit, onCancel, busy }) {
 }
 
 /**
- * The qualifications a candidate holds, most recent first.
- *
- * Separate from the education level beside it: the level is the one ordered
- * value an offer is filtered against, this is what that value stands for.
- * Editing opens the form in the entry's place, so the rest of the path stays
- * readable while one line of it changes.
+ * The qualifications a candidate holds, most recent first. Separate from the
+ * education level beside it, which is the one ordered value an offer is
+ * filtered against. Editing opens the form in the entry's own place.
  */
 export default function AcademicPath({ entries, onAdd, onUpdate, onRemove, busy }) {
   const [editing, setEditing] = useState(null); // null, 'new', or an entry id
@@ -109,11 +106,12 @@ export default function AcademicPath({ entries, onAdd, onUpdate, onRemove, busy 
   return (
     <section className="card" aria-labelledby="path-title">
       <div className="card__head">
-        <h2 id="path-title" className="card__title">Parcours</h2>
-        <p className="card__subtitle">
-          Les diplômes que vous avez obtenus, et celui que vous préparez. Chaque formation est
-          enregistrée dès son ajout.
-        </p>
+        <h2 id="path-title" className="card__title">
+          Parcours
+          <InfoHint label="À propos du parcours">
+            Les diplômes que vous avez obtenus, et celui que vous préparez. Chaque formation est enregistrée dès son ajout.
+          </InfoHint>
+        </h2>
       </div>
 
       <div className="card__body">

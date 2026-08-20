@@ -1,7 +1,7 @@
 import { api } from './client.js';
 
 export const applicationsApi = {
-  apply: (offerId) => api.post('/applications', { offerId }),
+  apply: (offerId, cvId = null) => api.post('/applications', { offerId, cvId }),
   mine: () => api.get('/applications/mine'),
   forOffer: (offerId) => api.get(`/applications?offerId=${offerId}`),
   get: (id) => api.get(`/applications/${id}`),

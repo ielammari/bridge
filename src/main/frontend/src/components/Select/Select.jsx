@@ -4,12 +4,9 @@ import '../Field/Field.css';
 import './Select.css';
 
 /**
- * Labelled select matching the Field primitive. The label is always visible and
- * the chevron is decorative, so the native control keeps its keyboard behaviour.
- *
- * The label, hint, and error come from Field: they are the same parts, and
- * keeping one copy means a change to them cannot land in one control and not
- * the other.
+ * Labelled select matching the Field primitive: the label stays visible and the
+ * chevron is decorative, so the native control keeps its keyboard behaviour.
+ * The label, hint and error come from Field, so the two cannot drift apart.
  */
 export default function Select({
   label,

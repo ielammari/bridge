@@ -51,15 +51,14 @@ class ApplicationServiceTest {
 		profileService.update(id, new UpdateProfileRequest(Degree.BAC_5, null,
 				List.of(new TraitSelection(aTrait().getId(), null))));
 		if (withCv) {
-			profileService.storeCv(id,
-					new MockMultipartFile("file", "cv.pdf", "application/pdf", "%PDF-1.4".getBytes()));
+			profileService.storeCv(id, new MockMultipartFile("file", "cv.pdf", "application/pdf", "%PDF-1.4".getBytes()), null);
 		}
 		return id;
 	}
 
 	private Integer publishedOffer() {
 		OfferDto dto = offerService.create(hrId(), new OfferRequest(
-				"Poste", "desc", Degree.BAC, ContractType.PERMANENT, "Paris", null, null, null,
+				"Poste", null, "desc", Degree.BAC, ContractType.PERMANENT, "Paris", null, null, null,
 				List.of(new RequirementSelection(aTrait().getId(), true)), true));
 		return dto.id();
 	}
@@ -69,7 +68,7 @@ class ApplicationServiceTest {
 		Integer candidate = candidateWithProfile("apply1@example.fr", true);
 		Integer offer = publishedOffer();
 
-		ApplicationDto dto = applicationService.apply(candidate, offer);
+		ApplicationDto dto = applicationService.apply(candidate, offer, null);
 
 		assertThat(dto.status()).isEqualTo(ApplicationStatus.NOUVELLE);
 		assertThat(dto.offerId()).isEqualTo(offer);
@@ -79,9 +78,9 @@ class ApplicationServiceTest {
 	void applyingTwiceToTheSameOfferIsRejected() {
 		Integer candidate = candidateWithProfile("apply2@example.fr", true);
 		Integer offer = publishedOffer();
-		applicationService.apply(candidate, offer);
+		applicationService.apply(candidate, offer, null);
 
-		assertThatThrownBy(() -> applicationService.apply(candidate, offer))
+		assertThatThrownBy(() -> applicationService.apply(candidate, offer, null))
 				.isInstanceOf(ApiException.class)
 				.hasFieldOrPropertyWithValue("code", "ALREADY_APPLIED");
 	}
@@ -91,7 +90,7 @@ class ApplicationServiceTest {
 		Integer candidate = candidateWithProfile("apply3@example.fr", false); // no CV
 		Integer offer = publishedOffer();
 
-		assertThatThrownBy(() -> applicationService.apply(candidate, offer))
+		assertThatThrownBy(() -> applicationService.apply(candidate, offer, null))
 				.isInstanceOf(ApiException.class)
 				.hasFieldOrPropertyWithValue("code", "CV_REQUIRED");
 	}
@@ -103,10 +102,10 @@ class ApplicationServiceTest {
 		profileService.update(candidate, new UpdateProfileRequest(Degree.BAC, null,
 				List.of(new TraitSelection(aTrait().getId(), null))));
 		OfferDto offer = offerService.create(hrId(), new OfferRequest(
-				"Docteur", "desc", Degree.DOCTORAT, ContractType.PERMANENT, null, null, null, null,
+				"Docteur", null, "desc", Degree.DOCTORAT, ContractType.PERMANENT, null, null, null, null,
 				List.of(new RequirementSelection(aTrait().getId(), true)), true));
 
-		assertThatThrownBy(() -> applicationService.apply(candidate, offer.id()))
+		assertThatThrownBy(() -> applicationService.apply(candidate, offer.id(), null))
 				.isInstanceOf(ApiException.class)
 				.hasFieldOrPropertyWithValue("code", "OFFER_NOT_ACCESSIBLE");
 	}
@@ -115,10 +114,10 @@ class ApplicationServiceTest {
 	void applyingToADraftOfferIsRejected() {
 		Integer candidate = candidateWithProfile("apply5@example.fr", true);
 		OfferDto draft = offerService.create(hrId(), new OfferRequest(
-				"Brouillon", "desc", Degree.BAC, ContractType.PERMANENT, null, null, null, null,
+				"Brouillon", null, "desc", Degree.BAC, ContractType.PERMANENT, null, null, null, null,
 				List.of(new RequirementSelection(aTrait().getId(), true)), false));
 
-		assertThatThrownBy(() -> applicationService.apply(candidate, draft.id()))
+		assertThatThrownBy(() -> applicationService.apply(candidate, draft.id(), null))
 				.isInstanceOf(ApiException.class)
 				.hasFieldOrPropertyWithValue("code", "OFFER_NOT_ACCESSIBLE");
 	}
@@ -126,7 +125,7 @@ class ApplicationServiceTest {
 	@Test
 	void aCandidateSeesTheirOwnApplications() {
 		Integer candidate = candidateWithProfile("apply6@example.fr", true);
-		applicationService.apply(candidate, publishedOffer());
+		applicationService.apply(candidate, publishedOffer(), null);
 
 		assertThat(applicationService.forCandidate(candidate)).hasSize(1);
 	}
@@ -135,9 +134,9 @@ class ApplicationServiceTest {
 	void hrSeesTheApplicationsForAnOffer() {
 		Integer candidate = candidateWithProfile("apply7@example.fr", true);
 		Integer offer = publishedOffer();
-		applicationService.apply(candidate, offer);
+		applicationService.apply(candidate, offer, null);
 
-		assertThat(applicationService.forOffer(offer)).singleElement()
+		assertThat(applicationService.forOffer(hrId(), offer)).singleElement()
 				.satisfies(a -> assertThat(a.candidateEmail()).isEqualTo("apply7@example.fr"));
 	}
 

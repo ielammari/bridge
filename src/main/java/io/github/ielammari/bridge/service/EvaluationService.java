@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,11 +54,12 @@ public class EvaluationService {
 	private final HRInterviewRepository hrInterviews;
 	private final HiringRepository hirings;
 	private final NotificationService notifications;
+	private final StorageService storage;
 
 	public EvaluationService(ApplicationRepository applications, AppointmentRepository appointments,
 			EvaluationRepository evaluations, JobOfferRepository offers, TraitRepository traits,
 			UserRepository users, HRInterviewRepository hrInterviews, HiringRepository hirings,
-			NotificationService notifications) {
+			NotificationService notifications, StorageService storage) {
 		this.applications = applications;
 		this.appointments = appointments;
 		this.evaluations = evaluations;
@@ -67,12 +69,13 @@ public class EvaluationService {
 		this.hrInterviews = hrInterviews;
 		this.hirings = hirings;
 		this.notifications = notifications;
+		this.storage = storage;
 	}
 
 	/** HR opens an application to inspect it, which moves it into review. */
 	@Transactional
-	public HrApplicationDto review(Integer applicationId) {
-		Application application = requireApplication(applicationId);
+	public HrApplicationDto review(Integer hrId, Integer applicationId) {
+		Application application = requireOwnApplication(hrId, applicationId);
 		if (application.getStatus() == ApplicationStatus.NOUVELLE) {
 			application.setStatus(ApplicationStatus.EN_REVUE);
 		}
@@ -83,7 +86,7 @@ public class EvaluationService {
 	@Transactional
 	public HrApplicationDto preselect(Integer hrId, Integer applicationId, Decision decision, String comment) {
 		Evaluator hr = requireHr(hrId);
-		Application application = requireApplication(applicationId);
+		Application application = requireOwnApplication(hrId, applicationId);
 
 		if (application.getStatus() != ApplicationStatus.NOUVELLE
 				&& application.getStatus() != ApplicationStatus.EN_REVUE) {
@@ -106,29 +109,34 @@ public class EvaluationService {
 		return ApplicationMapper.toHrView(application, null);
 	}
 
+	/**
+	 * The exams waiting on this expert. An exam reaches them by being scheduled
+	 * and handed to them, so an unplanned one is nobody's queue yet.
+	 */
 	@Transactional(readOnly = true)
-	public List<PendingTechnicalDto> pendingTechnical() {
-		return applications.findByStatusWithCandidateAndOffer(ApplicationStatus.EXAMEN_TECHNIQUE).stream()
-				.map(application -> {
-					Appointment appointment = appointments
-							.findByApplicationIdAndType(application.getId(), AppointmentType.TECHNIQUE)
-							.orElse(null);
+	public List<PendingTechnicalDto> pendingTechnical(Integer expertId) {
+		return appointments.findExamsAssignedTo(expertId).stream()
+				.map(appointment -> {
+					Application application = appointment.getApplication();
 					return new PendingTechnicalDto(
 							application.getId(),
+							application.getCandidate().getId(),
 							application.getCandidate().getFirstName(),
 							application.getCandidate().getLastName(),
+							application.getOffer().getId(),
 							application.getOffer().getTitle(),
-							appointment == null ? null : appointment.getDate(),
-							appointment == null ? null : appointment.getTime());
+							appointment.getDate(),
+							appointment.getTime());
 				})
 				.toList();
 	}
 
 	/** The scoring grid: the offer's traits, required first. */
 	@Transactional(readOnly = true)
-	public TechnicalContextDto technicalContext(Integer applicationId) {
+	public TechnicalContextDto technicalContext(Integer expertId, Integer applicationId) {
 		Application application = requireApplication(applicationId);
 		requireStage(application, ApplicationStatus.EXAMEN_TECHNIQUE);
+		requireOwnExam(expertId, applicationId);
 		JobOffer offer = requireOfferWithRequirements(application);
 
 		List<ExaminedTraitDto> examined = offer.getRequirements().stream()
@@ -140,10 +148,21 @@ public class EvaluationService {
 
 		return new TechnicalContextDto(
 				application.getId(),
+				application.getCandidate().getId(),
 				application.getCandidate().getFirstName(),
 				application.getCandidate().getLastName(),
+				offer.getId(),
 				offer.getTitle(),
 				examined);
+	}
+
+	/** The CV the candidate attached, readable by the expert the exam was handed to. */
+	@Transactional(readOnly = true)
+	public Resource loadCv(Integer expertId, Integer applicationId) {
+		Application application = requireApplication(applicationId);
+		requireStage(application, ApplicationStatus.EXAMEN_TECHNIQUE);
+		requireOwnExam(expertId, applicationId);
+		return storage.loadCv(application.getAttachedCv());
 	}
 
 	/** The expert records the technical evaluation. Approval advances to the HR interview. */
@@ -152,6 +171,7 @@ public class EvaluationService {
 		Evaluator expert = requireExpert(expertId);
 		Application application = requireApplication(applicationId);
 		requireStage(application, ApplicationStatus.EXAMEN_TECHNIQUE);
+		Appointment exam = requireOwnExam(expertId, applicationId);
 		if (evaluations.existsByApplicationIdAndType(applicationId, EvaluationType.TECHNIQUE)) {
 			throw ApiException.badRequest("ALREADY_EVALUATED", "L'évaluation technique a déjà été faite.");
 		}
@@ -164,12 +184,8 @@ public class EvaluationService {
 		Evaluation evaluation = new Evaluation(EvaluationType.TECHNIQUE, request.decision(),
 				blankToNull(request.comment()), application, expert);
 
-		// Link to the technical appointment and mark it held, if it was scheduled.
-		appointments.findByApplicationIdAndType(applicationId, AppointmentType.TECHNIQUE)
-				.ifPresent(appointment -> {
-					appointment.setStatus(AppointmentStatus.REALISE);
-					evaluation.setAppointment(appointment);
-				});
+		exam.setStatus(AppointmentStatus.REALISE);
+		evaluation.setAppointment(exam);
 
 		Set<Integer> seen = new HashSet<>();
 		for (TechnicalEvaluationRequest.Score score : request.scores()) {
@@ -199,26 +215,27 @@ public class EvaluationService {
 	}
 
 	/**
-	 * HR's final decision after the interview. The interview data is recorded
-	 * whatever the outcome; acceptance creates the hiring record and hires the
-	 * candidate, refusal closes the application.
+	 * HR's final decision, recorded against an interview that was booked: the
+	 * assessment reports a meeting, so there must be one. The interview data is
+	 * kept whatever the outcome; acceptance creates the hiring record and hires
+	 * the candidate, refusal closes the application.
 	 */
 	@Transactional
 	public HrApplicationDto finalize(Integer hrId, Integer applicationId, FinalEvaluationRequest request) {
 		Evaluator hr = requireHr(hrId);
-		Application application = requireApplication(applicationId);
+		Application application = requireOwnApplication(hrId, applicationId);
 		requireStage(application, ApplicationStatus.ENTRETIEN_RH);
 		if (evaluations.existsByApplicationIdAndType(applicationId, EvaluationType.ENTRETIEN_RH)) {
 			throw ApiException.badRequest("ALREADY_EVALUATED", "L'entretien final a déjà été enregistré.");
 		}
+		Appointment interview = appointments.findByApplicationIdAndType(applicationId, AppointmentType.RH)
+				.orElseThrow(() -> ApiException.badRequest("INTERVIEW_NOT_SCHEDULED",
+						"Planifiez l'entretien RH avant de clôturer cette candidature."));
 
 		Evaluation evaluation = new Evaluation(EvaluationType.ENTRETIEN_RH, request.decision(),
 				blankToNull(request.comment()), application, hr);
-		appointments.findByApplicationIdAndType(applicationId, AppointmentType.RH)
-				.ifPresent(appointment -> {
-					appointment.setStatus(AppointmentStatus.REALISE);
-					evaluation.setAppointment(appointment);
-				});
+		interview.setStatus(AppointmentStatus.REALISE);
+		evaluation.setAppointment(interview);
 		evaluations.save(evaluation);
 
 		hrInterviews.save(buildInterview(application, request.interview()));
@@ -274,6 +291,25 @@ public class EvaluationService {
 	private Application requireApplication(Integer applicationId) {
 		return applications.findByIdWithOfferAndCandidate(applicationId)
 				.orElseThrow(() -> ApiException.notFound("Cette candidature est introuvable."));
+	}
+
+	/** A recruiter acts only on the applications their own offers received. */
+	private Application requireOwnApplication(Integer hrId, Integer applicationId) {
+		return Ownership.requireOwnApplication(requireApplication(applicationId), hrId);
+	}
+
+	/**
+	 * The exam this expert was handed. An exam that was never scheduled, or that
+	 * went to somebody else, is not theirs to sit or to read.
+	 */
+	private Appointment requireOwnExam(Integer expertId, Integer applicationId) {
+		Appointment exam = appointments
+				.findByApplicationIdAndType(applicationId, AppointmentType.TECHNIQUE)
+				.orElseThrow(() -> ApiException.notFound("Cet examen technique est introuvable."));
+		if (!exam.getEvaluator().getId().equals(expertId)) {
+			throw ApiException.notFound("Cet examen technique est introuvable.");
+		}
+		return exam;
 	}
 
 	private Evaluator requireHr(Integer id) {

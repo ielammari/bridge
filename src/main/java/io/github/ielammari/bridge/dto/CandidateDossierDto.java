@@ -7,12 +7,9 @@ import io.github.ielammari.bridge.model.Degree;
 import io.github.ielammari.bridge.model.Gender;
 
 /**
- * Everything one actor is allowed to know about a candidate, gathered at the
- * candidate's own address rather than scattered across the applications they
- * appear in.
- *
- * The reader is decided before this is built, so what reaches the DTO is
- * already what that reader may see.
+ * Everything one actor is allowed to know about a candidate, at the candidate's
+ * own address. The reader is decided before this is built, so what reaches the
+ * DTO is already what that reader may see.
  */
 public record CandidateDossierDto(
 		Integer id,

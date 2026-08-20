@@ -8,10 +8,13 @@ export const profileApi = {
   addEducation: (payload) => api.post('/profile/education', payload),
   updateEducation: (id, payload) => api.put(`/profile/education/${id}`, payload),
   removeEducation: (id) => api.delete(`/profile/education/${id}`),
-  uploadCv: (file) => {
+  uploadCv: (file, label) => {
     const form = new FormData();
     form.append('file', file);
+    if (label) form.append('label', label);
     return api.post('/profile/cv', form);
   },
+  chooseCv: (id) => api.put(`/profile/cv/${id}`),
+  removeCv: (id) => api.delete(`/profile/cv/${id}`),
   downloadCv: () => api.getBlob('/profile/cv'),
 };

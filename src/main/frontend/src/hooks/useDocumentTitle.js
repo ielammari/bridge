@@ -3,8 +3,8 @@ import { useEffect } from 'react';
 const SUFFIX = 'Bridge';
 
 /**
- * Names the current page in the tab, the history entry, and the first thing a
- * screen reader announces after a navigation.
+ * Names the page in the tab, in the history entry, and in what a screen reader
+ * announces after a navigation.
  */
 export default function useDocumentTitle(title) {
   useEffect(() => {

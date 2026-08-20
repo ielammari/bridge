@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import Icon from '../Icon/Icon.jsx';
+import useMasonry from '../../hooks/useMasonry.js';
+import useMediaQuery from '../../hooks/useMediaQuery.js';
 import './TraitPicker.css';
 
 // Accent and case insensitive, so "francais" matches "Français".
@@ -8,13 +10,18 @@ function fold(text) {
 }
 
 /**
- * Selects traits from a large catalogue grouped by category. Selection is a
- * possession toggle; the search narrows the option set so no category dumps
- * hundreds of choices at once.
+ * Selects traits from a catalogue grouped by category, with a search that
+ * narrows the option set. `chipNote` labels each selected chip with what the
+ * caller has decided about that trait.
  */
-export default function TraitPicker({ catalogue, value, onChange }) {
+export default function TraitPicker({ catalogue, value, onChange, chipNote }) {
   const [query, setQuery] = useState('');
   const [openCategories, setOpenCategories] = useState(() => new Set());
+
+  // Two columns while there is room for them; below that the browser's own
+  // flow is left alone.
+  const narrow = useMediaQuery('(max-width: 48rem)');
+  const categories = useMasonry(narrow ? 1 : 2, 8);
 
   const selected = useMemo(() => new Set(value), [value]);
   const needle = fold(query.trim());
@@ -97,6 +104,7 @@ export default function TraitPicker({ catalogue, value, onChange }) {
                   aria-label={`Retirer ${labelById.get(id) ?? ''}`}
                 >
                   <span>{labelById.get(id) ?? '—'}</span>
+                  {chipNote && <span className="chip__note mono">{chipNote(id)}</span>}
                   <Icon name="close" className="chip__remove" />
                 </button>
               </li>
@@ -105,7 +113,7 @@ export default function TraitPicker({ catalogue, value, onChange }) {
         </div>
       )}
 
-      <ul className="picker__categories">
+      <ul className="picker__categories" ref={categories}>
         {filtered.map((category) => {
           const open = searching || openCategories.has(category.id);
           const count = selectedCountIn(category);

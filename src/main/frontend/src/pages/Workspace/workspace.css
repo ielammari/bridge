@@ -1,6 +1,8 @@
 .workspace {
   --sidebar-collapsed: 5.5rem;
   --sidebar-width: 20rem;
+  /* The drawer bar's height, which the header stops below on a narrow screen. */
+  --mobilebar-h: 3.75rem;
   min-height: 100dvh;
 }
 
@@ -42,8 +44,8 @@
   transition: margin-left var(--duration-slow) var(--ease);
 }
 
-/* Capped and centred in the space beside the rail. A listing wants room for a
-   card grid; a form or a page of prose wants a readable measure instead. */
+/* Capped and centred beside the rail: room for a card grid on a listing, a
+   readable measure on a form or a page of prose. */
 .workspace__inner {
   max-width: var(--content-max);
   margin-inline: auto;
@@ -56,13 +58,125 @@
   --content-max: 56rem;
 }
 
-/* Stepped in from the rail, so the heading does not read as the top row of the
-   content beneath it. */
+/* ---- The header --------------------------------------------------------
+   Where the page came from, what it is, what it amounts to, and what steers
+   the content below. It holds the top of the screen, and spans the content's
+   own padding so what passes underneath is covered. */
+.workspace__header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-nav);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  /* It ends on its last row, the rule under the title or the toolbar below it,
+     so that edge is where passing content disappears. The room between the
+     header and the content is given back underneath, outside the painted box. */
+  margin: calc(var(--space-6) * -1) calc(var(--space-6) * -1) var(--space-4);
+  --pad-open: var(--space-6);
+  --pad-shut: var(--space-4);
+  padding: var(--pad-open) var(--space-6) 0;
+  background: var(--paper);
+  animation-name: header-condense;
+}
+
+/* The shade falls below the edge and stops short of the sides, so the header
+   is a boundary the content passes under and never an outlined rectangle. */
+.workspace__header::after {
+  content: '';
+  position: absolute;
+  inset: 100% var(--space-6) auto;
+  height: 10px;
+  background: linear-gradient(to bottom, var(--header-shade), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 6rem,
+    #000 calc(100% - 6rem), transparent);
+  opacity: 0;
+  pointer-events: none;
+  animation-name: header-shade;
+}
+
+/* What the header sheds as the page moves. Folding the row, or the column for
+   what sits beside the title, closes it in step with everything else, so the
+   header changes height as one motion. */
+.workspace__fold {
+  display: grid;
+  grid-template-rows: 1fr;
+  animation-name: header-fold;
+}
+
+.workspace__fold > * {
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  animation-name: header-fade;
+}
+
+.workspace__fold--inline {
+  grid-template-columns: 1fr;
+  animation-name: header-fold-inline;
+}
+
+/* What steers the content: tabs, filters, a picker. */
+.workspace__toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* The page opens on a band: what it is on the left, what it amounts to and
+   what to do about it on the right. The heading gets a container of its own, so
+   the title reads as the head of the page. */
+.workspace__band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-6);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
 .workspace__head {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  padding-left: var(--space-5);
+  min-width: 0;
+}
+
+.workspace__aside {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.workspace__stats {
+  display: flex;
+  gap: var(--space-5);
+  margin: 0;
+}
+
+/* Each figure holds its own width, so the column closing over them clips them
+   rather than squeezing them into narrower and narrower lines. */
+.workspace__stat {
+  flex-shrink: 0;
+}
+
+/* Number over label, so the figure carries and the word only names it. */
+.workspace__stat-value {
+  font-family: var(--font-display);
+  font-size: var(--size-2xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-heading);
+}
+
+.workspace__stat-label {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--size-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-faint);
 }
 
 .workspace__back {
@@ -74,6 +188,8 @@
   font-size: var(--size-sm);
   font-weight: var(--weight-medium);
   text-decoration: none;
+  animation-name: header-back;
+  transition: outline-color var(--duration) var(--ease);
 }
 
 .workspace__back:hover {
@@ -86,8 +202,15 @@
 }
 
 .workspace__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
   font-size: var(--size-4xl);
+  animation-name: header-title;
   letter-spacing: var(--tracking-display);
+  /* A title is arbitrary text: an unspaced run has to be allowed to break, or
+     it sets the page's minimum width and scrolls every column sideways. */
+  overflow-wrap: anywhere;
 }
 
 /* Navigation moves focus here, so the heading is focusable but not operable:
@@ -98,6 +221,7 @@
 }
 
 .workspace__subtitle {
+  padding-top: var(--space-2);
   color: var(--text-secondary);
 }
 
@@ -109,7 +233,8 @@
   gap: var(--space-3);
   position: sticky;
   top: 0;
-  z-index: var(--z-nav);
+  /* Above the page header, which stops below it. */
+  z-index: calc(var(--z-nav) + 1);
   padding: var(--space-2) var(--space-4);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
@@ -162,8 +287,8 @@
 }
 
 @media (max-width: 64rem) {
-  /* A drawer covers the page rather than sitting beside it, so it yields to the
-     viewport on a narrow screen instead of swallowing it. */
+  /* A drawer covers the page, so it yields to the viewport rather than
+     swallowing it. */
   .workspace {
     --sidebar-width: min(20rem, 84vw);
   }
@@ -191,8 +316,8 @@
       visibility 0s linear 0s;
   }
 
-  /* Collapsing is a desktop affordance; the drawer is opened and closed from
-     the bar and the scrim instead. */
+  /* Collapsing is a desktop affordance; the drawer opens from the bar and the
+     scrim. */
   .sidebar__toggle {
     display: none;
   }
@@ -202,14 +327,80 @@
     padding: var(--space-5) var(--space-4);
   }
 
-  .workspace__head {
-    padding-left: 0;
+  /* The drawer bar owns the top of the screen here, so the header stops under
+     it and spans this narrower padding. */
+  .workspace__header {
+    top: var(--mobilebar-h);
+    margin: calc(var(--space-5) * -1) calc(var(--space-4) * -1) var(--space-4);
+    --pad-open: var(--space-5);
+    --pad-shut: var(--space-3);
+    padding: var(--pad-open) var(--space-4) 0;
+  }
+
+  .workspace__header::after {
+    inset: 100% var(--space-4) auto;
+    mask-image: linear-gradient(to right, transparent, #000 3rem,
+      #000 calc(100% - 3rem), transparent);
+  }
+
+  .workspace__band {
+    align-items: flex-start;
   }
 }
 
+/* ---- The change of shape, carried by the scroll -------------------------
+   `--condense` is how far into that change the header is: 0 at rest, 1 fully
+   condensed, set frame by frame in Workspace.jsx. Each part is a paused
+   animation positioned by a negative delay, so the shapes stay in the keyframes
+   and the scroll has one number to move. */
+.workspace__header,
+.workspace__header::after,
+.workspace__title,
+.workspace__back,
+.workspace__fold,
+.workspace__fold > * {
+  animation-duration: 1s;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+  animation-play-state: paused;
+  animation-delay: calc(var(--condense, 0) * -1s);
+}
+
+@keyframes header-condense {
+  to { padding-top: var(--pad-shut); }
+}
+
+@keyframes header-shade {
+  to { opacity: 1; }
+}
+
+@keyframes header-title {
+  to { font-size: var(--size-2xl); }
+}
+
+@keyframes header-back {
+  to { min-height: 0; }
+}
+
+@keyframes header-fold {
+  to { grid-template-rows: 0fr; }
+}
+
+@keyframes header-fold-inline {
+  to { grid-template-rows: 0fr; grid-template-columns: 0fr; }
+}
+
+@keyframes header-fade {
+  to { opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  /* The header keeps two shapes here, reached without travel: the scroll
+     rounds `--condense` to one end or the other. */
   .workspace__content,
-  .workspace__rail {
+  .workspace__rail,
+  .workspace__back,
+  .workspace__title {
     transition: none;
   }
 }

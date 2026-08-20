@@ -3,7 +3,9 @@
   flex-wrap: wrap;
   align-items: flex-end;
   gap: var(--space-4);
-  padding: var(--space-4);
+  /* Trimmed vertically: the strip narrows its band without narrowing its
+     controls, which keep the width they need to be read. */
+  padding: calc(var(--space-4) - 2px) var(--space-4);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -38,13 +40,22 @@
   pointer-events: none;
 }
 
-/* Pushed to the end: it reports on the filters rather than setting them. */
+/* Pushed to the end: it reports on the filters rather than setting them, and
+   centres on the strip rather than sitting on the controls' baseline. */
 .filters__count {
   min-width: 0;
   margin-left: auto;
-  padding-bottom: var(--space-2);
+  align-self: center;
   font-size: var(--size-sm);
   color: var(--text-faint);
+}
+
+/* A filter is chosen with the pointer already on the strip, so its controls
+   run shorter than the form fields elsewhere. */
+.filters .select__native,
+.filters .field__input {
+  min-height: 40px;
+  padding-block: var(--space-1);
 }
 
 @media (max-width: 40rem) {

@@ -1,4 +1,5 @@
 import Icon from '../../components/Icon/Icon.jsx';
+import InfoHint from '../../components/InfoHint/InfoHint.jsx';
 import { useTheme } from '../../context/ThemeContext.jsx';
 
 const CHOICES = [
@@ -17,8 +18,12 @@ export default function AppearanceSection() {
   return (
     <section className="card" aria-labelledby="appearance-title">
       <div className="card__head">
-        <h2 id="appearance-title" className="card__title">Apparence</h2>
-        <p className="card__subtitle">Ce réglage ne vaut que pour cet appareil.</p>
+        <h2 id="appearance-title" className="card__title">
+          Apparence
+          <InfoHint label="À propos du thème">
+            Ce réglage ne vaut que pour cet appareil.
+          </InfoHint>
+        </h2>
       </div>
       <div className="card__body">
         <fieldset className="theme">

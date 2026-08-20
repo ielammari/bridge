@@ -25,7 +25,7 @@ export const clockTime = (value) => (value ? value.slice(0, 5) : '');
 
 export const euros = (amount) => `${Number(amount).toLocaleString('fr-FR')} €`;
 
-/** A salary range in whichever of its two bounds an offer actually states. */
+/** A salary range in whichever of its two bounds an offer states. */
 export const salaryText = (min, max) => {
   if (min && max) return `${euros(min)} à ${euros(max)}`;
   if (min) return `À partir de ${euros(min)}`;
@@ -52,3 +52,30 @@ export const monthLabel = (key) => {
   const label = MONTH.format(new Date(`${key}-01T00:00:00`));
   return label.charAt(0).toUpperCase() + label.slice(1);
 };
+
+/**
+ * Which dated group an instant belongs to. Coarser the further back it goes,
+ * since older news is scanned by period and recent news by day.
+ */
+export const timeGroup = (iso) => {
+  const then = new Date(iso);
+  const midnight = new Date();
+  midnight.setHours(0, 0, 0, 0);
+  const days = Math.floor((midnight - then) / 86400000);
+
+  if (days < 0) return 'today';
+  if (days === 0) return 'yesterday';
+  if (days < 7) return 'week';
+  if (days < 30) return 'month';
+  return 'earlier';
+};
+
+export const TIME_GROUP_LABELS = {
+  today: "Aujourd'hui",
+  yesterday: 'Hier',
+  week: 'Cette semaine',
+  month: 'Ce mois-ci',
+  earlier: 'Plus tôt',
+};
+
+export const TIME_GROUP_ORDER = ['today', 'yesterday', 'week', 'month', 'earlier'];

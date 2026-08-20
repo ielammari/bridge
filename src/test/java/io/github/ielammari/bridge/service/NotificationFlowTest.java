@@ -48,9 +48,9 @@ class NotificationFlowTest {
 	@Autowired private NotificationPreferenceRepository preferences;
 
 	/**
-	 * These accounts are shared with the development database, where a
-	 * notification may have been silenced by hand. Delivery is what is under
-	 * test, and the surrounding transaction rolls the clearing back.
+	 * The dev accounts are shared with the development database, so their
+	 * preferences are cleared inside the test transaction: delivery is what is
+	 * under test.
 	 */
 	@BeforeEach
 	void deliverEverything() {
@@ -67,6 +67,12 @@ class NotificationFlowTest {
 		return users.findByEmailIgnoreCase("expert@bridge.local").orElseThrow().getId();
 	}
 
+	/** Books the exam the technical evaluation requires. */
+	private void bookExam(Integer app) {
+		appointmentService.schedule(hrId(), app, LocalDate.of(2099, 1, 1).plusDays(app % 1000),
+				LocalTime.of(9, 0), expertId());
+	}
+
 	private Trait aTrait() {
 		return traits.findAll().get(0);
 	}
@@ -75,12 +81,12 @@ class NotificationFlowTest {
 		Integer id = authService.register(new RegisterRequest(email, "Motdepasse1!x", "Notif", "Test", null, LocalDate.of(1995, 5, 20), null, null, null)).user().id();
 		profileService.update(id, new UpdateProfileRequest(Degree.BAC_5, null,
 				List.of(new TraitSelection(aTrait().getId(), null))));
-		profileService.storeCv(id, new MockMultipartFile("file", "cv.pdf", "application/pdf", "%PDF-1.4".getBytes()));
+		profileService.storeCv(id, new MockMultipartFile("file", "cv.pdf", "application/pdf", "%PDF-1.4".getBytes()), null);
 		return id;
 	}
 
 	private Integer publishedOffer() {
-		OfferDto offer = offerService.create(hrId(), new OfferRequest("Poste", "d", Degree.BAC,
+		OfferDto offer = offerService.create(hrId(), new OfferRequest("Poste", null, "d", Degree.BAC,
 				ContractType.PERMANENT, "Paris", null, null, null,
 				List.of(new RequirementSelection(aTrait().getId(), true)), true));
 		return offer.id();
@@ -94,17 +100,26 @@ class NotificationFlowTest {
 	void applyingNotifiesThePublishingHr() {
 		long before = messageService.inbox(hrId()).size();
 		Integer candidate = applyingCandidate("n1@example.fr");
-		applicationService.apply(candidate, publishedOffer());
+		applicationService.apply(candidate, publishedOffer(), null);
 
 		List<MessageDto> hrInbox = messageService.inbox(hrId());
 		assertThat(hrInbox).hasSizeGreaterThan((int) before);
 		assertThat(hasType(hrInbox, NotificationType.APPLICATION_RECEIVED)).isTrue();
 	}
 
+	/** The candidate gets a receipt for what they just sent. */
+	@Test
+	void applyingConfirmsItToTheCandidate() {
+		Integer candidate = applyingCandidate("n14@example.fr");
+		applicationService.apply(candidate, publishedOffer(), null);
+
+		assertThat(hasType(messageService.inbox(candidate), NotificationType.APPLICATION_SUBMITTED)).isTrue();
+	}
+
 	@Test
 	void preselectionRejectionNotifiesTheCandidate() {
 		Integer candidate = applyingCandidate("n2@example.fr");
-		Integer app = applicationService.apply(candidate, publishedOffer()).id();
+		Integer app = applicationService.apply(candidate, publishedOffer(), null).id();
 		evaluationService.preselect(hrId(), app, Decision.REFUSEE, null);
 
 		assertThat(hasType(messageService.inbox(candidate), NotificationType.REJECTED)).isTrue();
@@ -113,9 +128,9 @@ class NotificationFlowTest {
 	@Test
 	void schedulingTheExamNotifiesCandidateAndExpert() {
 		Integer candidate = applyingCandidate("n3@example.fr");
-		Integer app = applicationService.apply(candidate, publishedOffer()).id();
+		Integer app = applicationService.apply(candidate, publishedOffer(), null).id();
 		evaluationService.preselect(hrId(), app, Decision.VALIDEE, null);
-		appointmentService.schedule(app, LocalDate.of(2099, 3, 1), LocalTime.of(10, 0));
+		appointmentService.schedule(hrId(), app, LocalDate.of(2099, 3, 1), LocalTime.of(10, 0), expertId());
 
 		assertThat(hasType(messageService.inbox(candidate), NotificationType.INTERVIEW_SCHEDULED)).isTrue();
 		assertThat(hasType(messageService.inbox(expertId()), NotificationType.INTERVIEW_SCHEDULED)).isTrue();
@@ -124,10 +139,12 @@ class NotificationFlowTest {
 	@Test
 	void hiringNotifiesTheCandidate() {
 		Integer candidate = applyingCandidate("n4@example.fr");
-		Integer app = applicationService.apply(candidate, publishedOffer()).id();
+		Integer app = applicationService.apply(candidate, publishedOffer(), null).id();
 		evaluationService.preselect(hrId(), app, Decision.VALIDEE, null);
+		bookExam(app);
 		evaluationService.evaluateTechnical(expertId(), app, new TechnicalEvaluationRequest(
 				Decision.VALIDEE, "ok", List.of(new Score(aTrait().getId(), (short) 8))));
+		appointmentService.schedule(hrId(), app, LocalDate.of(2099, 3, 2), LocalTime.of(9, 0), expertId());
 		evaluationService.finalize(hrId(), app, new io.github.ielammari.bridge.dto.FinalEvaluationRequest(
 				Decision.VALIDEE, "ok",
 				new io.github.ielammari.bridge.dto.FinalEvaluationRequest.InterviewData(
@@ -150,7 +167,7 @@ class NotificationFlowTest {
 	@Test
 	void anAnsweredApplicationNoticeStopsCountingAsUnread() {
 		Integer candidate = applyingCandidate("n6@example.fr");
-		Integer app = applicationService.apply(candidate, publishedOffer()).id();
+		Integer app = applicationService.apply(candidate, publishedOffer(), null).id();
 
 		assertThat(unreadOfType(hrId(), app, NotificationType.APPLICATION_RECEIVED)).isGreaterThan(0);
 
@@ -163,12 +180,12 @@ class NotificationFlowTest {
 	@Test
 	void aScheduledInterviewSettlesTheSchedulingPrompt() {
 		Integer candidate = applyingCandidate("n7@example.fr");
-		Integer app = applicationService.apply(candidate, publishedOffer()).id();
+		Integer app = applicationService.apply(candidate, publishedOffer(), null).id();
 		evaluationService.preselect(hrId(), app, Decision.VALIDEE, null);
 
 		assertThat(unreadOfType(hrId(), app, NotificationType.SCHEDULE_NEEDED)).isGreaterThan(0);
 
-		appointmentService.schedule(app, LocalDate.of(2099, 5, 4), LocalTime.of(11, 0));
+		appointmentService.schedule(hrId(), app, LocalDate.of(2099, 5, 4), LocalTime.of(11, 0), expertId());
 
 		assertThat(unreadOfType(hrId(), app, NotificationType.SCHEDULE_NEEDED)).isZero();
 	}
@@ -177,12 +194,13 @@ class NotificationFlowTest {
 	@Test
 	void aCompletedExamSettlesTheExpertsPrompt() {
 		Integer candidate = applyingCandidate("n8@example.fr");
-		Integer app = applicationService.apply(candidate, publishedOffer()).id();
+		Integer app = applicationService.apply(candidate, publishedOffer(), null).id();
 		evaluationService.preselect(hrId(), app, Decision.VALIDEE, null);
-		appointmentService.schedule(app, LocalDate.of(2099, 5, 5), LocalTime.of(11, 0));
+		appointmentService.schedule(hrId(), app, LocalDate.of(2099, 5, 5), LocalTime.of(11, 0), expertId());
 
 		assertThat(unreadOfType(expertId(), app, NotificationType.INTERVIEW_SCHEDULED)).isGreaterThan(0);
 
+		bookExam(app);
 		evaluationService.evaluateTechnical(expertId(), app, new TechnicalEvaluationRequest(
 				Decision.REFUSEE, "ko", List.of(new Score(aTrait().getId(), (short) 2))));
 
@@ -193,7 +211,7 @@ class NotificationFlowTest {
 	@Test
 	void aRefusalNoticeIsNeverSettledAutomatically() {
 		Integer candidate = applyingCandidate("n9@example.fr");
-		Integer app = applicationService.apply(candidate, publishedOffer()).id();
+		Integer app = applicationService.apply(candidate, publishedOffer(), null).id();
 		evaluationService.preselect(hrId(), app, Decision.REFUSEE, null);
 
 		assertThat(unreadOfType(candidate, app, NotificationType.REJECTED)).isEqualTo(1);
@@ -205,9 +223,9 @@ class NotificationFlowTest {
 	@Test
 	void theCandidatesInterviewNoticeIsNotSettledByTheExamBeingDone() {
 		Integer candidate = applyingCandidate("n10@example.fr");
-		Integer app = applicationService.apply(candidate, publishedOffer()).id();
+		Integer app = applicationService.apply(candidate, publishedOffer(), null).id();
 		evaluationService.preselect(hrId(), app, Decision.VALIDEE, null);
-		appointmentService.schedule(app, LocalDate.of(2099, 5, 6), LocalTime.of(11, 0));
+		appointmentService.schedule(hrId(), app, LocalDate.of(2099, 5, 6), LocalTime.of(11, 0), expertId());
 		evaluationService.evaluateTechnical(expertId(), app, new TechnicalEvaluationRequest(
 				Decision.REFUSEE, "ko", List.of(new Score(aTrait().getId(), (short) 2))));
 
@@ -223,7 +241,7 @@ class NotificationFlowTest {
 		Integer candidate = applyingCandidate("n11@example.fr");
 		long before = messageService.unreadCount(hrId());
 
-		Integer app = applicationService.apply(candidate, publishedOffer()).id();
+		Integer app = applicationService.apply(candidate, publishedOffer(), null).id();
 		assertThat(messageService.unreadCount(hrId())).isEqualTo(before + 1);
 
 		evaluationService.preselect(hrId(), app, Decision.REFUSEE, null);
@@ -236,7 +254,7 @@ class NotificationFlowTest {
 	void openingAnApplicationClearsItsNotices() {
 		Integer candidate = applyingCandidate("n12@example.fr");
 		long before = messageService.unreadCount(hrId());
-		Integer app = applicationService.apply(candidate, publishedOffer()).id();
+		Integer app = applicationService.apply(candidate, publishedOffer(), null).id();
 		assertThat(messageService.unreadCount(hrId())).isEqualTo(before + 1);
 
 		messageService.markReadForApplication(hrId(), app);
@@ -248,7 +266,7 @@ class NotificationFlowTest {
 	@Test
 	void openingAnApplicationLeavesOtherInboxesAlone() {
 		Integer candidate = applyingCandidate("n13@example.fr");
-		Integer app = applicationService.apply(candidate, publishedOffer()).id();
+		Integer app = applicationService.apply(candidate, publishedOffer(), null).id();
 		evaluationService.preselect(hrId(), app, Decision.REFUSEE, null);
 
 		messageService.markReadForApplication(hrId(), app);
@@ -259,7 +277,7 @@ class NotificationFlowTest {
 	@Test
 	void unreadCountAndMarkReadWork() {
 		Integer candidate = applyingCandidate("n5@example.fr");
-		Integer app = applicationService.apply(candidate, publishedOffer()).id();
+		Integer app = applicationService.apply(candidate, publishedOffer(), null).id();
 		evaluationService.preselect(hrId(), app, Decision.REFUSEE, null);
 
 		assertThat(messageService.unreadCount(candidate)).isGreaterThan(0);

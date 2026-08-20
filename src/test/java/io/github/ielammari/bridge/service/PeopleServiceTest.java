@@ -66,13 +66,12 @@ class PeopleServiceTest {
 				List.of(new TraitSelection(aTrait().getId(), null))));
 		profileService.addEducation(id, new EducationRequest(
 				"Master informatique", "INSA Lyon", "Genie logiciel", (short) 2018, (short) 2020));
-		profileService.storeCv(id,
-				new MockMultipartFile("file", "cv.pdf", "application/pdf", "%PDF-1.4".getBytes()));
+		profileService.storeCv(id, new MockMultipartFile("file", "cv.pdf", "application/pdf", "%PDF-1.4".getBytes()), null);
 		return id;
 	}
 
 	private Integer publishedOffer() {
-		OfferDto offer = offerService.create(hrId(), new OfferRequest("Poste", "d", Degree.BAC,
+		OfferDto offer = offerService.create(hrId(), new OfferRequest("Poste", null, "d", Degree.BAC,
 				ContractType.PERMANENT, "Paris", null, null, null,
 				List.of(new RequirementSelection(aTrait().getId(), true)), true));
 		return offer.id();
@@ -80,9 +79,9 @@ class PeopleServiceTest {
 
 	/** Carries an application as far as the expert's exam. */
 	private Integer examinedBy(Integer candidateId, LocalDate slot) {
-		Integer app = applicationService.apply(candidateId, publishedOffer()).id();
+		Integer app = applicationService.apply(candidateId, publishedOffer(), null).id();
 		evaluationService.preselect(hrId(), app, Decision.VALIDEE, "Bon dossier");
-		appointmentService.schedule(app, slot, LocalTime.of(10, 0));
+		appointmentService.schedule(hrId(), app, slot, LocalTime.of(10, 0), expertId());
 		evaluationService.evaluateTechnical(expertId(), app, new TechnicalEvaluationRequest(
 				Decision.VALIDEE, "Solide", List.of(new Score(aTrait().getId(), (short) 9))));
 		return app;
@@ -91,7 +90,7 @@ class PeopleServiceTest {
 	@Test
 	void theDossierGathersEverythingScatteredAcrossTheirApplications() {
 		Integer id = candidate("p1@example.fr");
-		applicationService.apply(id, publishedOffer());
+		applicationService.apply(id, publishedOffer(), null);
 
 		CandidateDossierDto dossier = peopleService.dossier(hrId(), Role.RH, id);
 
@@ -134,6 +133,23 @@ class PeopleServiceTest {
 	}
 
 	/**
+	 * The exam entitles the expert to that application, not to whatever else the
+	 * candidate has running. A recruiter, who owns the funnel, sees both.
+	 */
+	@Test
+	void anExpertSeesOnlyTheApplicationsTheyAssessed() {
+		Integer id = candidate("p8@example.fr");
+		Integer examined = examinedBy(id, LocalDate.of(2099, 7, 2));
+		applicationService.apply(id, publishedOffer(), null);
+
+		assertThat(peopleService.dossier(expertId(), Role.EXPERT, id).applications())
+				.singleElement()
+				.satisfies(a -> assertThat(a.id()).isEqualTo(examined));
+
+		assertThat(peopleService.dossier(hrId(), Role.RH, id).applications()).hasSize(2);
+	}
+
+	/**
 	 * Refused rather than reported as forbidden: a distinct answer would let the
 	 * address be used to find out who exists.
 	 */
@@ -148,6 +164,7 @@ class PeopleServiceTest {
 	void theCvFollowsTheSameEntitlementAsTheDossier() {
 		Integer id = candidate("p6@example.fr");
 		Integer other = candidate("p7@example.fr");
+		applicationService.apply(id, publishedOffer(), null);
 
 		assertThat(peopleService.cv(hrId(), Role.RH, id)).isNotNull();
 

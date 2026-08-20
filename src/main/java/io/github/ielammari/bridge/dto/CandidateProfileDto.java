@@ -16,6 +16,7 @@ public record CandidateProfileDto(
 		String phone,
 		Degree degree,
 		boolean hasCv,
+		List<CvDto> cvs,
 		List<EducationDto> education,
 		List<CandidateTraitDto> traits) {
 }

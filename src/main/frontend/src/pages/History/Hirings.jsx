@@ -9,7 +9,7 @@ import PersonLink from '../../components/PersonLink/PersonLink.jsx';
 import Skeleton from '../../components/Skeleton/Skeleton.jsx';
 import TabNav from '../../components/TabNav/TabNav.jsx';
 import { CONTRACT_LABELS } from '../../constants/enums.js';
-import { euros, longDate } from '../../constants/format.js';
+import { longDate } from '../../constants/format.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import useFiltering from '../../hooks/useFiltering.js';
 import useResource from '../../hooks/useResource.js';
@@ -57,43 +57,18 @@ export default function Hirings() {
   const card = (row) => (
     <li key={row.hiring.id} className="tile">
       <div className="tile__head">
-        <div>
-          <h3 className="tile__title">
-            <PersonLink id={row.candidateId}>{row.candidateName}</PersonLink>
-          </h3>
-          <p className="hire__email">{row.candidateEmail}</p>
-        </div>
+        <h3 className="tile__title">
+          <PersonLink id={row.candidateId}>{row.candidateName}</PersonLink>
+        </h3>
       </div>
 
+      {/* Who was hired, on what and from when. The terms they were hired on are
+          the record itself, and belong to the dossier the button opens. */}
       <p className="tile__facts">
         <span>{row.offerTitle}</span>
         <span>{CONTRACT_LABELS[row.hiring.finalContract]}</span>
+        <span>Prise de poste le {longDate(row.hiring.startDate)}</span>
       </p>
-
-      <dl className="hire__terms">
-        <dt>Salaire négocié</dt>
-        <dd className="mono">{euros(row.hiring.negotiatedSalary)}</dd>
-        <dt>Prise de poste</dt>
-        <dd>{longDate(row.hiring.startDate)}</dd>
-        {row.hiring.trialPeriod && (
-          <>
-            <dt>Période d'essai</dt>
-            <dd>{row.hiring.trialPeriod}</dd>
-          </>
-        )}
-        {row.hiring.executiveStatus && (
-          <>
-            <dt>Statut</dt>
-            <dd>Cadre</dd>
-          </>
-        )}
-        {row.hiring.benefits && (
-          <>
-            <dt>Avantages</dt>
-            <dd>{row.hiring.benefits}</dd>
-          </>
-        )}
-      </dl>
 
       <div className="tile__foot">
         <Button variant="secondary"
@@ -105,9 +80,24 @@ export default function Hirings() {
   );
 
   return (
-    <Workspace title="Historique">
-      <TabNav items={historyTabs(user.role)} label="Sections de l'historique" />
-
+    <Workspace
+      title="Historique"
+      toolbar={(
+        <>
+          <TabNav items={historyTabs(user.role)} label="Sections de l'historique" />
+          {status === 'ready' && hires.length > 0 && (
+            <FilterBar
+              dimensions={dimensions}
+              dimension={filtering.dimension}
+              value={filtering.value}
+              onDimension={filtering.setDimension}
+              onValue={filtering.setValue}
+              count={`${filtering.kept.length} sur ${hires.length}`}
+            />
+          )}
+        </>
+      )}
+    >
       {pending && <Skeleton leaving={leaving} label="Chargement des embauches" />}
 
       {status === 'error' && (
@@ -124,24 +114,13 @@ export default function Hirings() {
       )}
 
       {status === 'ready' && hires.length > 0 && (
-        <>
-          <FilterBar
-            dimensions={dimensions}
-            dimension={filtering.dimension}
-            value={filtering.value}
-            onDimension={filtering.setDimension}
-            onValue={filtering.setValue}
-            count={`${filtering.kept.length} sur ${hires.length}`}
-          />
-
-          {filtering.kept.length === 0 ? (
-            <EmptyState title="Aucune embauche ne correspond à ce filtre.">
-              Modifiez la valeur, ou revenez à la liste complète en choisissant « Aucun filtre ».
-            </EmptyState>
-          ) : (
-            <GroupedGrid sections={filtering.sections} render={card} />
-          )}
-        </>
+        filtering.kept.length === 0 ? (
+          <EmptyState title="Aucune embauche ne correspond à ce filtre.">
+            Modifiez la valeur, ou revenez à la liste complète en choisissant « Aucun filtre ».
+          </EmptyState>
+        ) : (
+          <GroupedGrid sections={filtering.sections} render={card} />
+        )
       )}
     </Workspace>
   );

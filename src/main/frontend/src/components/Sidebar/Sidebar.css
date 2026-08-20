@@ -200,8 +200,8 @@
 
 .sidebar--collapsed .sidebar__label {
   opacity: 0;
-  /* Collapsing does fade, and fast: the text has to be gone before the edge
-     reaches it, otherwise it would be sliced by the clip on the way out. */
+  /* The text is gone before the edge reaches it, or the clip would slice it on
+     the way out. */
   transition: opacity 90ms var(--ease);
 }
 

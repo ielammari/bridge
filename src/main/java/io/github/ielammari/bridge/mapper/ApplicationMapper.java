@@ -44,7 +44,11 @@ public final class ApplicationMapper {
 				application.getApplicationDate(),
 				application.getStatus(),
 				appointment == null ? null : appointment.getDate(),
-				appointment == null ? null : appointment.getTime());
+				appointment == null ? null : appointment.getTime(),
+				appointment == null ? null : appointment.getEvaluator().getId(),
+				appointment == null ? null
+						: appointment.getEvaluator().getFirstName() + " "
+								+ appointment.getEvaluator().getLastName());
 	}
 
 }

@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { profileApi } from '../../api/profile.js';
+import { settingsApi } from '../../api/settings.js';
 import { traitsApi } from '../../api/traits.js';
 import Button from '../../components/Button/Button.jsx';
-import CvUpload from '../../components/CvUpload/CvUpload.jsx';
+import CvLibrary from '../../components/CvLibrary/CvLibrary.jsx';
 import ErrorState from '../../components/ErrorState/ErrorState.jsx';
+import InfoHint from '../../components/InfoHint/InfoHint.jsx';
+import SectionRail from '../../components/SectionRail/SectionRail.jsx';
 import Select from '../../components/Select/Select.jsx';
 import Skeleton from '../../components/Skeleton/Skeleton.jsx';
 import { useToast } from '../../components/Toast/ToastContext.jsx';
@@ -13,13 +16,22 @@ import useForm from '../../hooks/useForm.js';
 import useResource from '../../hooks/useResource.js';
 import Workspace from '../Workspace/Workspace.jsx';
 import AcademicPath from './AcademicPath.jsx';
+import IdentitySection from './IdentitySection.jsx';
 import './profile.css';
 
-// Identity and contact details are configured in the settings; the profile
-// holds what the matching gate reads, and what stands behind it.
+// Only the scalar level is behind the save bar; every other section on this
+// page commits on its own.
 const RULES = {
   degree: { label: 'Niveau d\'études' },
 };
+
+const SECTIONS = [
+  { id: 'identite', label: 'Informations' },
+  { id: 'niveau', label: "Niveau d'études" },
+  { id: 'parcours', label: 'Parcours' },
+  { id: 'cv', label: 'Mes CV' },
+  { id: 'traits', label: 'Compétences' },
+];
 
 function snapshot(values, traitIds) {
   return JSON.stringify({
@@ -31,7 +43,7 @@ function snapshot(values, traitIds) {
 export default function Profile() {
   const toast = useToast();
 
-  const [hasCv, setHasCv] = useState(false);
+  const [documents, setDocuments] = useState([]);
   const [traitIds, setTraitIds] = useState([]);
   const [education, setEducation] = useState([]);
   const [baseline, setBaseline] = useState('');
@@ -40,15 +52,20 @@ export default function Profile() {
 
   const form = useForm({ degree: '' }, RULES);
 
+  const [account, setAccount] = useState(null);
+
   const { status, data, reload, pending, leaving } = useResource(async () => {
-    const [profile, catalogue] = await Promise.all([profileApi.read(), traitsApi.catalogue()]);
+    const [profile, catalogue, identity] = await Promise.all([
+      profileApi.read(), traitsApi.catalogue(), settingsApi.account(),
+    ]);
+    setAccount(identity);
     const values = { degree: profile.degree ?? '' };
     const ids = profile.traits.map((t) => t.traitId);
     form.setValues(values);
     setTraitIds(ids);
     setEducation(profile.education);
     setBaseline(snapshot(values, ids));
-    setHasCv(profile.hasCv);
+    setDocuments(profile.cvs);
     return catalogue;
   });
 
@@ -93,10 +110,19 @@ export default function Profile() {
     };
   }
 
-  async function uploadCv(file) {
-    const updated = await profileApi.uploadCv(file);
-    setHasCv(updated.hasCv);
-    toast.success('CV mis à jour.');
+  /** Every document action answers with the profile, so one call refreshes. */
+  function cvAction(run, done) {
+    return async (...args) => {
+      setDocuments((await run(...args)).cvs);
+      toast.success(done);
+    };
+  }
+
+  async function openCv() {
+    const blob = await profileApi.downloadCv();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank', 'noopener');
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
   }
 
   if (status === 'loading') {
@@ -121,27 +147,34 @@ export default function Profile() {
   }
 
   return (
-    <Workspace title="Mon profil">
-      <p className="profile__intro">
-        Complétez votre profil pour voir les offres qui correspondent à vos compétences. Les traits
-        obligatoires d'une offre sont comparés à ceux de votre profil.
-      </p>
+    <Workspace
+      title="Mon profil"
+      info="Les offres qui vous sont proposées sont celles dont vous possédez tous les traits obligatoires, avec au moins le niveau d'études demandé."
+      stats={[
+        { value: traitIds.length, label: 'traits' },
+        { value: education.length, label: education.length > 1 ? 'formations' : 'formation' },
+        { value: documents.length, label: 'CV' },
+      ]}
+    >
+      <SectionRail sections={SECTIONS}>
+        <div id="identite">{account && <IdentitySection account={account} />}</div>
 
-      {/* The three narrow cards share the left column so the trait catalogue,
-          much the tallest thing here, starts at the top of its own. */}
-      <div className="profile__columns">
-        <div className="profile__col">
-          <section className="card" aria-labelledby="level-title">
-            <div className="card__head">
-              <h2 id="level-title" className="card__title">Niveau d'études</h2>
-              <p className="card__subtitle">Comparé au niveau demandé par chaque offre.</p>
-            </div>
-            <div className="card__body">
-              <Select label="Niveau d'études atteint" labelHidden options={DEGREE_OPTIONS}
-                placeholder="Sélectionnez votre niveau" {...form.field('degree')} />
-            </div>
-          </section>
+        <section id="niveau" className="card" aria-labelledby="level-title">
+          <div className="card__head">
+            <h2 id="level-title" className="card__title">
+              Niveau d'études
+              <InfoHint label="À propos du niveau d'études">
+                Une offre demande un niveau minimum : un niveau supérieur y donne accès.
+              </InfoHint>
+            </h2>
+          </div>
+          <div className="card__body">
+            <Select label="Niveau d'études atteint" labelHidden options={DEGREE_OPTIONS}
+              placeholder="Sélectionnez votre niveau" {...form.field('degree')} />
+          </div>
+        </section>
 
+        <div id="parcours">
           <AcademicPath
             entries={education}
             busy={pathBusy}
@@ -149,33 +182,44 @@ export default function Profile() {
             onUpdate={pathAction(profileApi.updateEducation, 'Formation modifiée.')}
             onRemove={pathAction(profileApi.removeEducation, 'Formation supprimée.')}
           />
-
-          <section className="card" aria-labelledby="cv-title">
-            <div className="card__head">
-              <h2 id="cv-title" className="card__title">CV</h2>
-              <p className="card__subtitle">Obligatoire au moment de postuler.</p>
-            </div>
-            <div className="card__body">
-              <CvUpload hasCv={hasCv} onUpload={uploadCv} onDownload={profileApi.downloadCv} />
-            </div>
-          </section>
         </div>
 
-        <div className="profile__col">
-          <section className="card" aria-labelledby="traits-title">
-            <div className="card__head">
-              <h2 id="traits-title" className="card__title">Compétences et traits</h2>
-              <p className="card__subtitle">
-                Sélectionnez tout ce qui vous décrit : compétences techniques, niveau d'expérience,
-                langues et atouts.
-              </p>
-            </div>
-            <div className="card__body">
-              <TraitPicker catalogue={data} value={traitIds} onChange={setTraitIds} />
-            </div>
-          </section>
-        </div>
-      </div>
+        <section id="cv" className="card" aria-labelledby="cv-title">
+          <div className="card__head">
+            <h2 id="cv-title" className="card__title">
+              Mes CV
+              <InfoHint label="À propos des CV">
+                Un CV est obligatoire au moment de postuler. Vous pouvez en garder plusieurs et
+                choisir lequel joindre à chaque candidature.
+              </InfoHint>
+            </h2>
+          </div>
+          <div className="card__body">
+            <CvLibrary
+              documents={documents}
+              onUpload={cvAction(profileApi.uploadCv, 'CV ajouté.')}
+              onChoose={cvAction(profileApi.chooseCv, 'CV par défaut modifié.')}
+              onRemove={cvAction(profileApi.removeCv, 'CV supprimé.')}
+              onOpen={openCv}
+            />
+          </div>
+        </section>
+
+        <section id="traits" className="card" aria-labelledby="traits-title">
+          <div className="card__head">
+            <h2 id="traits-title" className="card__title">
+              Compétences et traits
+              <InfoHint label="À propos des compétences">
+                Tout ce qui vous décrit : compétences techniques, niveau d'expérience, langues
+                et atouts. Ils sont comparés aux traits demandés par chaque offre.
+              </InfoHint>
+            </h2>
+          </div>
+          <div className="card__body">
+            <TraitPicker catalogue={data} value={traitIds} onChange={setTraitIds} />
+          </div>
+        </section>
+      </SectionRail>
 
       {(dirty || saving) && (
         <div className="profile__savebar" role="status">

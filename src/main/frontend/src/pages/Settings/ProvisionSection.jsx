@@ -3,6 +3,7 @@ import { settingsApi } from '../../api/settings.js';
 import Button from '../../components/Button/Button.jsx';
 import Field from '../../components/Field/Field.jsx';
 import FormErrorSummary from '../../components/FormErrorSummary/FormErrorSummary.jsx';
+import InfoHint from '../../components/InfoHint/InfoHint.jsx';
 import PasswordField from '../../components/PasswordField/PasswordField.jsx';
 import PasswordRules from '../../components/PasswordField/PasswordRules.jsx';
 import Select from '../../components/Select/Select.jsx';
@@ -54,11 +55,12 @@ export default function ProvisionSection() {
   return (
     <form className="card" onSubmit={submit} noValidate>
       <div className="card__head">
-        <h2 className="card__title">Créer un compte</h2>
-        <p className="card__subtitle">
-          L'inscription publique ne crée que des comptes candidat. Les comptes RH et expert se
-          créent ici.
-        </p>
+        <h2 className="card__title">
+          Créer un compte
+          <InfoHint label="À propos des comptes">
+            L'inscription publique ne crée que des comptes candidat. Les comptes RH et expert se créent ici.
+          </InfoHint>
+        </h2>
       </div>
       <div className="card__body">
         <FormErrorSummary errors={form.currentErrors()} rules={RULES} />

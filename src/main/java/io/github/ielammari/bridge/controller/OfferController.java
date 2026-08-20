@@ -1,10 +1,12 @@
 package io.github.ielammari.bridge.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -40,14 +42,15 @@ public class OfferController {
 		return matchingService.feed(currentUserId(jwt));
 	}
 
+	/** HR: the offers this recruiter published. */
 	@GetMapping
-	public List<OfferDto> list() {
-		return offerService.listAll();
+	public List<OfferDto> list(@AuthenticationPrincipal Jwt jwt) {
+		return offerService.listFor(currentUserId(jwt));
 	}
 
 	@GetMapping("/{id}")
-	public OfferDto get(@PathVariable Integer id) {
-		return offerService.get(id);
+	public OfferDto get(@AuthenticationPrincipal Jwt jwt, @PathVariable Integer id) {
+		return offerService.get(currentUserId(jwt), id);
 	}
 
 	@PostMapping
@@ -57,24 +60,41 @@ public class OfferController {
 	}
 
 	@PutMapping("/{id}")
-	public OfferDto update(@PathVariable Integer id, @Valid @RequestBody OfferRequest request) {
-		return offerService.update(id, request);
+	public OfferDto update(@AuthenticationPrincipal Jwt jwt, @PathVariable Integer id,
+			@Valid @RequestBody OfferRequest request) {
+		return offerService.update(currentUserId(jwt), id, request);
 	}
 
 	@PostMapping("/{id}/publish")
-	public OfferDto publish(@PathVariable Integer id) {
-		return offerService.publish(id);
+	public OfferDto publish(@AuthenticationPrincipal Jwt jwt, @PathVariable Integer id) {
+		return offerService.publish(currentUserId(jwt), id);
 	}
 
 	@PostMapping("/{id}/close")
-	public OfferDto close(@PathVariable Integer id) {
-		return offerService.close(id);
+	public OfferDto close(@AuthenticationPrincipal Jwt jwt, @PathVariable Integer id) {
+		return offerService.close(currentUserId(jwt), id);
 	}
 
 	/** One offer in full, at its own address, for any signed in reader. */
 	@GetMapping("/{id}/detail")
 	public OfferDetailDto detail(@AuthenticationPrincipal Jwt jwt, @PathVariable Integer id) {
 		return offerService.detail(currentUserId(jwt), currentRole(jwt), id);
+	}
+
+	/** Candidate: the offers they kept to come back to. */
+	@GetMapping("/saved")
+	public List<OfferDto> saved(@AuthenticationPrincipal Jwt jwt) {
+		return offerService.savedFor(currentUserId(jwt));
+	}
+
+	@PutMapping("/{id}/saved")
+	public Map<String, Boolean> save(@AuthenticationPrincipal Jwt jwt, @PathVariable Integer id) {
+		return Map.of("saved", offerService.setSaved(currentUserId(jwt), id, true));
+	}
+
+	@DeleteMapping("/{id}/saved")
+	public Map<String, Boolean> unsave(@AuthenticationPrincipal Jwt jwt, @PathVariable Integer id) {
+		return Map.of("saved", offerService.setSaved(currentUserId(jwt), id, false));
 	}
 
 	private Role currentRole(Jwt jwt) {

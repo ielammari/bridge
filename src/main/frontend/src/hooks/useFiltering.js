@@ -2,20 +2,15 @@ import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 // The filter lives in the address, so a filtered listing can be returned to,
-// refreshed, and shared as the thing the user was actually looking at.
+// refreshed and shared as what was on screen.
 const DIMENSION = 'filtre';
 const VALUE = 'valeur';
 
 /**
- * The filtering and grouping behind a history listing.
- *
- * A dimension is one way of cutting the list: `of` reads the value to match on,
- * `groupOf` the value to gather sections by when it differs (a date filters on
- * the day but groups by month), and `labelOf` names a section.
- *
- * Choosing a dimension without a value groups by it; adding a value narrows to
- * that value; choosing nothing groups by `fallback`. A listing is therefore
- * never a flat undifferentiated run.
+ * The filtering and grouping behind a history listing. A dimension is one way
+ * of cutting the list: `of` reads the value to match on, `groupOf` the value to
+ * gather sections by, `labelOf` names a section. A dimension with no value
+ * groups by it, a value narrows to it, nothing groups by `fallback`.
  */
 export default function useFiltering(items, dimensions, fallback) {
   const [params, setParams] = useSearchParams();
@@ -23,10 +18,9 @@ export default function useFiltering(items, dimensions, fallback) {
   const value = params.get(VALUE) ?? '';
 
   /**
-   * Both keys are written together, since changing the dimension clears the
-   * value and two separate writes would each start from the same snapshot.
-   * Replaces rather than pushes, so back leaves the listing instead of
-   * retracing every keystroke.
+   * Both keys are written together: changing the dimension clears the value,
+   * and two separate writes would each start from the same snapshot. Replaces
+   * rather than pushes, so back leaves the listing.
    */
   function write(nextDimension, nextValue) {
     const updated = new URLSearchParams(params);

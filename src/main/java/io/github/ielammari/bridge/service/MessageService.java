@@ -1,5 +1,6 @@
 package io.github.ielammari.bridge.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -83,14 +84,27 @@ public class MessageService {
 			// HR was asked to book the next interview.
 			case SCHEDULE_NEEDED -> nothingLeftToSchedule(application, status);
 
-			// The expert was asked to run the exam. The same type reaches the
-			// candidate as information, which never settles.
+			// The expert holds the exam. The same type reaches the candidate as
+			// information, which never settles.
 			case INTERVIEW_SCHEDULED ->
 				message.getRecipient().getRole() == Role.EXPERT
 						&& status != ApplicationStatus.EXAMEN_TECHNIQUE;
 
-			case REJECTED, HIRED -> false;
+			// HR was asked to replan an exam nobody sat.
+			case EXAM_OVERDUE -> status != ApplicationStatus.EXAMEN_TECHNIQUE
+					|| examReplanned(application);
+
+			// A receipt, an outcome, and an exam leaving a queue are news, and
+			// ask the reader for nothing.
+			case APPLICATION_SUBMITTED, EXAM_UNASSIGNED, REJECTED, HIRED -> false;
 		};
+	}
+
+	/** Whether the stalled exam has been given an hour that has not gone by. */
+	private boolean examReplanned(Application application) {
+		return appointments.findByApplicationIdAndType(application.getId(), AppointmentType.TECHNIQUE)
+				.map(exam -> !ExamWatch.isUnattended(exam.getDate(), exam.getTime(), LocalDateTime.now()))
+				.orElse(false);
 	}
 
 	private boolean nothingLeftToSchedule(Application application, ApplicationStatus status) {

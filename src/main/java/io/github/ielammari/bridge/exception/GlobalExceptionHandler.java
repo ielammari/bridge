@@ -15,11 +15,9 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
- * Turns every failure into the single {@link ErrorResponse} shape.
- * <p>
- * Extends {@code ResponseEntityExceptionHandler} so Spring's own web
- * exceptions (unknown route, bad method, unreadable body) keep their status
- * codes instead of collapsing into 500.
+ * Turns every failure into the single {@link ErrorResponse} shape. Extends
+ * {@code ResponseEntityExceptionHandler} so Spring's own web exceptions keep
+ * their status codes instead of collapsing into 500.
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {

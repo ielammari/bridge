@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { applicationsApi } from '../../api/applications.js';
 import { messagesApi } from '../../api/messages.js';
@@ -28,9 +28,27 @@ function interviewText(app) {
   return `${label} le ${longDate(app.appointmentDate)} à ${clockTime(app.appointmentTime)}`;
 }
 
-// Both outcomes are irreversible, so both are confirmed.
-// Which offer's applications are on screen, kept in the address.
+/**
+ * What a card's action opens below it, with the way out in the corner beside
+ * the first row. Cancelling leaves the application untouched.
+ */
+function Panel({ onCancel, children }) {
+  return (
+    <div className="appcard__panel">
+      <div className="appcard__panel-body">{children}</div>
+      <button type="button" className="appcard__cancel" onClick={onCancel}
+        aria-label="Annuler" title="Annuler">
+        <Icon name="close" />
+      </button>
+    </div>
+  );
+}
+
+// What is on screen, kept in the address: which offer, which application is
+// open, and what is being done to it.
 const OFFER = 'offre';
+const APPLICATION = 'candidature';
+const ACTION = 'action';
 
 const DECISIONS = {
   VALIDEE: {
@@ -63,16 +81,42 @@ export default function HrApplications() {
   // An explicit choice lives in the address; without one the first offer shows.
   // Derived rather than stored, so there is no second copy of the selection.
   const chosen = params.get(OFFER) ?? '';
-  const offerId = chosen || (offers.length > 0 ? String(offers[0].id) : '');
+  const openId = params.get(APPLICATION) ?? '';
+  const mode = params.get(ACTION) === 'planification' ? 'schedule' : 'preselect';
 
-  function selectOffer(id) {
+  // A notice names the application, never the offer it arrived through, so the
+  // offer is read back from it when the address carries one without the other.
+  const landed = useResource(
+    () => (openId && !chosen ? applicationsApi.get(openId) : Promise.resolve(null)),
+    [openId, chosen],
+  );
+  const landedOffer = landed.data ? String(landed.data.offerId) : '';
+  const offerId = chosen || landedOffer || (offers.length > 0 ? String(offers[0].id) : '');
+
+  function write(changes) {
     const next = new URLSearchParams(params);
-    if (id) {
-      next.set(OFFER, id);
-    } else {
-      next.delete(OFFER);
+    for (const [key, value] of Object.entries(changes)) {
+      if (value) {
+        next.set(key, value);
+      } else {
+        next.delete(key);
+      }
     }
     setParams(next, { replace: true });
+  }
+
+  function selectOffer(id) {
+    write({ [OFFER]: id, [APPLICATION]: '', [ACTION]: '' });
+  }
+
+  const panel = openId ? { id: Number(openId), mode } : null;
+
+  function setPanel(next) {
+    write({
+      [OFFER]: offerId,
+      [APPLICATION]: next ? String(next.id) : '',
+      [ACTION]: next?.mode === 'schedule' ? 'planification' : (next ? 'preselection' : ''),
+    });
   }
 
   // Where this list currently stands, so an application opened from it can
@@ -86,8 +130,9 @@ export default function HrApplications() {
   // Rejected and hired applications move to the history.
   const applications = (appsRes.data ?? []).filter((app) => !isTerminal(app.status));
 
-  const [panel, setPanel] = useState(null); // { id, mode: 'preselect' | 'schedule' }
   const [comment, setComment] = useState('');
+  // The application whose screening panel has already been opened once.
+  const opened = useRef(null);
   const [confirming, setConfirming] = useState(null); // { app, decision }
   const [busy, setBusy] = useState(false);
 
@@ -111,23 +156,28 @@ export default function HrApplications() {
     try {
       await messagesApi.readForApplication(app.id);
     } catch {
-      // A side effect of looking, not a requested action: the count corrects
-      // itself on the next read.
+      // A side effect of looking: the count corrects itself on the next read.
     }
   }
 
-  async function openPreselection(app) {
+  /**
+   * Opening an application for screening moves it into review and settles the
+   * notices about it.
+   */
+  useEffect(() => {
+    if (!panel || panel.mode !== 'preselect' || opened.current === panel.id) return;
+    const app = applications.find((a) => a.id === panel.id);
+    if (!app) return;
+
+    opened.current = panel.id;
     setComment('');
-    setPanel({ id: app.id, mode: 'preselect' });
     markSeen(app);
     if (app.status === 'NOUVELLE') {
-      try {
-        replace(await applicationsApi.review(app.id));
-      } catch (apiError) {
-        toast.error(apiError.message);
-      }
+      applicationsApi.review(app.id).then(replace).catch((apiError) => toast.error(apiError.message));
     }
-  }
+    // Keyed on which application is open rather than on the list, which changes
+    // as the funnel moves it.
+  }, [panel?.id, panel?.mode, applications.length]);
 
   async function decide() {
     const { app, decision } = confirming;
@@ -178,12 +228,19 @@ export default function HrApplications() {
   }
 
   return (
-    <Workspace title="Candidatures">
-      <div className="hrapps__filter">
-        <Select label="Offre" value={offerId} onChange={(e) => selectOffer(e.target.value)}
-          options={offers.map((o) => ({ value: String(o.id), label: o.title }))} />
-      </div>
-
+    <Workspace
+      title="Candidatures"
+      toolbar={(
+        <div className="hrapps__filter">
+          {/* A closed offer is not recruiting, so it is not on offer here. The
+              one the address names stays, since a notice can point at it. */}
+          <Select label="Offre" value={offerId} onChange={(e) => selectOffer(e.target.value)}
+            options={offers
+              .filter((o) => o.status !== 'CLOTUREE' || String(o.id) === offerId)
+              .map((o) => ({ value: String(o.id), label: o.title }))} />
+        </div>
+      )}
+    >
       {appsRes.pending && <Skeleton leaving={appsRes.leaving} label="Chargement des candidatures" />}
 
       {appsRes.status === 'error' && (
@@ -210,12 +267,13 @@ export default function HrApplications() {
                 <div className="tile__head">
                   {/* Opening the person also settles the notices about this
                       application, which is what looking at it used to do. */}
-                  <PersonLink id={app.candidateId} className="appcard__who">
-                    <span className="appcard__name" onMouseDown={() => markSeen(app)}>
-                      {app.candidateFirstName} {app.candidateLastName}
-                    </span>
-                    <span className="appcard__email">{app.candidateEmail}</span>
-                  </PersonLink>
+                  <h2 className="tile__title">
+                    <PersonLink id={app.candidateId}>
+                      <span onMouseDown={() => markSeen(app)}>
+                        {app.candidateFirstName} {app.candidateLastName}
+                      </span>
+                    </PersonLink>
+                  </h2>
                   <StatusBadge status={app.status} />
                 </div>
 
@@ -225,12 +283,12 @@ export default function HrApplications() {
                 </p>
 
                 <div className="tile__foot">
-                  <Button variant="text" onClick={() => viewCv(app.id)}>
+                  <Button variant="secondary" onClick={() => viewCv(app.id)}>
                     <Icon name="download" /> CV
                   </Button>
                   {screening && (
                     <Button variant="secondary"
-                      onClick={() => (open ? setPanel(null) : openPreselection(app))}>
+                      onClick={() => setPanel(open ? null : { id: app.id, mode: 'preselect' })}>
                       Présélectionner
                     </Button>
                   )}
@@ -240,7 +298,9 @@ export default function HrApplications() {
                       {app.appointmentDate ? 'Reprogrammer' : 'Planifier'}
                     </Button>
                   )}
-                  {app.status === 'ENTRETIEN_RH' && (
+                  {/* The final assessment reports an interview, so it opens
+                      only once that interview has a date. */}
+                  {app.status === 'ENTRETIEN_RH' && app.appointmentDate && (
                     <Button onClick={() => navigate(`/candidatures/${app.id}/entretien`, { state: origin })}>
                       Finaliser
                     </Button>
@@ -248,7 +308,7 @@ export default function HrApplications() {
                 </div>
 
                 {open && panel.mode === 'preselect' && (
-                  <div className="appcard__panel">
+                  <Panel onCancel={() => setPanel(null)}>
                     <Field label="Commentaire de présélection" value={comment}
                       onChange={(e) => setComment(e.target.value)} multiline rows={3}
                       hint="Facultatif" />
@@ -260,21 +320,24 @@ export default function HrApplications() {
                         Valider et passer à l'examen technique
                       </Button>
                     </div>
-                  </div>
+                  </Panel>
                 )}
 
                 {open && panel.mode === 'schedule' && (
-                  <div className="appcard__panel">
+                  <Panel onCancel={() => setPanel(null)}>
                     <Scheduler
                       applicationId={app.id}
-                      current={app.appointmentDate ? { date: app.appointmentDate } : null}
+                      kind={app.status === 'EXAMEN_TECHNIQUE' ? 'TECHNIQUE' : 'RH'}
+                      current={app.appointmentDate
+                        ? { date: app.appointmentDate, evaluatorId: app.appointmentEvaluatorId }
+                        : null}
                       onScheduled={(updated) => {
                         replace(updated);
                         setPanel(null);
                         toast.success('Entretien planifié. Le candidat a été prévenu.');
                       }}
                     />
-                  </div>
+                  </Panel>
                 )}
               </li>
             );

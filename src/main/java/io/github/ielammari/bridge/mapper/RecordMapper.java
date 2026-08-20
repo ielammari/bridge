@@ -9,6 +9,7 @@ import io.github.ielammari.bridge.dto.HRInterviewDto;
 import io.github.ielammari.bridge.dto.TraitScoreDto;
 import io.github.ielammari.bridge.model.Appointment;
 import io.github.ielammari.bridge.model.Evaluation;
+import io.github.ielammari.bridge.model.Evaluator;
 import io.github.ielammari.bridge.model.Hiring;
 import io.github.ielammari.bridge.model.HRInterview;
 import io.github.ielammari.bridge.model.TraitScore;
@@ -40,7 +41,12 @@ public final class RecordMapper {
 				appointment.getType(),
 				appointment.getStatus(),
 				appointment.getDate(),
-				appointment.getTime());
+				appointment.getTime(),
+				name(appointment.getEvaluator()));
+	}
+
+	private static String name(Evaluator evaluator) {
+		return evaluator == null ? null : evaluator.getFirstName() + " " + evaluator.getLastName();
 	}
 
 	public static HRInterviewDto toDto(HRInterview interview) {

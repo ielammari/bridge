@@ -2,7 +2,11 @@ package io.github.ielammari.bridge.controller;
 
 import java.util.List;
 
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,14 +35,25 @@ public class EvaluationController {
 
 	/** Expert: applications awaiting the technical exam. */
 	@GetMapping("/pending")
-	public List<PendingTechnicalDto> pending() {
-		return evaluationService.pendingTechnical();
+	public List<PendingTechnicalDto> pending(@AuthenticationPrincipal Jwt jwt) {
+		return evaluationService.pendingTechnical(currentUserId(jwt));
 	}
 
 	/** Expert: the scoring grid for one application. */
 	@GetMapping("/{applicationId}")
-	public TechnicalContextDto context(@PathVariable Integer applicationId) {
-		return evaluationService.technicalContext(applicationId);
+	public TechnicalContextDto context(@AuthenticationPrincipal Jwt jwt,
+			@PathVariable Integer applicationId) {
+		return evaluationService.technicalContext(currentUserId(jwt), applicationId);
+	}
+
+	/** Expert: the CV attached to the application they are examining. */
+	@GetMapping("/{applicationId}/cv")
+	public ResponseEntity<Resource> cv(@AuthenticationPrincipal Jwt jwt, @PathVariable Integer applicationId) {
+		Resource cv = evaluationService.loadCv(currentUserId(jwt), applicationId);
+		return ResponseEntity.ok()
+				.contentType(MediaType.APPLICATION_PDF)
+				.header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"cv.pdf\"")
+				.body(cv);
 	}
 
 	/** Expert: record the technical evaluation. */
@@ -46,7 +61,11 @@ public class EvaluationController {
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void evaluate(@AuthenticationPrincipal Jwt jwt, @PathVariable Integer applicationId,
 			@Valid @RequestBody TechnicalEvaluationRequest request) {
-		evaluationService.evaluateTechnical(Integer.valueOf(jwt.getSubject()), applicationId, request);
+		evaluationService.evaluateTechnical(currentUserId(jwt), applicationId, request);
+	}
+
+	private Integer currentUserId(Jwt jwt) {
+		return Integer.valueOf(jwt.getSubject());
 	}
 
 }

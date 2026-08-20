@@ -15,6 +15,7 @@
 
 .stars__row--editable {
   cursor: pointer;
+  font-size: 1.785rem;
 }
 
 .stars__star {
@@ -63,4 +64,8 @@
   min-width: 2ch;
   font-size: var(--size-sm);
   color: var(--text-secondary);
+}
+
+.stars__row--editable + .stars__value {
+  font-size: calc(var(--size-sm) * 1.19);
 }

@@ -11,7 +11,7 @@ export function readPreference() {
   return PREFERENCES.includes(stored) ? stored : 'system';
 }
 
-/** The theme a preference actually resolves to right now. */
+/** The theme a preference resolves to. */
 export function resolve(preference) {
   if (preference === 'system') {
     return systemQuery().matches ? 'dark' : 'light';
@@ -21,8 +21,8 @@ export function resolve(preference) {
 
 /**
  * Writes the resolved theme where the stylesheet reads it. The same function
- * runs before the first paint from a script in the page head, so the document
- * is never painted in one theme and corrected into the other.
+ * runs before the first paint, so the document is never painted in one theme
+ * and corrected into the other.
  */
 export function applyTheme(preference) {
   document.documentElement.dataset.theme = resolve(preference);

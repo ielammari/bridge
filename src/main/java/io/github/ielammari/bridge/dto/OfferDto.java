@@ -13,6 +13,7 @@ import io.github.ielammari.bridge.model.RemoteMode;
 public record OfferDto(
 		Integer id,
 		String title,
+		String company,
 		String description,
 		Degree requiredDegree,
 		ContractType contractType,

@@ -28,6 +28,10 @@ public interface MessageRepository extends JpaRepository<Message, Integer> {
 
 	Optional<Message> findByIdAndRecipientId(Integer id, Integer recipientId);
 
+	/** Whether an application has already produced a notification of this kind. */
+	boolean existsByApplicationIdAndType(Integer applicationId,
+			io.github.ielammari.bridge.model.NotificationType type);
+
 	// Bulk updates bypass the persistence context: flush pending changes first,
 	// then clear the stale copies they leave behind.
 	@Transactional

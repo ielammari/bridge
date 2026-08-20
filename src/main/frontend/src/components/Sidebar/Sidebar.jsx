@@ -1,13 +1,15 @@
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import Icon from '../Icon/Icon.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useNotifications } from '../../context/NotificationContext.jsx';
 import './Sidebar.css';
 
-// Active work first, then the record of what is finished.
+// Active work first, then the record of what is finished. `notMine` names the
+// paths that sit under a section's address without belonging to it.
 const NAV_BY_ROLE = {
   CANDIDAT: [
-    { to: '/offres', label: 'Offres', icon: 'briefcase' },
+    { to: '/offres', label: 'Offres', icon: 'briefcase', notMine: ['/offres/enregistrees'] },
+    { to: '/offres/enregistrees', label: 'Enregistrées', icon: 'bookmark' },
     { to: '/mes-candidatures', label: 'Mes candidatures', icon: 'stack' },
     { to: '/historique/candidatures', label: 'Historique', icon: 'archive' },
   ],
@@ -25,16 +27,15 @@ const NAV_BY_ROLE = {
 const ROLE_LABELS = { CANDIDAT: 'Candidat', RH: 'RH', EXPERT: 'Expert' };
 
 /**
- * Persistent primary navigation. Routes at the top, the account and its
- * settings at the bottom, and the two groups never mix.
- *
- * Every row shares one geometry, with the icon at a fixed offset that is also
- * its centre once the panel is collapsed. Collapsing then moves nothing but the
- * panel edge: the labels only fade.
+ * Persistent primary navigation: routes at the top, the account and its
+ * settings at the bottom. Every row shares one geometry, with the icon at the
+ * offset that is also its centre once collapsed, so collapsing moves nothing
+ * but the panel edge.
  */
 export default function Sidebar({ collapsed, onToggle, onNavigate }) {
   const { user, logout } = useAuth();
   const { unreadCount } = useNotifications();
+  const { pathname } = useLocation();
 
   const routes = NAV_BY_ROLE[user.role] ?? [];
   const isCandidate = user.role === 'CANDIDAT';
@@ -42,12 +43,24 @@ export default function Sidebar({ collapsed, onToggle, onNavigate }) {
   // With the labels hidden there is nothing left to name the row.
   const hint = (label) => (collapsed ? label : undefined);
 
-  function row({ to, label, icon, badge }) {
+  /**
+   * Whether a row names the page on screen. A row owns its own address and what
+   * opens from it, never a sibling section that shares its prefix.
+   */
+  function isCurrent({ to, notMine = [] }) {
+    if (pathname === to) return true;
+    if (!pathname.startsWith(`${to}/`)) return false;
+    return !notMine.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  }
+
+  function row({ to, label, icon, badge, notMine }) {
+    const current = isCurrent({ to, notMine });
     return (
-      <NavLink
+      <Link
         key={to}
         to={to}
-        className={({ isActive }) => `sidebar__row${isActive ? ' sidebar__row--active' : ''}`}
+        className={`sidebar__row${current ? ' sidebar__row--active' : ''}`}
+        aria-current={current ? 'page' : undefined}
         title={hint(label)}
         aria-label={hint(label)}
         onClick={onNavigate}
@@ -59,7 +72,7 @@ export default function Sidebar({ collapsed, onToggle, onNavigate }) {
             {badge > 9 ? '9+' : badge}
           </span>
         )}
-      </NavLink>
+      </Link>
     );
   }
 

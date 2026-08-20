@@ -52,12 +52,14 @@ export default function PastApplications() {
   const unique = (read) => [...new Set(closed.map(read))].sort((a, b) => a.localeCompare(b, 'fr'));
 
   const dimensions = [
-    {
+    // Only a recruiter reads this across offers. A candidate filtering their own
+    // record by offer would get one application per section.
+    ...(isCandidate ? [] : [{
       key: 'offer', label: 'Offre', type: 'select', valueLabel: 'Offre',
       of: (app) => app.offerTitle,
       labelOf: (key) => key,
       options: unique((app) => app.offerTitle).map((title) => ({ value: title, label: title })),
-    },
+    }]),
     {
       key: 'outcome', label: 'Catégorie', type: 'select', valueLabel: 'Issue',
       of: BY_OUTCOME.of,
@@ -111,9 +113,24 @@ export default function PastApplications() {
   );
 
   return (
-    <Workspace title="Historique">
-      <TabNav items={historyTabs(user.role)} label="Sections de l'historique" />
-
+    <Workspace
+      title="Historique"
+      toolbar={(
+        <>
+          <TabNav items={historyTabs(user.role)} label="Sections de l'historique" />
+          {status === 'ready' && closed.length > 0 && (
+            <FilterBar
+              dimensions={dimensions}
+              dimension={filtering.dimension}
+              value={filtering.value}
+              onDimension={filtering.setDimension}
+              onValue={filtering.setValue}
+              count={`${filtering.kept.length} sur ${closed.length}`}
+            />
+          )}
+        </>
+      )}
+    >
       {pending && <Skeleton leaving={leaving} label="Chargement de l'historique" />}
 
       {status === 'error' && (
@@ -131,24 +148,13 @@ export default function PastApplications() {
       )}
 
       {status === 'ready' && closed.length > 0 && (
-        <>
-          <FilterBar
-            dimensions={dimensions}
-            dimension={filtering.dimension}
-            value={filtering.value}
-            onDimension={filtering.setDimension}
-            onValue={filtering.setValue}
-            count={`${filtering.kept.length} sur ${closed.length}`}
-          />
-
-          {filtering.kept.length === 0 ? (
-            <EmptyState title="Aucune candidature ne correspond à ce filtre.">
-              Modifiez la valeur, ou revenez à la liste complète en choisissant « Aucun filtre ».
-            </EmptyState>
-          ) : (
-            <GroupedGrid sections={filtering.sections} render={card} />
-          )}
-        </>
+        filtering.kept.length === 0 ? (
+          <EmptyState title="Aucune candidature ne correspond à ce filtre.">
+            Modifiez la valeur, ou revenez à la liste complète en choisissant « Aucun filtre ».
+          </EmptyState>
+        ) : (
+          <GroupedGrid sections={filtering.sections} render={card} />
+        )
       )}
     </Workspace>
   );

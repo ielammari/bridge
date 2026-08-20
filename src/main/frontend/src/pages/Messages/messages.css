@@ -1,15 +1,3 @@
-.msg__bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.msg__count {
-  font-size: var(--size-sm);
-  color: var(--text-faint);
-}
-
 .msg__list {
   display: flex;
   flex-direction: column;
@@ -22,13 +10,32 @@
 .msg {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-3);
+  /* The room the text keeps from the bell. */
+  gap: 14px;
   padding: var(--space-4);
   background: var(--surface);
   border: 1px solid var(--border);
   border-left: 3px solid var(--border);
   border-radius: var(--radius);
   --tone: var(--border)
+}
+
+/* A notice is read by opening it, so the row answers the pointer with a hint of
+   its own tone and nothing else: no movement to disturb a scan. */
+.msg--openable {
+  cursor: pointer;
+  transition:
+    background-color var(--duration) var(--ease),
+    outline-color var(--duration) var(--ease);
+}
+
+.msg--openable:hover {
+  background: color-mix(in srgb, var(--surface) 92%, var(--tone));
+}
+
+.msg--openable:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 /* Unread carries the type accent on the rail and a heavier body. */
@@ -42,8 +49,11 @@
   color: var(--text);
 }
 
+/* Centred on the row rather than on its first line: the mark belongs to the
+   whole notice. */
 .msg__icon {
   display: inline-flex;
+  align-self: center;
   color: var(--tone);
   font-size: var(--size-lg);
   line-height: 1;
@@ -65,6 +75,37 @@
 }
 
 .msg .button--text {
+  align-self: center;
   flex-shrink: 0;
   font-size: var(--size-sm);
+}
+
+/* ---- Dated groups ------------------------------------------------------ */
+
+.msg__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* The period names itself and says how much it holds, so a long inbox can be
+   scanned by when rather than read from the top. */
+.msg__groupname {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--size-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.msg__groupcount {
+  padding: 1px var(--space-2);
+  background: var(--surface-sunken);
+  border-radius: 999px;
+  font-size: var(--size-xs);
+  color: var(--text-secondary);
 }

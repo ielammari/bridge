@@ -17,6 +17,7 @@ import PastEvaluations from './pages/History/PastEvaluations.jsx';
 import ApplicationRecord from './pages/History/ApplicationRecord.jsx';
 import OfferPage from './pages/Offers/OfferPage.jsx';
 import PersonPage from './pages/People/PersonPage.jsx';
+import SavedOffers from './pages/Offers/SavedOffers.jsx';
 import Settings from './pages/Settings/Settings.jsx';
 import NotFound from './pages/NotFound/NotFound.jsx';
 import ProtectedRoute, { HOME_BY_ROLE } from './components/ProtectedRoute/ProtectedRoute.jsx';
@@ -173,6 +174,15 @@ export default function App() {
       {/* Open to every role: the service decides who may read whom, so a
           candidate reaching their own address is the same request as HR
           reaching anyone's. */}
+      <Route
+        path="/offres/enregistrees"
+        element={
+          <ProtectedRoute roles={['CANDIDAT']}>
+            <SavedOffers />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/offres/:id"
         element={

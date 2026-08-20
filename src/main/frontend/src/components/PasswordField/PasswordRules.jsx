@@ -3,9 +3,8 @@ import { PASSWORD_RULES } from '../../constants/password.js';
 import './PasswordField.css';
 
 /**
- * The conditions a password must meet, ticking as it is typed. Separate from
- * the field so it can span a two column form, and because it is guidance: it
- * never turns red.
+ * The conditions a password must meet, ticking as it is typed. Guidance rather
+ * than validation, so it never turns red.
  */
 export default function PasswordRules({ id, value, context }) {
   return (

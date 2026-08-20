@@ -14,8 +14,7 @@ export function setTokenProvider(provider) {
 }
 
 // Called when a request that carried a token is refused. A rejected login is
-// not this: no token goes out with it, so a wrong password never reads as an
-// expired session.
+// not this: no token goes out with it.
 export function setUnauthorizedHandler(handler) {
   onUnauthorized = handler;
 }

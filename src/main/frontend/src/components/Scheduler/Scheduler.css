@@ -4,6 +4,19 @@
   gap: var(--space-3);
 }
 
+/* Who runs it, then when: an exam's hours belong to the expert holding it. */
+.scheduler__who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-4);
+}
+
+.scheduler__who .select {
+  flex: 1 1 18rem;
+  max-width: 26rem;
+}
+
 .scheduler__date {
   display: flex;
   flex-direction: column;

@@ -67,12 +67,12 @@ class HistoryServiceTest {
 				LocalDate.of(1995, 5, 20), null, null, null)).user().id();
 		profileService.update(id, new UpdateProfileRequest(Degree.BAC_5, null,
 				List.of(new TraitSelection(aTrait().getId(), null))));
-		profileService.storeCv(id, new MockMultipartFile("file", "cv.pdf", "application/pdf", "%PDF-1.4".getBytes()));
+		profileService.storeCv(id, new MockMultipartFile("file", "cv.pdf", "application/pdf", "%PDF-1.4".getBytes()), null);
 		return id;
 	}
 
 	private Integer publishedOffer() {
-		OfferDto offer = offerService.create(hrId(), new OfferRequest("Poste", "d", Degree.BAC,
+		OfferDto offer = offerService.create(hrId(), new OfferRequest("Poste", null, "d", Degree.BAC,
 				ContractType.PERMANENT, "Paris", null, null, null,
 				List.of(new RequirementSelection(aTrait().getId(), true)), true));
 		return offer.id();
@@ -81,11 +81,12 @@ class HistoryServiceTest {
 	/** Carries an application all the way to a hire. */
 	private Integer hiredApplication(String email, LocalDate slot) {
 		Integer candidateId = candidate(email);
-		Integer app = applicationService.apply(candidateId, publishedOffer()).id();
+		Integer app = applicationService.apply(candidateId, publishedOffer(), null).id();
 		evaluationService.preselect(hrId(), app, Decision.VALIDEE, "Bon dossier");
-		appointmentService.schedule(app, slot, LocalTime.of(10, 0));
+		appointmentService.schedule(hrId(), app, slot, LocalTime.of(10, 0), expertId());
 		evaluationService.evaluateTechnical(expertId(), app, new TechnicalEvaluationRequest(
 				Decision.VALIDEE, "Solide", List.of(new Score(aTrait().getId(), (short) 9))));
+		appointmentService.schedule(hrId(), app, slot, LocalTime.of(11, 0), expertId());
 		evaluationService.finalize(hrId(), app, new FinalEvaluationRequest(
 				Decision.VALIDEE, "Retenu",
 				new FinalEvaluationRequest.InterviewData(new BigDecimal("45000"), LocalDate.of(2099, 9, 1),
@@ -155,7 +156,7 @@ class HistoryServiceTest {
 	void anEvaluatorFindsTheEvaluationsTheyWrote() {
 		Integer app = hiredApplication("h5@example.fr", LocalDate.of(2099, 6, 5));
 
-		assertThat(historyService.authored(expertId()))
+		assertThat(historyService.authored(expertId(), Role.EXPERT))
 				.filteredOn(row -> row.applicationId().equals(app))
 				.singleElement()
 				.satisfies(row -> {
@@ -201,7 +202,7 @@ class HistoryServiceTest {
 	@Test
 	void anExpertCannotReadTheTrailOfAnApplicationTheyNeverTouched() {
 		Integer candidateId = candidate("h9@example.fr");
-		Integer app = applicationService.apply(candidateId, publishedOffer()).id();
+		Integer app = applicationService.apply(candidateId, publishedOffer(), null).id();
 
 		assertThatThrownBy(() -> historyService.trail(expertId(), Role.EXPERT, app))
 				.isInstanceOf(ApiException.class)
