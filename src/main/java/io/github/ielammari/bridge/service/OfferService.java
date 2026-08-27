@@ -9,11 +9,14 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.github.ielammari.bridge.dto.MatchDto;
 import io.github.ielammari.bridge.dto.OfferDetailDto;
 import io.github.ielammari.bridge.dto.OfferDto;
+import io.github.ielammari.bridge.dto.OfferMatchDto;
 import io.github.ielammari.bridge.dto.OfferRequest;
 import io.github.ielammari.bridge.exception.ApiException;
 import io.github.ielammari.bridge.mapper.OfferMapper;
+import io.github.ielammari.bridge.model.Candidate;
 import io.github.ielammari.bridge.model.HRManager;
 import io.github.ielammari.bridge.model.JobOffer;
 import io.github.ielammari.bridge.model.OfferStatus;
@@ -40,10 +43,11 @@ public class OfferService {
 	private final AppointmentRepository appointments;
 	private final EvaluationRepository evaluations;
 	private final SavedOfferRepository saved;
+	private final MatchingService matching;
 
 	public OfferService(JobOfferRepository offers, TraitRepository traits, UserRepository users,
 			ApplicationRepository applications, AppointmentRepository appointments,
-			EvaluationRepository evaluations, SavedOfferRepository saved) {
+			EvaluationRepository evaluations, SavedOfferRepository saved, MatchingService matching) {
 		this.offers = offers;
 		this.traits = traits;
 		this.users = users;
@@ -51,6 +55,7 @@ public class OfferService {
 		this.appointments = appointments;
 		this.evaluations = evaluations;
 		this.saved = saved;
+		this.matching = matching;
 	}
 
 	@Transactional
@@ -134,24 +139,33 @@ public class OfferService {
 		}
 
 		HRManager publisher = offer.getPublisher();
+		MatchDto match = viewerRole == Role.CANDIDAT
+				? matching.match(requireCandidate(viewerId), offer)
+				: null;
+
 		return new OfferDetailDto(
 				OfferMapper.toDto(offer),
 				viewerRole == Role.CANDIDAT && saved.existsByCandidateIdAndOfferId(viewerId, offerId),
 				publisher == null ? null : publisher.getFirstName() + " " + publisher.getLastName(),
 				viewerRole == Role.CANDIDAT && applied,
-				viewerRole == Role.RH ? applications.findByOffer(offerId).size() : null);
+				viewerRole == Role.RH ? applications.findByOffer(offerId).size() : null,
+				match);
 	}
 
 	// ---- Saved offers ---------------------------------------------------
 
-	/** The offers this candidate kept, most recently saved first. */
+	/**
+	 * The offers this candidate kept, most recently saved first. A kept offer can
+	 * drift out of reach when its traits change, so each carries where the
+	 * candidate stands against it.
+	 */
 	@Transactional(readOnly = true)
-	public List<OfferDto> savedFor(Integer candidateId) {
-		return saved.findByCandidateIdOrderBySavedAtDesc(candidateId).stream()
+	public List<OfferMatchDto> savedFor(Integer candidateId) {
+		List<JobOffer> kept = saved.findByCandidateIdOrderBySavedAtDesc(candidateId).stream()
 				.map(entry -> offers.findByIdWithRequirements(entry.getOfferId()).orElse(null))
 				.filter(java.util.Objects::nonNull)
-				.map(OfferMapper::toDto)
 				.toList();
+		return matching.describe(candidateId, kept);
 	}
 
 	/**
@@ -188,6 +202,7 @@ public class OfferService {
 		offer.setRemoteMode(request.remoteMode());
 		offer.setSalaryMin(request.salaryMin());
 		offer.setSalaryMax(request.salaryMax());
+		offer.setWaitForAppointment(request.waitForAppointment());
 	}
 
 	private void applyRequirements(JobOffer offer, OfferRequest request) {
@@ -216,6 +231,13 @@ public class OfferService {
 			throw ApiException.badRequest("NO_MANDATORY_TRAIT",
 					"L'offre doit exiger au moins un trait obligatoire.");
 		}
+	}
+
+	private Candidate requireCandidate(Integer candidateId) {
+		return users.findById(candidateId)
+				.filter(Candidate.class::isInstance)
+				.map(Candidate.class::cast)
+				.orElseThrow(() -> ApiException.notFound("Ce profil candidat est introuvable."));
 	}
 
 	private HRManager requireHr(Integer hrId) {

@@ -77,7 +77,7 @@ class FinalEvaluationTest {
 		profileService.storeCv(candidate, new MockMultipartFile("file", "cv.pdf", "application/pdf", "%PDF-1.4".getBytes()), null);
 		OfferDto offer = offerService.create(hrId(), new OfferRequest("Poste", null, "d", Degree.BAC,
 				ContractType.PERMANENT, "Paris", null, null, null,
-				List.of(new RequirementSelection(aTrait().getId(), true)), true));
+				false, List.of(new RequirementSelection(aTrait().getId(), true)), true));
 		Integer app = applicationService.apply(candidate, offer.id(), null).id();
 		evaluationService.preselect(hrId(), app, Decision.VALIDEE, null);
 		bookExam(app);
@@ -147,7 +147,7 @@ class FinalEvaluationTest {
 		profileService.storeCv(candidate, new MockMultipartFile("file", "cv.pdf", "application/pdf", "%PDF-1.4".getBytes()), null);
 		OfferDto offer = offerService.create(hrId(), new OfferRequest("P", null, "d", Degree.BAC,
 				ContractType.PERMANENT, null, null, null, null,
-				List.of(new RequirementSelection(aTrait().getId(), true)), true));
+				false, List.of(new RequirementSelection(aTrait().getId(), true)), true));
 		Integer app = applicationService.apply(candidate, offer.id(), null).id(); // still NOUVELLE
 
 		assertThatThrownBy(() -> evaluationService.finalize(hrId(), app, new FinalEvaluationRequest(

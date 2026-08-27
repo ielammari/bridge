@@ -36,6 +36,7 @@ public final class OfferMapper {
 				offer.getSalaryMax(),
 				offer.getPublicationDate(),
 				offer.getStatus(),
+				offer.isWaitForAppointment(),
 				requirements);
 	}
 

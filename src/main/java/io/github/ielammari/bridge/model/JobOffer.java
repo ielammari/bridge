@@ -66,6 +66,10 @@ public class JobOffer {
 	@Column(name = "statut", nullable = false, length = 20)
 	private OfferStatus status;
 
+	/** Whether an interview for this offer can only be recorded once its hour has come. */
+	@Column(name = "attendre_rendez_vous", nullable = false)
+	private boolean waitForAppointment = true;
+
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "id_rh", nullable = false)
 	private HRManager publisher;
@@ -180,6 +184,14 @@ public class JobOffer {
 
 	public void setStatus(OfferStatus status) {
 		this.status = status;
+	}
+
+	public boolean isWaitForAppointment() {
+		return waitForAppointment;
+	}
+
+	public void setWaitForAppointment(boolean waitForAppointment) {
+		this.waitForAppointment = waitForAppointment;
 	}
 
 	public HRManager getPublisher() {

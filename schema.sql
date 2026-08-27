@@ -211,6 +211,7 @@ CREATE TABLE public.offre (
     statut character varying(20) NOT NULL,
     id_rh integer NOT NULL,
     entreprise character varying(120) DEFAULT 'Bridge'::character varying NOT NULL,
+    attendre_rendez_vous boolean DEFAULT true NOT NULL,
     CONSTRAINT ck_offre_salaire CHECK (((salaire_min IS NULL) OR (salaire_max IS NULL) OR (salaire_min <= salaire_max))),
     CONSTRAINT ck_offre_statut CHECK (((statut)::text = ANY ((ARRAY['BROUILLON'::character varying, 'PUBLIEE'::character varying, 'CLOTUREE'::character varying])::text[])))
 );
@@ -307,6 +308,7 @@ CREATE TABLE public.utilisateur (
     sexe character varying(20),
     ville character varying(100),
     pays character varying(100),
+    mot_de_passe_a_changer boolean DEFAULT false NOT NULL,
     CONSTRAINT ck_utilisateur_date_naissance CHECK (((date_naissance IS NULL) OR (date_naissance < CURRENT_DATE))),
     CONSTRAINT ck_utilisateur_role CHECK (((role)::text = ANY ((ARRAY['CANDIDAT'::character varying, 'RH'::character varying, 'EXPERT'::character varying])::text[]))),
     CONSTRAINT ck_utilisateur_sexe CHECK (((sexe IS NULL) OR ((sexe)::text = ANY ((ARRAY['HOMME'::character varying, 'FEMME'::character varying, 'AUTRE'::character varying])::text[]))))

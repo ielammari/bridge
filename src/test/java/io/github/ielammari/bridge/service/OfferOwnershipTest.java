@@ -78,7 +78,7 @@ class OfferOwnershipTest {
 	private Integer offerOf(Integer hrId) {
 		return offerService.create(hrId, new OfferRequest("Poste", null, "d", Degree.BAC,
 				ContractType.PERMANENT, "Paris", null, null, null,
-				List.of(new RequirementSelection(aTrait().getId(), true)), true)).id();
+				false, List.of(new RequirementSelection(aTrait().getId(), true)), true)).id();
 	}
 
 	private Integer candidate(String email) {

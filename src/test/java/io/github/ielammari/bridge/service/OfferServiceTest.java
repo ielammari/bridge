@@ -39,7 +39,7 @@ class OfferServiceTest {
 
 	private OfferRequest offer(boolean publishNow, List<RequirementSelection> reqs, BigDecimal min, BigDecimal max) {
 		return new OfferRequest("Titre", null, "Description", Degree.BAC_3, ContractType.PERMANENT,
-				"Lyon", null, min, max, reqs, publishNow);
+				"Lyon", null, min, max, false, reqs, publishNow);
 	}
 
 	@Test

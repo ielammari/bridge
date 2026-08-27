@@ -1,7 +1,8 @@
 import { api } from './client.js';
 
 export const offersApi = {
-  feed: () => api.get('/offers/feed'),
+  // 'compatible' keeps only what the candidate qualifies for; 'all' adds the rest.
+  feed: (scope = 'compatible') => api.get(`/offers/feed?scope=${scope}`),
   list: () => api.get('/offers'),
   get: (id) => api.get(`/offers/${id}`),
   // Readable by every role, unlike the rest of this module.

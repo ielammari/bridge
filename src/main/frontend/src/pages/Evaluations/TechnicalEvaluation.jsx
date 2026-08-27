@@ -5,6 +5,7 @@ import Alert from '../../components/Alert/Alert.jsx';
 import Button from '../../components/Button/Button.jsx';
 import Checkbox from '../../components/Checkbox/Checkbox.jsx';
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog.jsx';
+import EmptyState from '../../components/EmptyState/EmptyState.jsx';
 import ErrorState from '../../components/ErrorState/ErrorState.jsx';
 import Field from '../../components/Field/Field.jsx';
 import InfoHint from '../../components/InfoHint/InfoHint.jsx';
@@ -13,6 +14,7 @@ import PersonLink from '../../components/PersonLink/PersonLink.jsx';
 import Skeleton from '../../components/Skeleton/Skeleton.jsx';
 import StarRating from '../../components/StarRating/StarRating.jsx';
 import { useToast } from '../../components/Toast/ToastContext.jsx';
+import { isDue, opensText } from '../../constants/schedule.js';
 import useResource from '../../hooks/useResource.js';
 import Workspace from '../Workspace/Workspace.jsx';
 import './technicalEvaluations.css';
@@ -103,6 +105,21 @@ export default function TechnicalEvaluation() {
   }
 
   const name = `${data.candidateFirstName} ${data.candidateLastName}`;
+
+  // An evaluation reports an exam, so the exam has to have happened.
+  if (!isDue(data)) {
+    return (
+      <Workspace width="narrow" title="Évaluation technique" subtitle={name} back={back}>
+        <EmptyState
+          title="Cet examen n'a pas encore eu lieu."
+          actionLabel="Retour aux évaluations"
+          actionTo={returnTo}
+        >
+          {opensText(data)}
+        </EmptyState>
+      </Workspace>
+    );
+  }
 
   // Plus traits left unscored, surfaced by the confirmation.
   const unrated = data.traits

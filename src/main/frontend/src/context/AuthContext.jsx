@@ -89,9 +89,16 @@ export function AuthProvider({ children }) {
     setExpired(false);
   }, [clear]);
 
+  // Re-reads the account after something about it changes on the server.
+  const refresh = useCallback(async () => {
+    const profile = await authApi.me();
+    setUser(profile);
+    return profile;
+  }, []);
+
   const value = useMemo(
-    () => ({ user, loading, expired, isAuthenticated: Boolean(user), login, register, logout }),
-    [user, loading, expired, login, register, logout],
+    () => ({ user, loading, expired, isAuthenticated: Boolean(user), login, register, logout, refresh }),
+    [user, loading, expired, login, register, logout, refresh],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

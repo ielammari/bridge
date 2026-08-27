@@ -31,6 +31,10 @@ public final class ApiException extends RuntimeException {
 		return new ApiException(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", message);
 	}
 
+	public static ApiException forbidden(String code, String message) {
+		return new ApiException(HttpStatus.FORBIDDEN, code, message);
+	}
+
 	public static ApiException badRequest(String code, String message) {
 		return new ApiException(HttpStatus.BAD_REQUEST, code, message);
 	}

@@ -73,7 +73,8 @@ public class SettingsService {
 
 	/**
 	 * The current password is required: without it, an unattended session is
-	 * enough to lock the owner out of their own account.
+	 * enough to lock the owner out of their own account. The new one must differ,
+	 * and choosing it settles the demand made of a provisioned account.
 	 */
 	@Transactional
 	public void changePassword(Integer userId, PasswordChangeRequest request) {
@@ -82,9 +83,14 @@ public class SettingsService {
 		if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
 			throw ApiException.badRequest("WRONG_PASSWORD", "Le mot de passe actuel est incorrect.");
 		}
+		if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
+			throw ApiException.badRequest("PASSWORD_UNCHANGED",
+					"Le nouveau mot de passe doit être différent de l'ancien.");
+		}
 
 		PasswordPolicy.check(request.newPassword(), user.getEmail(), user.getFirstName(), user.getLastName());
 		user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+		user.setMustChangePassword(false);
 	}
 
 	// ---- Notifications --------------------------------------------------
@@ -151,6 +157,8 @@ public class SettingsService {
 		User account = request.role() == Role.RH
 				? new HRManager(email, hash, firstName, lastName, null)
 				: new TechnicalExpert(email, hash, firstName, lastName, null);
+		// The password was chosen by somebody else, so it is theirs to replace.
+		account.setMustChangePassword(true);
 
 		return UserMapper.toSummary(users.save(account));
 	}

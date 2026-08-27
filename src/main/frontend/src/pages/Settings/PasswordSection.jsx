@@ -19,7 +19,10 @@ const RULES = {
   newPassword: {
     label: 'Nouveau mot de passe',
     required: 'Choisissez un nouveau mot de passe.',
-    format: (value, values) => passwordProblem(value, values),
+    format: (value, values) =>
+      (value === values.currentPassword
+        ? 'Le nouveau mot de passe doit être différent de l\'ancien.'
+        : passwordProblem(value, values)),
   },
   confirmPassword: {
     label: 'Confirmation',

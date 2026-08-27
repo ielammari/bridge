@@ -74,7 +74,7 @@ class HistoryServiceTest {
 	private Integer publishedOffer() {
 		OfferDto offer = offerService.create(hrId(), new OfferRequest("Poste", null, "d", Degree.BAC,
 				ContractType.PERMANENT, "Paris", null, null, null,
-				List.of(new RequirementSelection(aTrait().getId(), true)), true));
+				false, List.of(new RequirementSelection(aTrait().getId(), true)), true));
 		return offer.id();
 	}
 

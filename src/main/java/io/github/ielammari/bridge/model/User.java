@@ -64,6 +64,10 @@ public abstract class User {
 	@Column(name = "date_inscription", nullable = false)
 	private LocalDate registrationDate;
 
+	/** Set on an account somebody else created, until its holder picks their own password. */
+	@Column(name = "mot_de_passe_a_changer", nullable = false)
+	private boolean mustChangePassword;
+
 	protected User() {
 	}
 
@@ -166,6 +170,14 @@ public abstract class User {
 
 	public void setCountry(String country) {
 		this.country = country;
+	}
+
+	public boolean isMustChangePassword() {
+		return mustChangePassword;
+	}
+
+	public void setMustChangePassword(boolean mustChangePassword) {
+		this.mustChangePassword = mustChangePassword;
 	}
 
 	public LocalDate getRegistrationDate() {

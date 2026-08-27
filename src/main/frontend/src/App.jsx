@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import Login from './pages/auth/Login.jsx';
 import Signup from './pages/auth/Signup.jsx';
+import ForcedPassword from './pages/auth/ForcedPassword.jsx';
 import Profile from './pages/Profile/Profile.jsx';
 import OffersPage from './pages/Offers/OffersPage.jsx';
 import OfferEditor from './pages/Offers/OfferEditor.jsx';
@@ -44,6 +45,16 @@ export default function App() {
 
       <Route path="/connexion" element={<GuestOnly><Login /></GuestOnly>} />
       <Route path="/inscription" element={<GuestOnly><Signup /></GuestOnly>} />
+
+      {/* The one address an account owing its first password change can reach. */}
+      <Route
+        path="/mot-de-passe"
+        element={
+          <ProtectedRoute>
+            <ForcedPassword />
+          </ProtectedRoute>
+        }
+      />
 
       <Route
         path="/offres"

@@ -48,7 +48,8 @@ public final class ApplicationMapper {
 				appointment == null ? null : appointment.getEvaluator().getId(),
 				appointment == null ? null
 						: appointment.getEvaluator().getFirstName() + " "
-								+ appointment.getEvaluator().getLastName());
+								+ appointment.getEvaluator().getLastName(),
+				application.getOffer().isWaitForAppointment());
 	}
 
 }

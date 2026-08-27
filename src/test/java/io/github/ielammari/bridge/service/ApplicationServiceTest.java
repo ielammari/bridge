@@ -59,7 +59,7 @@ class ApplicationServiceTest {
 	private Integer publishedOffer() {
 		OfferDto dto = offerService.create(hrId(), new OfferRequest(
 				"Poste", null, "desc", Degree.BAC, ContractType.PERMANENT, "Paris", null, null, null,
-				List.of(new RequirementSelection(aTrait().getId(), true)), true));
+				false, List.of(new RequirementSelection(aTrait().getId(), true)), true));
 		return dto.id();
 	}
 
@@ -103,7 +103,7 @@ class ApplicationServiceTest {
 				List.of(new TraitSelection(aTrait().getId(), null))));
 		OfferDto offer = offerService.create(hrId(), new OfferRequest(
 				"Docteur", null, "desc", Degree.DOCTORAT, ContractType.PERMANENT, null, null, null, null,
-				List.of(new RequirementSelection(aTrait().getId(), true)), true));
+				false, List.of(new RequirementSelection(aTrait().getId(), true)), true));
 
 		assertThatThrownBy(() -> applicationService.apply(candidate, offer.id(), null))
 				.isInstanceOf(ApiException.class)
@@ -115,7 +115,7 @@ class ApplicationServiceTest {
 		Integer candidate = candidateWithProfile("apply5@example.fr", true);
 		OfferDto draft = offerService.create(hrId(), new OfferRequest(
 				"Brouillon", null, "desc", Degree.BAC, ContractType.PERMANENT, null, null, null, null,
-				List.of(new RequirementSelection(aTrait().getId(), true)), false));
+				false, List.of(new RequirementSelection(aTrait().getId(), true)), false));
 
 		assertThatThrownBy(() -> applicationService.apply(candidate, draft.id(), null))
 				.isInstanceOf(ApiException.class)

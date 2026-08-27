@@ -1,0 +1,26 @@
+/* On a card, in the row that holds the action it blocks. */
+.matchmark {
+  margin-right: auto;
+  font-size: var(--size-sm);
+  font-weight: var(--weight-medium);
+  color: var(--danger);
+}
+
+.matchnote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+}
+
+.matchnote__mark {
+  flex-shrink: 0;
+  font-weight: var(--weight-semibold);
+  color: var(--danger);
+}
+
+.matchnote__why::first-letter {
+  text-transform: uppercase;
+}

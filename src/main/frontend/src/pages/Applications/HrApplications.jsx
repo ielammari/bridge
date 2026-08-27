@@ -18,6 +18,7 @@ import StatusBadge from '../../components/StatusBadge/StatusBadge.jsx';
 import { useToast } from '../../components/Toast/ToastContext.jsx';
 import { isTerminal } from '../../constants/enums.js';
 import { clockTime, longDate } from '../../constants/format.js';
+import { isDue } from '../../constants/schedule.js';
 import useResource from '../../hooks/useResource.js';
 import Workspace from '../Workspace/Workspace.jsx';
 import './hrApplications.css';
@@ -283,6 +284,9 @@ export default function HrApplications() {
                 </p>
 
                 <div className="tile__foot">
+                  {app.status === 'ENTRETIEN_RH' && app.appointmentDate && !isDue(app) && (
+                    <span className="tile__blocked">Pas encore eu lieu</span>
+                  )}
                   <Button variant="secondary" onClick={() => viewCv(app.id)}>
                     <Icon name="download" /> CV
                   </Button>
@@ -299,9 +303,10 @@ export default function HrApplications() {
                     </Button>
                   )}
                   {/* The final assessment reports an interview, so it opens
-                      only once that interview has a date. */}
+                      once that interview has a date and has taken place. */}
                   {app.status === 'ENTRETIEN_RH' && app.appointmentDate && (
-                    <Button onClick={() => navigate(`/candidatures/${app.id}/entretien`, { state: origin })}>
+                    <Button disabled={!isDue(app)}
+                      onClick={() => navigate(`/candidatures/${app.id}/entretien`, { state: origin })}>
                       Finaliser
                     </Button>
                   )}

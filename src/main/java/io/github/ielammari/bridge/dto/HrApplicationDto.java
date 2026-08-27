@@ -20,5 +20,6 @@ public record HrApplicationDto(
 		LocalDate appointmentDate,
 		LocalTime appointmentTime,
 		Integer appointmentEvaluatorId,
-		String appointmentEvaluatorName) {
+		String appointmentEvaluatorName,
+		boolean waitForAppointment) {
 }

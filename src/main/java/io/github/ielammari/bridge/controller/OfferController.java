@@ -13,11 +13,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.github.ielammari.bridge.dto.OfferDetailDto;
 import io.github.ielammari.bridge.dto.OfferDto;
+import io.github.ielammari.bridge.dto.OfferMatchDto;
 import io.github.ielammari.bridge.dto.OfferRequest;
 import io.github.ielammari.bridge.model.Role;
 import io.github.ielammari.bridge.service.MatchingService;
@@ -28,6 +30,9 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/v1/offers")
 public class OfferController {
 
+	/** The scope that keeps the offers the candidate does not qualify for. */
+	private static final String ALL_SCOPE = "all";
+
 	private final OfferService offerService;
 	private final MatchingService matchingService;
 
@@ -36,10 +41,14 @@ public class OfferController {
 		this.matchingService = matchingService;
 	}
 
-	/** Candidate feed: only published offers the candidate qualifies for. */
+	/**
+	 * Candidate feed. The default scope is the offers they qualify for; scope
+	 * `all` adds the rest of what is published, marked with what they lack.
+	 */
 	@GetMapping("/feed")
-	public List<OfferDto> feed(@AuthenticationPrincipal Jwt jwt) {
-		return matchingService.feed(currentUserId(jwt));
+	public List<OfferMatchDto> feed(@AuthenticationPrincipal Jwt jwt,
+			@RequestParam(defaultValue = "compatible") String scope) {
+		return matchingService.feed(currentUserId(jwt), !ALL_SCOPE.equalsIgnoreCase(scope));
 	}
 
 	/** HR: the offers this recruiter published. */
@@ -83,7 +92,7 @@ public class OfferController {
 
 	/** Candidate: the offers they kept to come back to. */
 	@GetMapping("/saved")
-	public List<OfferDto> saved(@AuthenticationPrincipal Jwt jwt) {
+	public List<OfferMatchDto> saved(@AuthenticationPrincipal Jwt jwt) {
 		return offerService.savedFor(currentUserId(jwt));
 	}
 

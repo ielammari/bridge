@@ -8,5 +8,6 @@ public record UserSummary(
 		String email,
 		String firstName,
 		String lastName,
-		Role role) {
+		Role role,
+		boolean mustChangePassword) {
 }

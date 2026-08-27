@@ -23,5 +23,6 @@ public record OfferDto(
 		BigDecimal salaryMax,
 		LocalDate publicationDate,
 		OfferStatus status,
+		boolean waitForAppointment,
 		List<OfferRequirementDto> requirements) {
 }

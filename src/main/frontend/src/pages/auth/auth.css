@@ -4,7 +4,7 @@
   min-height: 100dvh;
 }
 
-/* ---- The stages panel --------------------------------------------------- */
+/* ---- The wordmark panel ------------------------------------------------- */
 
 .auth__aside {
   /* The panel keeps steel as its ground in both themes while steel itself
@@ -13,79 +13,48 @@
      either way round. */
   --on-steel-quiet: color-mix(in srgb, var(--paper) 80%, var(--steel));
 
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
+  /* The mark is measured from the panel's own width, not the window's. */
+  container-type: inline-size;
+
+  display: grid;
+  place-content: center;
   padding: var(--space-6) var(--space-5);
   background: var(--steel);
   color: var(--paper);
 }
 
+/* Two lines of one mark: the name, and the trade set in under it and to the
+   right. The name sets the left edge, so it sits left of the panel's centre. */
 .auth__brand {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
+  --mark: clamp(2rem, 11cqi, 3.5rem);
+
+  display: grid;
+  justify-items: start;
+  row-gap: calc(var(--mark) * 0.2);
+  margin: 0;
 }
 
 /* The one place the display face runs large. The brass underline is the
    accent's only appearance outside focus rings. */
 .auth__logo {
   font-family: var(--font-display);
-  font-size: var(--size-2xl);
+  font-size: calc(var(--mark) * 1.1);
   font-weight: var(--weight-bold);
-  letter-spacing: var(--tracking-display);
-  padding-bottom: 2px;
+  line-height: 1;
+  letter-spacing: var(--tracking-heading);
+  padding-bottom: calc(var(--mark) * 0.08);
   border-bottom: 2px solid var(--accent);
 }
 
 .auth__scope {
-  font-size: var(--size-xs);
-  font-weight: var(--weight-medium);
+  margin-inline-start: calc(var(--mark) * 1.32);
+  font-family: var(--font-display);
+  font-size: calc(var(--mark) * 0.55);
+  font-weight: var(--weight-heavy);
+  line-height: 1;
   text-transform: uppercase;
-  letter-spacing: 0.14em;
+  letter-spacing: var(--tracking-label);
   color: var(--on-steel-quiet);
-}
-
-.auth__journey {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.auth__step {
-  position: relative;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--space-4);
-  align-items: center;
-}
-
-/* A hairline joins each step to the next, so the list reads as one run. */
-.auth__step:not(:last-child)::before {
-  content: '';
-  position: absolute;
-  left: 0.75rem;
-  top: 1.4rem;
-  bottom: calc(var(--space-4) * -1);
-  width: 1px;
-  background: color-mix(in srgb, var(--paper) 30%, var(--steel));
-}
-
-.auth__step-index {
-  position: relative;
-  z-index: 1;
-  width: 1.5rem;
-  font-size: var(--size-xs);
-  color: var(--on-steel-quiet);
-  background: var(--steel);
-}
-
-.auth__step-label {
-  font-size: var(--size-sm);
-  font-weight: var(--weight-medium);
 }
 
 /* ---- The form panel ----------------------------------------------------- */
@@ -155,6 +124,17 @@
   align-self: center;
 }
 
+/* Above the form rather than beside it, at a smaller mark. */
+@media (max-width: 63.99rem) {
+  .auth__brand {
+    --mark: clamp(1.5rem, 9cqi, 2.25rem);
+  }
+
+  .auth__aside {
+    padding: var(--space-5);
+  }
+}
+
 @media (max-width: 34rem) {
   .auth__grid {
     grid-template-columns: 1fr;
@@ -163,20 +143,11 @@
 
 @media (min-width: 64rem) {
   .auth {
-    grid-template-columns: 22rem 1fr;
+    grid-template-columns: 33% 1fr;
   }
 
   .auth__aside {
-    gap: var(--space-7);
     padding: var(--space-7) var(--space-6);
-  }
-
-  /* The brand holds the top of the panel and the journey centres in what is
-     left, so a tall window opens space around the steps rather than pushing
-     the identity into the middle of the screen. */
-  .auth__journey {
-    flex: 1;
-    justify-content: center;
   }
 
   .auth__panel {

@@ -126,7 +126,8 @@ public class EvaluationService {
 							application.getOffer().getId(),
 							application.getOffer().getTitle(),
 							appointment.getDate(),
-							appointment.getTime());
+							appointment.getTime(),
+							application.getOffer().isWaitForAppointment());
 				})
 				.toList();
 	}
@@ -136,7 +137,7 @@ public class EvaluationService {
 	public TechnicalContextDto technicalContext(Integer expertId, Integer applicationId) {
 		Application application = requireApplication(applicationId);
 		requireStage(application, ApplicationStatus.EXAMEN_TECHNIQUE);
-		requireOwnExam(expertId, applicationId);
+		Appointment exam = requireOwnExam(expertId, applicationId);
 		JobOffer offer = requireOfferWithRequirements(application);
 
 		List<ExaminedTraitDto> examined = offer.getRequirements().stream()
@@ -153,6 +154,9 @@ public class EvaluationService {
 				application.getCandidate().getLastName(),
 				offer.getId(),
 				offer.getTitle(),
+				exam.getDate(),
+				exam.getTime(),
+				offer.isWaitForAppointment(),
 				examined);
 	}
 
@@ -177,6 +181,7 @@ public class EvaluationService {
 		}
 
 		JobOffer offer = requireOfferWithRequirements(application);
+		Timing.requireOpen(offer, exam);
 		Set<Integer> offerTraitIds = offer.getRequirements().stream()
 				.map(r -> r.getTrait().getId())
 				.collect(java.util.stream.Collectors.toSet());
@@ -231,6 +236,7 @@ public class EvaluationService {
 		Appointment interview = appointments.findByApplicationIdAndType(applicationId, AppointmentType.RH)
 				.orElseThrow(() -> ApiException.badRequest("INTERVIEW_NOT_SCHEDULED",
 						"Planifiez l'entretien RH avant de clôturer cette candidature."));
+		Timing.requireOpen(application.getOffer(), interview);
 
 		Evaluation evaluation = new Evaluation(EvaluationType.ENTRETIEN_RH, request.decision(),
 				blankToNull(request.comment()), application, hr);

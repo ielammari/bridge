@@ -1,31 +1,17 @@
 import './auth.css';
 
-// The hiring stages, in order. Sets expectations before an account is created.
-const JOURNEY = ['Candidature', 'Présélection', 'Examen technique', 'Entretien RH', 'Décision'];
-
 /**
- * Frame shared by signing in and signing up: the stages on the left, the form
+ * Frame shared by signing in and signing up: the wordmark on the left, the form
  * on the right. `wide` gives the form two columns.
  */
 export default function AuthLayout({ title, intro, children, footer, wide = false }) {
   return (
     <div className="auth">
       <aside className="auth__aside">
-        <div className="auth__brand">
+        <p className="auth__brand">
           <span className="auth__logo">Bridge</span>
           <span className="auth__scope">Recrutement</span>
-        </div>
-
-        <ol className="auth__journey">
-          {JOURNEY.map((label, index) => (
-            <li key={label} className="auth__step">
-              <span className="auth__step-index mono" aria-hidden="true">
-                {String(index + 1).padStart(2, '0')}
-              </span>
-              <span className="auth__step-label">{label}</span>
-            </li>
-          ))}
-        </ol>
+        </p>
       </aside>
 
       <main className="auth__panel" id="contenu">

@@ -19,6 +19,7 @@ import io.github.ielammari.bridge.dto.OrganisationSettingsDto;
 import io.github.ielammari.bridge.dto.PasswordChangeRequest;
 import io.github.ielammari.bridge.dto.ProvisionAccountRequest;
 import io.github.ielammari.bridge.dto.RegisterRequest;
+import io.github.ielammari.bridge.dto.UserSummary;
 import io.github.ielammari.bridge.exception.ApiException;
 import io.github.ielammari.bridge.model.Gender;
 import io.github.ielammari.bridge.model.NotificationType;
@@ -101,6 +102,43 @@ class SettingsServiceTest {
 				new PasswordChangeRequest("pas-le-bon", "Tour-Eiffel-92")))
 				.isInstanceOf(ApiException.class)
 				.hasFieldOrPropertyWithValue("code", "WRONG_PASSWORD");
+	}
+
+	/** Reusing the old one leaves the account exactly where it was. */
+	@Test
+	void theNewPasswordMustDifferFromTheOldOne() {
+		Integer id = account("s7@example.fr");
+
+		assertThatThrownBy(() -> settingsService.changePassword(id,
+				new PasswordChangeRequest("Motdepasse1!x", "Motdepasse1!x")))
+				.isInstanceOf(ApiException.class)
+				.hasFieldOrPropertyWithValue("code", "PASSWORD_UNCHANGED");
+	}
+
+	@Test
+	void aProvisionedAccountIsAskedToChooseItsOwnPassword() {
+		settingsService.provision(new ProvisionAccountRequest(
+				"expert.neuf2@example.fr", "Nouvel", "Expert", "Tour-Eiffel-92", Role.EXPERT));
+
+		UserSummary signedIn = authService
+				.login(new LoginRequest("expert.neuf2@example.fr", "Tour-Eiffel-92")).user();
+		assertThat(signedIn.mustChangePassword()).isTrue();
+
+		settingsService.changePassword(signedIn.id(),
+				new PasswordChangeRequest("Tour-Eiffel-92", "Pont-Neuf-1607"));
+
+		assertThat(authService.login(new LoginRequest("expert.neuf2@example.fr", "Pont-Neuf-1607"))
+				.user().mustChangePassword()).isFalse();
+	}
+
+	/** Somebody who chose their own password at signup is never asked again. */
+	@Test
+	void aSelfRegisteredAccountIsNotAsked() {
+		Integer id = account("s8@example.fr");
+
+		assertThat(authService.login(new LoginRequest("s8@example.fr", "Motdepasse1!x"))
+				.user().mustChangePassword()).isFalse();
+		assertThat(id).isNotNull();
 	}
 
 	@Test

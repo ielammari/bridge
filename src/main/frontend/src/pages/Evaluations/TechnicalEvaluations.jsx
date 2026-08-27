@@ -10,6 +10,7 @@ import OfferLink from '../../components/OfferLink/OfferLink.jsx';
 import Skeleton from '../../components/Skeleton/Skeleton.jsx';
 import { useToast } from '../../components/Toast/ToastContext.jsx';
 import { clockTime, shortDate } from '../../constants/format.js';
+import { isDue } from '../../constants/schedule.js';
 import useResource from '../../hooks/useResource.js';
 import Workspace from '../Workspace/Workspace.jsx';
 import './technicalEvaluations.css';
@@ -75,10 +76,14 @@ export default function TechnicalEvaluations() {
                 <span>{whenText(app)}</span>
               </p>
               <div className="tile__foot evals__foot">
+                {!isDue(app) && <span className="tile__blocked">Pas encore eu lieu</span>}
                 <Button variant="secondary" onClick={() => viewCv(app.applicationId)}>
                   <Icon name="download" /> CV
                 </Button>
-                <Button onClick={() => navigate(`/evaluations/${app.applicationId}`, { state: origin })}>Évaluer</Button>
+                <Button disabled={!isDue(app)}
+                  onClick={() => navigate(`/evaluations/${app.applicationId}`, { state: origin })}>
+                  Évaluer
+                </Button>
               </div>
             </li>
           ))}

@@ -2,6 +2,7 @@ import { offersApi } from '../../api/offers.js';
 import CardGrid from '../../components/CardGrid/CardGrid.jsx';
 import EmptyState from '../../components/EmptyState/EmptyState.jsx';
 import ErrorState from '../../components/ErrorState/ErrorState.jsx';
+import { MatchMark } from '../../components/MatchNote/MatchNote.jsx';
 import OfferCard from '../../components/OfferCard/OfferCard.jsx';
 import SaveOffer from '../../components/SaveOffer/SaveOffer.jsx';
 import Skeleton from '../../components/Skeleton/Skeleton.jsx';
@@ -10,17 +11,18 @@ import Workspace from '../Workspace/Workspace.jsx';
 
 /**
  * The offers a candidate kept to come back to. Releasing one drops it from the
- * list at once: the page is the list.
+ * list at once: the page is the list. A kept offer can drift out of reach when
+ * its traits change, so each says where the candidate stands.
  */
 export default function SavedOffers() {
   const { status, data, setData, reload, pending, leaving } = useResource(() => offersApi.saved());
-  const offers = data ?? [];
+  const entries = data ?? [];
 
   return (
     <Workspace
       title="Offres enregistrées"
       stats={status === 'ready' ? [
-        { value: offers.length, label: offers.length > 1 ? 'enregistrées' : 'enregistrée' },
+        { value: entries.length, label: entries.length > 1 ? 'enregistrées' : 'enregistrée' },
       ] : []}
     >
       {pending && <Skeleton leaving={leaving} label="Chargement des offres enregistrées" />}
@@ -31,7 +33,7 @@ export default function SavedOffers() {
         </ErrorState>
       )}
 
-      {status === 'ready' && offers.length === 0 && (
+      {status === 'ready' && entries.length === 0 && (
         <EmptyState
           title="Aucune offre enregistrée."
           actionLabel="Parcourir les offres"
@@ -41,9 +43,9 @@ export default function SavedOffers() {
         </EmptyState>
       )}
 
-      {status === 'ready' && offers.length > 0 && (
+      {status === 'ready' && entries.length > 0 && (
         <CardGrid label="Offres enregistrées">
-          {offers.map((offer) => (
+          {entries.map(({ offer, match }) => (
             <OfferCard
               key={offer.id}
               offer={offer}
@@ -51,10 +53,12 @@ export default function SavedOffers() {
                 <SaveOffer
                   offerId={offer.id}
                   saved
-                  onChange={(id) => setData((list) => list.filter((o) => o.id !== id))}
+                  onChange={(id) => setData((list) => list.filter((e) => e.offer.id !== id))}
                 />
               )}
-            />
+            >
+              {!match.compatible && <MatchMark match={match} />}
+            </OfferCard>
           ))}
         </CardGrid>
       )}

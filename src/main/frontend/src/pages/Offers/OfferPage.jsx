@@ -7,6 +7,7 @@ import ApplyDialog from '../../components/ApplyDialog/ApplyDialog.jsx';
 import Button from '../../components/Button/Button.jsx';
 import ErrorState from '../../components/ErrorState/ErrorState.jsx';
 import InfoHint from '../../components/InfoHint/InfoHint.jsx';
+import MatchNote from '../../components/MatchNote/MatchNote.jsx';
 import SaveOffer from '../../components/SaveOffer/SaveOffer.jsx';
 import Skeleton from '../../components/Skeleton/Skeleton.jsx';
 import StatusBadge from '../../components/StatusBadge/StatusBadge.jsx';
@@ -86,7 +87,7 @@ export default function OfferPage() {
     );
   }
 
-  const { offer, saved, publisherName, alreadyApplied, applicationCount } = data;
+  const { offer, saved, publisherName, alreadyApplied, applicationCount, match } = data;
   const required = offer.requirements.filter((r) => r.mandatory);
   const plus = offer.requirements.filter((r) => !r.mandatory);
   const hasApplied = alreadyApplied || applied;
@@ -121,6 +122,10 @@ export default function OfferPage() {
             <Term label="Rémunération">{salaryText(offer.salaryMin, offer.salaryMax)}</Term>
           </dl>
 
+          {isCandidate && !hasApplied && (
+            <MatchNote match={match} requiredDegree={offer.requiredDegree} />
+          )}
+
           {isCandidate && (
             <div className="actionbar">
               {hasApplied ? (
@@ -135,7 +140,12 @@ export default function OfferPage() {
                   <p className="actionbar__note">
                     {chosen ? `CV : ${chosen.label}` : 'Aucun CV déposé'}
                   </p>
-                  <Button onClick={() => setChoosing(true)}>Postuler</Button>
+                  <Button
+                    disabled={match != null && !match.compatible}
+                    onClick={() => setChoosing(true)}
+                  >
+                    Postuler
+                  </Button>
                 </>
               )}
             </div>

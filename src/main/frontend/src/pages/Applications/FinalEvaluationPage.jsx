@@ -6,6 +6,7 @@ import OfferLink from '../../components/OfferLink/OfferLink.jsx';
 import PersonLink from '../../components/PersonLink/PersonLink.jsx';
 import Skeleton from '../../components/Skeleton/Skeleton.jsx';
 import { useToast } from '../../components/Toast/ToastContext.jsx';
+import { isDue, opensText } from '../../constants/schedule.js';
 import useResource from '../../hooks/useResource.js';
 import Workspace from '../Workspace/Workspace.jsx';
 import FinalEvaluation from './FinalEvaluation.jsx';
@@ -68,6 +69,21 @@ export default function FinalEvaluationPage() {
           actionTo={returnTo}
         >
           Fixez sa date depuis la liste des candidatures, puis revenez saisir le bilan.
+        </EmptyState>
+      </Workspace>
+    );
+  }
+
+  // A bilan reports a meeting that has taken place.
+  if (!isDue(data)) {
+    return (
+      <Workspace width="narrow" title={title} subtitle={name} back={back}>
+        <EmptyState
+          title="Cet entretien n'a pas encore eu lieu."
+          actionLabel="Retour aux candidatures"
+          actionTo={returnTo}
+        >
+          {opensText(data)}
         </EmptyState>
       </Workspace>
     );

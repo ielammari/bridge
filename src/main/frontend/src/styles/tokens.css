@@ -104,6 +104,7 @@
   --weight-medium: 500;
   --weight-semibold: 600;
   --weight-bold: 700;
+  --weight-heavy: 800;
 
   /* Larger type needs less tracking, small uppercase type needs more. */
   --tracking-display: -0.03em;

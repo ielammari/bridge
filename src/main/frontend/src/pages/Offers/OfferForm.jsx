@@ -7,6 +7,7 @@ import FormErrorSummary from '../../components/FormErrorSummary/FormErrorSummary
 import Icon from '../../components/Icon/Icon.jsx';
 import InfoHint from '../../components/InfoHint/InfoHint.jsx';
 import Select from '../../components/Select/Select.jsx';
+import Toggle from '../../components/Toggle/Toggle.jsx';
 import TraitPicker from '../../components/TraitPicker/TraitPicker.jsx';
 import { CONTRACT_OPTIONS, DEGREE_OPTIONS, REMOTE_OPTIONS } from '../../constants/enums.js';
 import { positiveNumber } from '../../constants/validation.js';
@@ -55,6 +56,13 @@ function initialFrom(offer) {
   };
 }
 
+// When an evaluation may be saved: held to the interview's hour, or accepted as
+// soon as it is planned.
+const TIMING = [
+  { value: true, label: 'À l\'heure prévue' },
+  { value: false, label: 'Dès la publication' },
+];
+
 function initialTraits(offer) {
   const mandatoryById = {};
   (offer?.requirements ?? []).forEach((r) => {
@@ -71,6 +79,7 @@ function initialTraits(offer) {
 export default function OfferForm({ mode, offer, catalogue, onSubmit, onCancel, submitting }) {
   const form = useForm(initialFrom(offer), RULES);
   const [traits, setTraits] = useState(() => initialTraits(offer));
+  const [waitForAppointment, setWaitForAppointment] = useState(offer?.waitForAppointment ?? true);
   const [confirming, setConfirming] = useState(null);
   const [failure, setFailure] = useState(null);
   const [attempted, setAttempted] = useState(false);
@@ -128,6 +137,7 @@ export default function OfferForm({ mode, offer, catalogue, onSubmit, onCancel, 
       remoteMode: values.remoteMode || null,
       salaryMin: values.salaryMin === '' ? null : Number(values.salaryMin),
       salaryMax: values.salaryMax === '' ? null : Number(values.salaryMax),
+      waitForAppointment,
       requirements: traits.traitIds.map((id) => ({
         traitId: id,
         mandatory: Boolean(traits.mandatoryById[id]),
@@ -241,6 +251,28 @@ export default function OfferForm({ mode, offer, catalogue, onSubmit, onCancel, 
               })}
             </ul>
           )}
+        </div>
+      </section>
+
+      <section className="card">
+        <div className="card__head">
+          <h2 className="card__title">
+            Moment de l'évaluation
+            <InfoHint label="Quand un entretien peut être saisi">
+              À l'heure prévue, l'expert et le recruteur ne peuvent enregistrer un entretien
+              qu'une fois son heure venue. Dès la publication, ils le peuvent dès qu'il est
+              planifié.
+            </InfoHint>
+          </h2>
+        </div>
+        <div className="card__body">
+          <Toggle
+            name="timing"
+            label="Moment de l'évaluation"
+            value={waitForAppointment}
+            options={TIMING}
+            onChange={setWaitForAppointment}
+          />
         </div>
       </section>
 

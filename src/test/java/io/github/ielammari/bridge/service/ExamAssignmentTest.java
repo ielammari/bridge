@@ -85,7 +85,7 @@ class ExamAssignmentTest {
 	private Integer publishedOffer() {
 		return offerService.create(hrId(), new OfferRequest("Poste", null, "d", Degree.BAC,
 				ContractType.PERMANENT, "Paris", null, null, null,
-				List.of(new RequirementSelection(aTrait().getId(), true)), true)).id();
+				false, List.of(new RequirementSelection(aTrait().getId(), true)), true)).id();
 	}
 
 	/** An application screened through to the exam stage, not yet scheduled. */

@@ -10,7 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.github.ielammari.bridge.dto.MatchDto;
 import io.github.ielammari.bridge.dto.OfferDto;
+import io.github.ielammari.bridge.dto.OfferMatchDto;
 import io.github.ielammari.bridge.dto.OfferRequest;
 import io.github.ielammari.bridge.dto.OfferRequest.RequirementSelection;
 import io.github.ielammari.bridge.dto.RegisterRequest;
@@ -54,10 +56,20 @@ class MatchingServiceTest {
 				held.stream().map(t -> new TraitSelection(t.getId(), null)).toList()));
 	}
 
+	private List<Integer> ids(List<OfferMatchDto> entries) {
+		return entries.stream().map(entry -> entry.offer().id()).toList();
+	}
+
+	private MatchDto matchFor(Integer candidateId, Integer offerId) {
+		return matchingService.feed(candidateId, false).stream()
+				.filter(entry -> entry.offer().id().equals(offerId))
+				.findFirst().orElseThrow().match();
+	}
+
 	private Integer publishOffer(Degree required, List<RequirementSelection> reqs) {
 		OfferDto dto = offerService.create(hrId(), new OfferRequest(
 				"Ingénieur", null, "Description", required, ContractType.PERMANENT,
-				"Paris", null, null, null, reqs, true));
+				"Paris", null, null, null, false, reqs, true));
 		return dto.id();
 	}
 
@@ -70,7 +82,7 @@ class MatchingServiceTest {
 				new RequirementSelection(t.get(0).getId(), true),
 				new RequirementSelection(t.get(1).getId(), true)));
 
-		assertThat(matchingService.feed(candidate)).hasSize(1);
+		assertThat(matchingService.feed(candidate, true)).hasSize(1);
 	}
 
 	@Test
@@ -82,7 +94,7 @@ class MatchingServiceTest {
 				new RequirementSelection(t.get(0).getId(), true),
 				new RequirementSelection(t.get(1).getId(), true)));
 
-		assertThat(matchingService.feed(candidate)).isEmpty();
+		assertThat(matchingService.feed(candidate, true)).isEmpty();
 	}
 
 	@Test
@@ -94,7 +106,7 @@ class MatchingServiceTest {
 				new RequirementSelection(t.get(0).getId(), true),
 				new RequirementSelection(t.get(1).getId(), false))); // t1 is a plus
 
-		assertThat(matchingService.feed(candidate)).hasSize(1);
+		assertThat(matchingService.feed(candidate, true)).hasSize(1);
 	}
 
 	@Test
@@ -104,7 +116,7 @@ class MatchingServiceTest {
 		giveProfile(candidate, Degree.BAC, t);
 		publishOffer(Degree.BAC_5, List.of(new RequirementSelection(t.get(0).getId(), true)));
 
-		assertThat(matchingService.feed(candidate)).isEmpty();
+		assertThat(matchingService.feed(candidate, true)).isEmpty();
 	}
 
 	@Test
@@ -114,24 +126,55 @@ class MatchingServiceTest {
 		giveProfile(candidate, null, t);
 		publishOffer(Degree.BAC, List.of(new RequirementSelection(t.get(0).getId(), true)));
 
-		assertThat(matchingService.feed(candidate)).isEmpty();
+		assertThat(matchingService.feed(candidate, true)).isEmpty();
 	}
 
 	@Test
-	void draftsAndClosedOffersNeverAppearInTheFeed() {
+	void theWholeMarketIsListedWithWhatTheCandidateLacks() {
+		List<Trait> t = someTraits(2);
+		Integer candidate = newCandidate("m7@example.fr");
+		giveProfile(candidate, Degree.BAC_5, List.of(t.get(0)));
+		Integer offerId = publishOffer(Degree.BAC, List.of(
+				new RequirementSelection(t.get(0).getId(), true),
+				new RequirementSelection(t.get(1).getId(), true)));
+
+		assertThat(ids(matchingService.feed(candidate, true))).doesNotContain(offerId);
+
+		MatchDto match = matchFor(candidate, offerId);
+		assertThat(match.compatible()).isFalse();
+		assertThat(match.degreeMet()).isTrue();
+		assertThat(match.missingTraits()).containsExactly(t.get(1).getLabel());
+	}
+
+	@Test
+	void aDegreeShortOfTheOfferIsReportedOnItsOwn() {
+		List<Trait> t = someTraits(1);
+		Integer candidate = newCandidate("m8@example.fr");
+		giveProfile(candidate, Degree.BAC, t);
+		Integer offerId = publishOffer(Degree.BAC_5, List.of(new RequirementSelection(t.get(0).getId(), true)));
+
+		MatchDto match = matchFor(candidate, offerId);
+		assertThat(match.compatible()).isFalse();
+		assertThat(match.degreeMet()).isFalse();
+		assertThat(match.missingTraits()).isEmpty();
+	}
+
+	@Test
+	void unpublishedOffersAreOutsideEveryScope() {
 		List<Trait> t = someTraits(1);
 		Integer candidate = newCandidate("m6@example.fr");
 		giveProfile(candidate, Degree.BAC_5, t);
 
 		// A draft (publishNow = false).
-		offerService.create(hrId(), new OfferRequest("Brouillon", null, "d", Degree.BAC,
+		Integer draft = offerService.create(hrId(), new OfferRequest("Brouillon", null, "d", Degree.BAC,
 				ContractType.PERMANENT, null, null, null, null,
-				List.of(new RequirementSelection(t.get(0).getId(), true)), false));
+				false, List.of(new RequirementSelection(t.get(0).getId(), true)), false)).id();
 		// A published then closed offer.
-		Integer published = publishOffer(Degree.BAC, List.of(new RequirementSelection(t.get(0).getId(), true)));
-		offerService.close(hrId(), published);
+		Integer closed = publishOffer(Degree.BAC, List.of(new RequirementSelection(t.get(0).getId(), true)));
+		offerService.close(hrId(), closed);
 
-		assertThat(matchingService.feed(candidate)).isEmpty();
+		assertThat(ids(matchingService.feed(candidate, true))).doesNotContain(draft, closed);
+		assertThat(ids(matchingService.feed(candidate, false))).doesNotContain(draft, closed);
 	}
 
 }

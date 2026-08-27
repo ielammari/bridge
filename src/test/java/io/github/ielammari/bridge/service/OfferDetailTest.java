@@ -65,7 +65,7 @@ class OfferDetailTest {
 	private OfferDto offer(boolean published) {
 		return offerService.create(hrId(), new OfferRequest("Ingenieur logiciel", null, "Description longue",
 				Degree.BAC, ContractType.PERMANENT, "Paris", null, null, null,
-				List.of(new RequirementSelection(aTrait().getId(), true)), published));
+				false, List.of(new RequirementSelection(aTrait().getId(), true)), published));
 	}
 
 	@Test
@@ -151,7 +151,7 @@ class OfferDetailTest {
 		Integer id = candidate("od8@example.fr");
 
 		offerService.setSaved(id, offerId, true);
-		assertThat(offerService.savedFor(id)).extracting(OfferDto::id).containsExactly(offerId);
+		assertThat(offerService.savedFor(id)).extracting(entry -> entry.offer().id()).containsExactly(offerId);
 		assertThat(offerService.detail(id, Role.CANDIDAT, offerId).saved()).isTrue();
 
 		// Pressing save twice states the same intent, and is not an error.

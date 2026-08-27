@@ -17,6 +17,9 @@ import jakarta.validation.constraints.Size;
  * Creates or edits an offer. {@code publishNow} applies only on creation: it
  * decides between saving a draft and publishing immediately. Status changes on
  * an existing offer go through the publish and close endpoints.
+ * <p>
+ * {@code waitForAppointment} holds the evaluators to the hour booked for an
+ * interview, so nothing is recorded before it has taken place.
  */
 public record OfferRequest(
 
@@ -46,6 +49,8 @@ public record OfferRequest(
 
 		@PositiveOrZero(message = "Le salaire maximum ne peut pas être négatif.")
 		BigDecimal salaryMax,
+
+		boolean waitForAppointment,
 
 		@NotEmpty(message = "Sélectionnez au moins un trait pour l'offre.")
 		@Valid
