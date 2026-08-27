@@ -118,29 +118,40 @@
   width: 60%;
 }
 
+/* Each theme's own card and border, held literally so a swatch shows the
+   theme it names whichever one is in use. */
+.theme__swatch {
+  --light-ground: #ffffff;
+  --light-mark: #b9c1d4;
+  --dark-ground: #2c3654;
+  --dark-mark: #5b6c92;
+}
+
 .theme__swatch--light {
-  background: #ffffff;
+  background: var(--light-ground);
 }
 
 .theme__swatch--light .theme__swatch-bar {
-  background: #c3cccc;
+  background: var(--light-mark);
 }
 
 .theme__swatch--dark {
-  background: #1a2831;
+  background: var(--dark-ground);
 }
 
 .theme__swatch--dark .theme__swatch-bar {
-  background: #3b4d59;
+  background: var(--dark-mark);
 }
 
 /* Split down the middle: following the system is both, not a third look. */
 .theme__swatch--system {
-  background: linear-gradient(to right, #ffffff 50%, #1a2831 50%);
+  background: linear-gradient(to right,
+    var(--light-ground) 50%, var(--dark-ground) 50%);
 }
 
 .theme__swatch--system .theme__swatch-bar {
-  background: linear-gradient(to right, #c3cccc 50%, #3b4d59 50%);
+  background: linear-gradient(to right,
+    var(--light-mark) 50%, var(--dark-mark) 50%);
 }
 
 .theme__label {

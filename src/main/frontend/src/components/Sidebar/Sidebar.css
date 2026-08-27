@@ -13,8 +13,11 @@
   width: var(--sidebar-width);
   height: 100dvh;
   padding: var(--space-5) var(--sidebar-pad);
-  background: var(--surface-sunken);
-  border-right: 1px solid var(--border);
+  background: var(--rail);
+  border-right: 1px solid var(--rail-edge);
+  /* The rail's ground is dark in both themes, so the ring is the accent that
+     reads on it rather than the page's. */
+  --focus: var(--rail-accent);
   /* The only thing that moves. */
   transition: width var(--duration-slow) var(--ease);
 }
@@ -38,6 +41,7 @@
   font-size: var(--size-2xl);
   font-weight: var(--weight-bold);
   letter-spacing: var(--tracking-display);
+  color: var(--rail-text-active);
 }
 
 .sidebar__logo-full,
@@ -45,7 +49,7 @@
   grid-area: 1 / 1;
   justify-self: start;
   padding-bottom: 1px;
-  border-bottom: 2px solid var(--accent);
+  border-bottom: 2px solid var(--rail-accent);
   white-space: nowrap;
   transition: opacity var(--duration) var(--ease);
 }
@@ -78,17 +82,17 @@
   height: var(--sidebar-toggle);
   padding: 0;
   font-size: var(--size-base);
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
+  background: var(--rail-active);
+  border: 1px solid var(--rail-edge);
   border-radius: 50%;
-  color: var(--text-faint);
+  color: var(--rail-faint);
   cursor: pointer;
   transition: color var(--duration) var(--ease), border-color var(--duration) var(--ease);
 }
 
 .sidebar__toggle:hover {
-  color: var(--text);
-  border-color: var(--text-faint);
+  color: var(--rail-text-active);
+  border-color: var(--rail-faint);
 }
 
 /* The chevron points down by default; it points back towards the edge it folds
@@ -125,7 +129,7 @@
 .sidebar__foot {
   margin-top: auto;
   padding-top: var(--space-4);
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--rail-edge);
 }
 
 /* One geometry for every row, navigation and account alike, so the icon column
@@ -144,7 +148,7 @@
   font: inherit;
   font-size: var(--size-base);
   font-weight: var(--weight-medium);
-  color: var(--text-secondary);
+  color: var(--rail-text);
   text-align: left;
   text-decoration: none;
   cursor: pointer;
@@ -156,18 +160,18 @@
 }
 
 .sidebar__row:not(.sidebar__row--static):hover {
-  background: var(--surface);
-  color: var(--text);
+  background: var(--rail-hover);
+  color: var(--rail-text-active);
 }
 
 .sidebar__row--danger:hover {
-  background: var(--danger-bg);
-  color: var(--danger);
+  background: var(--rail-danger-bg);
+  color: var(--rail-danger);
 }
 
 .sidebar__row--active {
-  background: var(--surface);
-  color: var(--primary);
+  background: var(--rail-active);
+  color: var(--rail-text-active);
 }
 
 /* The active marker is a funnel rail node: the device the application pages
@@ -179,7 +183,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--rail-accent);
 }
 
 .sidebar__icon {
@@ -220,7 +224,7 @@
   font-family: var(--font-mono);
   font-size: var(--size-sm);
   letter-spacing: 0.06em;
-  color: var(--text-faint);
+  color: var(--rail-faint);
 }
 
 /* Sits on the icon in both states, so it never travels across the row. */
@@ -234,8 +238,8 @@
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--rail-accent);
+  color: var(--rail);
   border-radius: 999px;
   font-family: var(--font-mono);
   font-size: var(--size-xs);

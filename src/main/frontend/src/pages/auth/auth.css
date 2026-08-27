@@ -7,20 +7,16 @@
 /* ---- The wordmark panel ------------------------------------------------- */
 
 .auth__aside {
-  /* The panel keeps steel as its ground in both themes while steel itself
-     trades places with paper, so its quiet foreground is derived against the
-     panel: the text eased 20 percent toward the ground, which clears 4.5:1
-     either way round. */
-  --on-steel-quiet: color-mix(in srgb, var(--paper) 80%, var(--steel));
-
   /* The mark is measured from the panel's own width, not the window's. */
   container-type: inline-size;
 
   display: grid;
   place-content: center;
   padding: var(--space-6) var(--space-5);
-  background: var(--steel);
-  color: var(--paper);
+  /* The same slab as the rail: a dark ground in both themes, carrying the
+     rail's own foregrounds. */
+  background: var(--rail);
+  color: var(--rail-text-active);
 }
 
 /* Two lines of one mark: the name, and the trade set in under it and to the
@@ -43,18 +39,18 @@
   line-height: 1;
   letter-spacing: var(--tracking-heading);
   padding-bottom: calc(var(--mark) * 0.08);
-  border-bottom: 2px solid var(--accent);
+  border-bottom: 2px solid var(--rail-accent);
 }
 
 .auth__scope {
-  margin-inline-start: calc(var(--mark) * 1.32);
+  margin-inline-start: calc(var(--mark) * 1.1);
   font-family: var(--font-display);
   font-size: calc(var(--mark) * 0.55);
   font-weight: var(--weight-heavy);
   line-height: 1;
   text-transform: uppercase;
   letter-spacing: var(--tracking-label);
-  color: var(--on-steel-quiet);
+  color: var(--rail-faint);
 }
 
 /* ---- The form panel ----------------------------------------------------- */

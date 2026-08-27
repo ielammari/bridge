@@ -5,10 +5,10 @@ const PREFERENCES = ['system', 'light', 'dark'];
 
 const systemQuery = () => window.matchMedia('(prefers-color-scheme: dark)');
 
-/** The stored choice, or following the system when nothing has been chosen. */
+/** The stored choice, or dark when nothing has been chosen. */
 export function readPreference() {
   const stored = localStorage.getItem(KEY);
-  return PREFERENCES.includes(stored) ? stored : 'system';
+  return PREFERENCES.includes(stored) ? stored : 'dark';
 }
 
 /** The theme a preference resolves to. */
