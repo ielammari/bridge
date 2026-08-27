@@ -18,6 +18,7 @@ import StatusBadge from '../../components/StatusBadge/StatusBadge.jsx';
 import { useToast } from '../../components/Toast/ToastContext.jsx';
 import { isTerminal } from '../../constants/enums.js';
 import { clockTime, longDate } from '../../constants/format.js';
+import { returnLink } from '../../constants/navigation.js';
 import { isDue } from '../../constants/schedule.js';
 import useResource from '../../hooks/useResource.js';
 import Workspace from '../Workspace/Workspace.jsx';
@@ -50,6 +51,10 @@ function Panel({ onCancel, children }) {
 const OFFER = 'offre';
 const APPLICATION = 'candidature';
 const ACTION = 'action';
+// One card pointed at rather than acted on. Opening an application for
+// screening moves it into review, so a link that only says "this one" carries
+// its own name and leaves the funnel alone.
+const NAMED = 'fiche';
 
 const DECISIONS = {
   VALIDEE: {
@@ -83,13 +88,15 @@ export default function HrApplications() {
   // Derived rather than stored, so there is no second copy of the selection.
   const chosen = params.get(OFFER) ?? '';
   const openId = params.get(APPLICATION) ?? '';
+  const named = Number(params.get(NAMED)) || null;
   const mode = params.get(ACTION) === 'planification' ? 'schedule' : 'preselect';
 
   // A notice names the application, never the offer it arrived through, so the
   // offer is read back from it when the address carries one without the other.
+  const addressed = openId || (named ? String(named) : '');
   const landed = useResource(
-    () => (openId && !chosen ? applicationsApi.get(openId) : Promise.resolve(null)),
-    [openId, chosen],
+    () => (addressed && !chosen ? applicationsApi.get(addressed) : Promise.resolve(null)),
+    [addressed, chosen],
   );
   const landedOffer = landed.data ? String(landed.data.offerId) : '';
   const offerId = chosen || landedOffer || (offers.length > 0 ? String(offers[0].id) : '');
@@ -107,7 +114,7 @@ export default function HrApplications() {
   }
 
   function selectOffer(id) {
-    write({ [OFFER]: id, [APPLICATION]: '', [ACTION]: '' });
+    write({ [OFFER]: id, [APPLICATION]: '', [ACTION]: '', [NAMED]: '' });
   }
 
   const panel = openId ? { id: Number(openId), mode } : null;
@@ -130,6 +137,11 @@ export default function HrApplications() {
   );
   // Rejected and hired applications move to the history.
   const applications = (appsRes.data ?? []).filter((app) => !isTerminal(app.status));
+
+  useEffect(() => {
+    if (!named || appsRes.status !== 'ready') return;
+    document.getElementById(`candidature-${named}`)?.scrollIntoView({ block: 'nearest' });
+  }, [named, appsRes.status]);
 
   const [comment, setComment] = useState('');
   // The application whose screening panel has already been opened once.
@@ -231,6 +243,7 @@ export default function HrApplications() {
   return (
     <Workspace
       title="Candidatures"
+      returnTo={returnLink(location.state)}
       toolbar={(
         <div className="hrapps__filter">
           {/* A closed offer is not recruiting, so it is not on offer here. The
@@ -264,7 +277,8 @@ export default function HrApplications() {
             const screening = app.status === 'NOUVELLE' || app.status === 'EN_REVUE';
             const open = panel?.id === app.id;
             return (
-              <li key={app.id} className={`tile${open ? ' tile--open' : ''}`}>
+              <li key={app.id} id={`candidature-${app.id}`}
+                className={`tile${open ? ' tile--open' : ''}${app.id === named ? ' tile--named' : ''}`}>
                 <div className="tile__head">
                   {/* Opening the person also settles the notices about this
                       application, which is what looking at it used to do. */}

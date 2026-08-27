@@ -10,6 +10,8 @@ import HrApplications from './pages/Applications/HrApplications.jsx';
 import FinalEvaluationPage from './pages/Applications/FinalEvaluationPage.jsx';
 import TechnicalEvaluations from './pages/Evaluations/TechnicalEvaluations.jsx';
 import TechnicalEvaluation from './pages/Evaluations/TechnicalEvaluation.jsx';
+import CalendarPage from './pages/Calendar/CalendarPage.jsx';
+import SchedulingCalendar from './pages/Calendar/SchedulingCalendar.jsx';
 import Messages from './pages/Messages/Messages.jsx';
 import PastApplications from './pages/History/PastApplications.jsx';
 import PastOffers from './pages/History/PastOffers.jsx';
@@ -107,6 +109,14 @@ export default function App() {
         }
       />
       <Route
+        path="/candidatures/:id/planification"
+        element={
+          <ProtectedRoute roles={['RH']}>
+            <SchedulingCalendar />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/candidatures/:id/entretien"
         element={
           <ProtectedRoute roles={['RH']}>
@@ -128,6 +138,15 @@ export default function App() {
         element={
           <ProtectedRoute roles={['EXPERT']}>
             <TechnicalEvaluation />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/calendrier"
+        element={
+          <ProtectedRoute roles={['RH', 'EXPERT']}>
+            <CalendarPage />
           </ProtectedRoute>
         }
       />

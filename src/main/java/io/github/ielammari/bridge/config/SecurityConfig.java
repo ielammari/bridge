@@ -66,6 +66,10 @@ public class SecurityConfig {
 						// Manual scheduling is HR; the technical evaluation is the expert's.
 						.requestMatchers("/api/v1/schedule/**").hasRole("RH")
 						.requestMatchers("/api/v1/evaluations/technical/**").hasRole("EXPERT")
+						// The calendar belongs to every evaluator; the service decides
+						// whose a recruiter may also open.
+						.requestMatchers("/api/v1/calendar", "/api/v1/calendar/**")
+						.hasAnyRole("RH", "EXPERT")
 						// History: a candidate reads only their own record, the hires
 						// register is HR's, and a trail is for whoever ran the funnel.
 						.requestMatchers("/api/v1/history/mine/**").hasRole("CANDIDAT")

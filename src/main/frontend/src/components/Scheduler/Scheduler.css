@@ -4,7 +4,8 @@
   gap: var(--space-3);
 }
 
-/* Who runs it, then when: an exam's hours belong to the expert holding it. */
+/* Who runs it, then when, then the month: an exam's hours belong to the expert
+   holding it. */
 .scheduler__who {
   display: flex;
   flex-wrap: wrap;
@@ -101,4 +102,34 @@
 .slot__note {
   font-size: var(--size-xs);
   color: var(--text-faint);
+}
+
+/* The month, for when the day on offer is not the right one. */
+.scheduler__calendar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--primary);
+  font-size: var(--size-xl);
+  cursor: pointer;
+  transition:
+    color var(--duration) var(--ease),
+    border-color var(--duration) var(--ease),
+    background-color var(--duration) var(--ease);
+}
+
+.scheduler__calendar:hover,
+.scheduler__calendar:active {
+  border-color: var(--primary);
+  background: var(--surface-sunken);
+}
+
+.scheduler__calendar:active {
+  transition: none;
 }

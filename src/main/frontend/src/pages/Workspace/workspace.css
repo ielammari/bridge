@@ -3,7 +3,17 @@
   --sidebar-width: 20rem;
   /* The drawer bar's height, which the header stops below on a narrow screen. */
   --mobilebar-h: 3.75rem;
+  /* The width a side panel takes at the other edge, and how much of it the page
+     is giving up. The panel reads the same value, so the two cannot drift. */
+  --panel-width: 26rem;
+  --panel-out: 0px;
   min-height: 100dvh;
+}
+
+/* A panel that takes its own space: the content narrows by exactly what the
+   panel occupies, header included, so nothing is covered. */
+.workspace--panelled {
+  --panel-out: var(--panel-width);
 }
 
 .workspace--collapsed {
@@ -40,8 +50,19 @@
 
 .workspace__content {
   margin-left: var(--sidebar-width);
+  margin-right: var(--panel-out);
   padding: var(--space-6);
-  transition: margin-left var(--duration-slow) var(--ease);
+  transition:
+    margin-left var(--duration-slow) var(--ease),
+    margin-right var(--duration-drawer-out) var(--ease-in);
+}
+
+/* Out and back on the panel's own timing, so the edge of the content and the
+   edge of the panel travel together. */
+.workspace--panelled .workspace__content {
+  transition:
+    margin-left var(--duration-slow) var(--ease),
+    margin-right var(--duration-drawer) var(--ease);
 }
 
 /* Capped and centred beside the rail: room for a card grid on a listing, a
@@ -196,6 +217,23 @@
   text-decoration: underline;
 }
 
+/* The way out of a page that was opened from somewhere else. It sits at the end
+   of the band, level with the title, and never folds: the reader leaves by it. */
+.workspace__return {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 44px;
+  font-size: var(--size-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  transition: outline-color var(--duration) var(--ease);
+}
+
+.workspace__return:hover {
+  text-decoration: underline;
+}
+
 /* The chevron points down by default; a step back points left. */
 .workspace__back-icon {
   rotate: 90deg;
@@ -291,6 +329,11 @@
      swallowing it. */
   .workspace {
     --sidebar-width: min(20rem, 84vw);
+  }
+
+  /* A panel takes the whole screen here, so there is no width to give up. */
+  .workspace--panelled {
+    --panel-out: 0px;
   }
 
   .workspace__mobilebar {

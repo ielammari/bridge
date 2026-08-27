@@ -1,24 +1,13 @@
 import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { applicationsApi } from '../../api/applications.js';
 import { scheduleApi } from '../../api/schedule.js';
+import Icon from '../Icon/Icon.jsx';
 import Select from '../Select/Select.jsx';
-import { clockTime, localDate } from '../../constants/format.js';
+import SlotGrid from './SlotGrid.jsx';
+import { localDate } from '../../constants/format.js';
 import useResource from '../../hooks/useResource.js';
 import './Scheduler.css';
-
-/** Whether an hour on a given day has already gone by. */
-function isPast(date, time) {
-  if (date !== localDate()) return false;
-  const now = new Date();
-  return Number(time.slice(0, 2)) <= now.getHours();
-}
-
-const KIND = { TECHNIQUE: 'examen technique', RH: 'entretien RH' };
-
-/** Who a booked slot belongs to, named fully enough to tell two people apart. */
-function occupant(slot) {
-  return `${KIND[slot.type] ?? 'Entretien'} de ${slot.candidateName} pour l'offre « ${slot.offerTitle} »`;
-}
 
 /** An expert, with what they already hold that week. */
 function expertLabel(expert) {
@@ -34,6 +23,8 @@ function expertLabel(expert) {
  * and opens straight on the grid.
  */
 export default function Scheduler({ applicationId, kind, current, onScheduled }) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const needsExpert = kind === 'TECHNIQUE';
   const [date, setDate] = useState(current?.date ?? localDate(1));
   const [expertId, setExpertId] = useState(current?.evaluatorId ? String(current.evaluatorId) : '');
@@ -92,6 +83,22 @@ export default function Scheduler({ applicationId, kind, current, onScheduled })
           <input type="date" value={date} min={localDate()}
             onChange={(event) => setDate(event.target.value)} />
         </label>
+
+        {ready && (
+          <button
+            type="button"
+            className="scheduler__calendar"
+            onClick={() => navigate(
+              `/candidatures/${applicationId}/planification`
+                + (expertId ? `?expert=${expertId}` : ''),
+              { state: { from: `${location.pathname}${location.search}` } },
+            )}
+            aria-label="Voir le mois entier"
+            title="Voir le mois entier"
+          >
+            <Icon name="calendar" />
+          </button>
+        )}
       </div>
 
       {error && <p className="scheduler__error" role="alert">{error}</p>}
@@ -112,32 +119,8 @@ export default function Scheduler({ applicationId, kind, current, onScheduled })
       )}
 
       {ready && status === 'ready' && data && (
-        <div className="scheduler__grid" role="group" aria-label="Créneaux de la journée">
-          {data.slots.map((slot) => {
-            const mine = slot.taken && slot.applicationId === applicationId;
-            const takenByOther = slot.taken && !mine;
-            const past = isPast(date, slot.time);
-            const blocked = takenByOther || past;
-            return (
-              <button
-                key={slot.time}
-                type="button"
-                className={`slot${mine ? ' slot--current' : ''}${blocked ? ' slot--taken' : ''}`}
-                disabled={blocked || busy === slot.time}
-                onClick={() => pick(slot.time)}
-                title={takenByOther ? occupant(slot) : undefined}
-                aria-label={takenByOther
-                  ? `${clockTime(slot.time)}, pris : ${occupant(slot)}`
-                  : undefined}
-              >
-                <span className="slot__time mono">{clockTime(slot.time)}</span>
-                {mine && <span className="slot__note">Actuel</span>}
-                {takenByOther && <span className="slot__note">{slot.candidateName}</span>}
-                {past && !takenByOther && <span className="slot__note">Passé</span>}
-              </button>
-            );
-          })}
-        </div>
+        <SlotGrid slots={data.slots} date={date} applicationId={applicationId}
+          busy={busy} onPick={pick} />
       )}
     </div>
   );

@@ -35,13 +35,16 @@ const EDGE = 0.5;
  *
  * `width` is 'wide' for listings and 'narrow' for reading and forms, `info`
  * carries what the page cannot say for itself, and `stats` and `action` fill
- * the header band. `titleTo` makes the title the way into what it names.
+ * the header band. `returnTo` is the way back out of a page reached from
+ * elsewhere, and holds its shape while the header condenses, since it is how
+ * the reader leaves. `titleTo` makes the title the way into what it names.
  * `toolbar` holds what steers the content (tabs, filters, a picker) and stays
  * with the header, which holds the top of the screen and condenses on scroll.
+ * `panelOpen` says a side panel is out, so the page gives up its width to it.
  */
 export default function Workspace({
-  title, titleTo, subtitle, info, back, stats = [], action, toolbar,
-  width = 'wide', children,
+  title, titleTo, subtitle, info, back, stats = [], action, returnTo, toolbar,
+  width = 'wide', panelOpen = false, children,
 }) {
   const { unreadCount } = useNotifications();
   const location = useLocation();
@@ -167,7 +170,7 @@ export default function Workspace({
     return () => observer.disconnect();
     // The observer covers a reflow; the deps cover the header's own content
     // arriving.
-  }, [toolbar, title, subtitle, stats.length, action, back]);
+  }, [toolbar, title, subtitle, stats.length, action, returnTo, back]);
 
   // An open drawer covers the page, so Tab has to stay inside it, and closing
   // returns focus to the control that opened it.
@@ -214,8 +217,11 @@ export default function Workspace({
   }
 
   return (
-    <div className={`workspace workspace--${width}${collapsed ? ' workspace--collapsed' : ''}`}
-      ref={shell}>
+    <div
+      className={`workspace workspace--${width}${collapsed ? ' workspace--collapsed' : ''}`
+        + `${panelOpen ? ' workspace--panelled' : ''}`}
+      ref={shell}
+    >
       <a className="workspace__skip" href="#contenu">Aller au contenu</a>
 
       {/* Below the sidebar breakpoint the navigation becomes a drawer, so the
@@ -287,7 +293,7 @@ export default function Workspace({
                 )}
               </div>
 
-              {(stats.length > 0 || action) && (
+              {(stats.length > 0 || action || returnTo) && (
                 <div className="workspace__aside">
                   {stats.length > 0 && (
                     <div className="workspace__fold workspace__fold--inline">
@@ -302,6 +308,11 @@ export default function Workspace({
                     </div>
                   )}
                   {action}
+                  {returnTo && (
+                    <Link className="workspace__return" to={returnTo.to}>
+                      <Icon name="chevron" className="workspace__back-icon" /> {returnTo.label}
+                    </Link>
+                  )}
                 </div>
               )}
             </header>

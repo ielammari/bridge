@@ -1,0 +1,639 @@
+/*
+ * The calendar page. --duration-slide and --slide-travel below are how a month
+ * changes; --duration-drawer in tokens.css is how the day panel arrives and how
+ * the page gives up the width it takes.
+ */
+
+.calendar__body {
+  /* How far and how fast a month moves aside for the next one. */
+  --duration-slide: 220ms;
+  --slide-travel: 6%;
+  /* The month fits the window: the header takes what is above it, the content's
+     own padding what is below. The arithmetic cancels, so the page is exactly
+     one viewport tall whatever shape the header is in, and never scrolls. A
+     floor here would break that: a page that scrolls condenses the header, which
+     grows this box, which stops the scroll, which opens the header again. The
+     fallback covers the frame before the header has published its height. */
+  height: calc(100dvh - var(--header-h, 11rem) - var(--space-6) - var(--space-6));
+}
+
+/* ---- The month navigation ---------------------------------------------
+   The month holds the centre of the page whatever the length of its name, so
+   the arrows never move under the pointer. */
+
+.monthnav {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.monthnav__steps {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.monthnav__step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-size: var(--size-lg);
+  cursor: pointer;
+  transition:
+    color var(--duration) var(--ease),
+    border-color var(--duration) var(--ease);
+}
+
+.monthnav__step:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+/* The chevron points down at rest; the steps point along the months. */
+.monthnav__prev {
+  rotate: 90deg;
+}
+
+.monthnav__next {
+  rotate: -90deg;
+}
+
+.monthnav__label {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--space-2);
+  min-width: 13rem;
+}
+
+.monthnav__month {
+  font-family: var(--font-display);
+  font-size: var(--size-2xl);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-heading);
+}
+
+/* The year is set as a figure, in the face this interface keeps for figures,
+   because it is a value the reader can change rather than part of the prose. */
+.monthnav__year {
+  padding: 2px var(--space-2);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: var(--size-2xl);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tracking-heading);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    color var(--duration) var(--ease),
+    background-color var(--duration) var(--ease);
+}
+
+.monthnav__year:hover {
+  color: var(--text);
+  background: var(--surface-sunken);
+}
+
+.monthnav__year--editing {
+  width: 5ch;
+  background: var(--surface);
+  border-color: var(--border-strong);
+  color: var(--text);
+  cursor: text;
+  appearance: textfield;
+}
+
+.monthnav__year--editing::-webkit-outer-spin-button,
+.monthnav__year--editing::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.monthnav__today {
+  grid-column: 3;
+  justify-self: end;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: var(--size-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    color var(--duration) var(--ease),
+    border-color var(--duration) var(--ease);
+}
+
+.monthnav__today:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+/* ---- The grid ---------------------------------------------------------- */
+
+.monthgrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  height: 100%;
+}
+
+.monthgrid__week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--space-2);
+  padding-inline: var(--space-1);
+}
+
+.monthgrid__weekday {
+  font-size: var(--size-xs);
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+
+/* The months are stacked here while one replaces the other, and clipped so
+   neither is seen leaving the page. */
+.monthgrid__stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.monthgrid__layer {
+  position: absolute;
+  inset: 0;
+}
+
+.monthgrid__days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+  gap: var(--space-2);
+  height: 100%;
+}
+
+/* ---- One day -----------------------------------------------------------
+   The ground says how spent the day is at a glance, the figure says exactly,
+   and the gauge says out of how much, so the colour is never carrying the
+   answer alone. */
+
+.day {
+  --tint: var(--surface);
+  --mark: var(--text-faint);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-content: start;
+  gap: var(--space-1);
+  min-height: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--tint);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform var(--duration-lift) var(--ease-lift),
+    border-color var(--duration) var(--ease),
+    background-color var(--duration) var(--ease);
+}
+
+.day:not(:disabled):hover {
+  border-color: var(--mark);
+}
+
+/* Answers on the press rather than the release. */
+.day:not(:disabled):active {
+  transform: scale(0.985);
+  transition-duration: 90ms;
+}
+
+/* A day with nothing on it is not a target, and reads as empty rather than as
+   a control that has been switched off. */
+.day:disabled {
+  cursor: default;
+}
+
+.day__number {
+  grid-row: 1;
+  font-family: var(--font-display);
+  font-size: var(--size-2xl);
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+  letter-spacing: var(--tracking-heading);
+  font-variant-numeric: tabular-nums;
+}
+
+/* What the day holds, counted and named: the figure is the glance, the word
+   says of what. */
+.day__load {
+  grid-row: 2;
+  align-self: end;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.day__kind {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  min-width: 0;
+  color: var(--mark);
+}
+
+.day__count {
+  font-size: var(--size-2xl);
+  font-weight: var(--weight-medium);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* One line, whatever the panel leaves of the cell's width. */
+.day__noun {
+  overflow: hidden;
+  font-size: var(--size-xs);
+  line-height: 1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.day__gauge {
+  grid-row: 3;
+  grid-column: 1 / -1;
+  align-self: end;
+  width: 100%;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.day__gauge::before {
+  content: '';
+  display: block;
+  height: 100%;
+  width: calc(var(--fill) * 100%);
+  background: var(--mark);
+  border-radius: inherit;
+}
+
+.day--load-1 { --mark: var(--load-1); --tint: var(--load-1-bg); }
+.day--load-2 { --mark: var(--load-2); --tint: var(--load-2-bg); }
+.day--load-3 { --mark: var(--load-3); --tint: var(--load-3-bg); }
+.day--load-4 { --mark: var(--load-4); --tint: var(--load-4-bg); }
+.day--load-5 { --mark: var(--load-5); --tint: var(--load-5-bg); }
+
+/* A weekend is bookable and rarely used, so it takes the same ground a shade
+   sunken rather than a ground of its own. */
+.day--weekend {
+  background: color-mix(in srgb, var(--tint) 82%, var(--surface-sunken));
+}
+
+/* The load is the record and stays; only the date reads as gone by. */
+.day--past .day__number {
+  color: var(--text-faint);
+}
+
+/* Brass means current here as everywhere else. */
+.day--today {
+  border-color: var(--accent);
+}
+
+.day--selected {
+  --mark: var(--on-primary);
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.day--selected .day__number {
+  color: var(--on-primary);
+}
+
+.day--selected .day__gauge {
+  background: color-mix(in srgb, var(--on-primary) 26%, transparent);
+}
+
+.day--today.day--selected {
+  border-color: var(--accent);
+}
+
+/* The days either side, drawn so the weeks keep their shape. */
+.day--outside {
+  background: none;
+  border-color: transparent;
+  cursor: default;
+}
+
+.day--outside .day__number {
+  font-family: var(--font-body);
+  font-size: var(--size-base);
+  font-weight: var(--weight-normal);
+  color: var(--text-faint);
+  opacity: 0.45;
+}
+
+/* ---- Paging ------------------------------------------------------------
+   The month leaves the way the reader is going and the next one follows it in,
+   short enough to read as a step rather than a journey. */
+
+.monthgrid__layer--in-next {
+  animation: month-in-next var(--duration-slide) var(--ease) backwards;
+}
+
+.monthgrid__layer--in-prev {
+  animation: month-in-prev var(--duration-slide) var(--ease) backwards;
+}
+
+.monthgrid__layer--out-next {
+  animation: month-out-next var(--duration-slide) var(--ease-in) forwards;
+}
+
+.monthgrid__layer--out-prev {
+  animation: month-out-prev var(--duration-slide) var(--ease-in) forwards;
+}
+
+@keyframes month-in-next {
+  from { transform: translateX(var(--slide-travel)); opacity: 0; }
+}
+
+@keyframes month-out-next {
+  to { transform: translateX(calc(var(--slide-travel) * -1)); opacity: 0; }
+}
+
+@keyframes month-in-prev {
+  from { transform: translateX(calc(var(--slide-travel) * -1)); opacity: 0; }
+}
+
+@keyframes month-out-prev {
+  to { transform: translateX(var(--slide-travel)); opacity: 0; }
+}
+
+/* ---- The day panel -----------------------------------------------------
+   It spans the window and arrives from the right edge, leaving by it. There is
+   no scrim: the page gives up exactly the width it takes, so the month stays
+   whole beside it and stays operable. */
+
+.daydrawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-float);
+  display: flex;
+  flex-direction: column;
+  width: var(--panel-width, 26rem);
+  background: var(--surface);
+  border-left: 1px solid var(--border-strong);
+  transform: translateX(100%);
+  visibility: hidden;
+  transition:
+    transform var(--duration-drawer-out) var(--ease-in),
+    visibility 0s linear var(--duration-drawer-out);
+}
+
+.daydrawer--open {
+  transform: translateX(0);
+  visibility: visible;
+  transition:
+    transform var(--duration-drawer) var(--ease),
+    visibility 0s linear 0s;
+}
+
+/* The day's name starts level with the page's own title. */
+.daydrawer__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-4) var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.daydrawer__title {
+  min-width: 0;
+}
+
+.daydrawer__day {
+  font-family: var(--font-display);
+  font-size: var(--size-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-heading);
+}
+
+/* Opening the panel moves focus here, so it is focusable but not operable. */
+.daydrawer__day:focus,
+.daydrawer__day:focus-visible {
+  outline-color: transparent;
+}
+
+.daydrawer__count {
+  margin-top: var(--space-1);
+  font-size: var(--size-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.daydrawer__close {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    color var(--duration) var(--ease),
+    border-color var(--duration) var(--ease),
+    outline-color var(--duration) var(--ease);
+}
+
+.daydrawer__close:hover,
+.daydrawer__close:active {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.daydrawer__close:active {
+  transition: none;
+}
+
+.daydrawer__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-4);
+}
+
+/* ---- The day's interviews ---------------------------------------------- */
+
+.dayfeed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dayfeed__none {
+  font-size: var(--size-sm);
+  color: var(--text-faint);
+}
+
+/* The hour is the spine the day reads down. The whole card is the way in, so
+   nothing inside it is a control of its own. */
+.dayitem {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform var(--duration-lift) var(--ease-lift),
+    color var(--duration-lift) var(--ease-lift),
+    border-color var(--duration-lift) var(--ease-lift),
+    background-color var(--duration-lift) var(--ease-lift);
+}
+
+.dayitem:hover {
+  background: var(--surface-sunken);
+  border-color: var(--border-strong);
+}
+
+.dayitem:hover .dayitem__name {
+  color: var(--primary);
+}
+
+.dayitem:active {
+  transform: scale(0.995);
+  transition-duration: 90ms;
+}
+
+.dayitem__hour {
+  align-self: center;
+  font-size: var(--size-sm);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--primary);
+}
+
+.dayitem__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dayitem__name {
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+  transition: color var(--duration-lift) var(--ease-lift);
+}
+
+.dayitem__offer {
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+/* Whose day the exam sits in, on the calendar of the recruiter who arranged it. */
+.dayitem__who {
+  font-size: var(--size-sm);
+  color: var(--text-faint);
+  overflow-wrap: anywhere;
+}
+
+/* An interview whose result is in reads back rather than ahead. */
+.dayitem--recorded .dayitem__hour {
+  color: var(--text-faint);
+}
+
+.dayitem--recorded .dayitem__name {
+  color: var(--text-secondary);
+}
+
+/* ---- Narrow ------------------------------------------------------------ */
+
+@media (max-width: 64rem) {
+  .calendar__body {
+    height: auto;
+  }
+
+  .monthgrid__stage {
+    overflow: visible;
+  }
+
+  /* The page scrolls here, so the months stop being stacked and the grid sets
+     its own height from the cells. */
+  .monthgrid__layer {
+    position: static;
+  }
+
+  .monthgrid__days {
+    grid-auto-rows: minmax(4.5rem, auto);
+    grid-template-rows: none;
+    height: auto;
+  }
+
+  .monthnav__month,
+  .monthnav__year {
+    font-size: var(--size-xl);
+  }
+
+  .monthnav__label {
+    min-width: 0;
+  }
+
+  /* Nothing to stand beside here, so the panel covers the page and casts the
+     shade of something above it. */
+  .daydrawer {
+    width: 100vw;
+    box-shadow: var(--shadow-float);
+  }
+
+  .daydrawer__head {
+    padding-top: var(--space-4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .day:not(:disabled):active,
+  .dayitem:active {
+    transform: none;
+  }
+
+  /* The panel appears where it belongs rather than travelling to it. Its
+     durations are already 1ms here, so there is nothing left to slow. */
+  .daydrawer,
+  .daydrawer--open {
+    transform: none;
+  }
+}

@@ -1,4 +1,5 @@
-import { useLocation, useParams } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { historyApi } from '../../api/history.js';
 import ErrorState from '../../components/ErrorState/ErrorState.jsx';
 import FunnelRail from '../../components/FunnelRail/FunnelRail.jsx';
@@ -11,11 +12,15 @@ import {
   EVALUATION_TYPE_LABELS, REMOTE_LABELS,
 } from '../../constants/enums.js';
 import { clockTime, dateTime, euros, longDate } from '../../constants/format.js';
+import { INTERVIEW, fromCalendar, returnLink } from '../../constants/navigation.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import useResource from '../../hooks/useResource.js';
 import Workspace from '../Workspace/Workspace.jsx';
 import './history.css';
 import { historyHome } from './tabs.js';
+
+// The evaluation an interview produces, so a record opened at one marks both.
+const EVALUATION_OF = { TECHNIQUE: 'TECHNIQUE', RH: 'ENTRETIEN_RH' };
 
 function Terms({ title, subtitle, rows }) {
   const filled = rows.filter(([, value]) => value !== null && value !== undefined && value !== '');
@@ -49,25 +54,39 @@ function Terms({ title, subtitle, rows }) {
 export default function ApplicationRecord() {
   const { id } = useParams();
   const location = useLocation();
+  const [params] = useSearchParams();
   const { user } = useAuth();
   const isCandidate = user.role === 'CANDIDAT';
+  // Followed from the calendar, which names the interview it means.
+  const named = params.get(INTERVIEW);
 
   const { status, data, reload, pending, leaving } = useResource(
     () => (isCandidate ? historyApi.myApplication(id) : historyApi.trail(id)),
     [id, isCandidate],
   );
 
+  // A record reached from the calendar returns there from the header's other
+  // corner; this link keeps to the history.
+  const returning = fromCalendar(location.state);
   // Back to the exact listing this was opened from, tab and filters included.
   // The role's first tab is the fallback for a record reached by its own link,
   // where there is no listing to return to.
   const back = {
-    to: location.state?.from ?? historyHome(user.role),
+    to: (returning ? null : location.state?.from) ?? historyHome(user.role),
     label: 'Retour à l\'historique',
   };
+  const returnTo = returning ? returnLink(location.state) : null;
+
+  useEffect(() => {
+    if (!named || status !== 'ready') return;
+    const target = document.getElementById('named-evaluation')
+      ?? document.getElementById('named-interview');
+    target?.scrollIntoView({ block: 'nearest' });
+  }, [named, status]);
 
   if (status !== 'ready') {
     return (
-      <Workspace width="narrow" title="Dossier de candidature" back={back}>
+      <Workspace width="narrow" title="Dossier de candidature" back={back} returnTo={returnTo}>
         {pending && <Skeleton variant="record" leaving={leaving} label="Chargement du dossier" />}
         {status === 'error' && (
           <ErrorState onRetry={reload}>
@@ -79,6 +98,11 @@ export default function ApplicationRecord() {
   }
 
   const app = data.application;
+  // The interview the address names, and the assessment it produced.
+  const markedInterview = named
+    ? data.appointments.find((one) => one.type === named)?.id : null;
+  const markedEvaluation = named
+    ? data.evaluations?.find((one) => one.type === EVALUATION_OF[named])?.id : null;
   const title = isCandidate ? app.offerTitle : `${app.candidateFirstName} ${app.candidateLastName}`;
   // A name is not an identity: two candidates can share one, so the title is
   // the way into the profile that settles which of them this is.
@@ -93,7 +117,7 @@ export default function ApplicationRecord() {
 
   return (
     <Workspace width={split ? 'wide' : 'narrow'} title={title} titleTo={titleTo}
-      subtitle={subtitle} back={back}>
+      subtitle={subtitle} back={back} returnTo={returnTo}>
       <div className={`doc${split ? ' doc--split' : ''}`}>
         {/* Where the application stands is the record's first fact, and the
             rail wants the width of the page rather than of a column. */}
@@ -116,7 +140,12 @@ export default function ApplicationRecord() {
             <div className="card__body">
               <ul className="record__list">
                 {data.appointments.map((appointment) => (
-                  <li key={appointment.id} className="record__row">
+                  <li
+                    key={appointment.id}
+                    className={`record__row${appointment.id === markedInterview
+                      ? ' record__row--named' : ''}`}
+                    id={appointment.id === markedInterview ? 'named-interview' : undefined}
+                  >
                     <span>
                       {APPOINTMENT_TYPE_LABELS[appointment.type] ?? appointment.type}
                       {appointment.evaluatorName && (
@@ -157,7 +186,12 @@ export default function ApplicationRecord() {
             </div>
             <div className="card__body">
               {data.evaluations.map((evaluation) => (
-                <article key={evaluation.id} className="record__eval">
+                <article
+                  key={evaluation.id}
+                  className={`record__eval${evaluation.id === markedEvaluation
+                    ? ' record__eval--named' : ''}`}
+                  id={evaluation.id === markedEvaluation ? 'named-evaluation' : undefined}
+                >
                   <div className="record__eval-head">
                     <h3 className="record__eval-title">
                       {EVALUATION_TYPE_LABELS[evaluation.type] ?? evaluation.type}

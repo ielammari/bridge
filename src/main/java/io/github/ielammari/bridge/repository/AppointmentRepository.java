@@ -44,6 +44,21 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
 			+ "ORDER BY a.date, a.time")
 	List<Appointment> findExamsAssignedTo(Integer expertId);
 
+	/** Every interview an evaluator holds over a range, with what each is about. */
+	@Query("SELECT a FROM Appointment a JOIN FETCH a.application ap "
+			+ "JOIN FETCH ap.candidate JOIN FETCH ap.offer JOIN FETCH a.evaluator "
+			+ "WHERE a.evaluator.id = :evaluatorId AND a.date BETWEEN :from AND :to "
+			+ "ORDER BY a.date, a.time")
+	List<Appointment> findForEvaluatorBetween(Integer evaluatorId, LocalDate from, LocalDate to);
+
+	/** Interviews of one kind over a range, on the offers a recruiter published. */
+	@Query("SELECT a FROM Appointment a JOIN FETCH a.application ap "
+			+ "JOIN FETCH ap.candidate JOIN FETCH ap.offer o JOIN FETCH a.evaluator "
+			+ "WHERE a.type = :type AND o.publisher.id = :hrId AND a.date BETWEEN :from AND :to "
+			+ "ORDER BY a.date, a.time")
+	List<Appointment> findByTypeAndPublisherBetween(AppointmentType type, Integer hrId,
+			LocalDate from, LocalDate to);
+
 	/** How many interviews each evaluator holds over a range, for the picker. */
 	@Query("SELECT a.evaluator.id, COUNT(a) FROM Appointment a "
 			+ "WHERE a.date BETWEEN :from AND :to GROUP BY a.evaluator.id")

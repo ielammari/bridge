@@ -83,6 +83,22 @@
   --status-cloturee: #5b6b76;
   --status-cloturee-bg: #e4e8e8;
 
+  /* ---- Interview load ---------------------------------------------------
+     How much of a day's bookable hours an evaluator has spent, from a first
+     booking to a day with nothing left. The ramp runs green through brass to
+     clay, so the accent this product already means sits at its middle. Each
+     mark clears 4.5:1 on the ground it is painted on. */
+  --load-1: #227751;
+  --load-1-bg: #ddeee6;
+  --load-2: #467326;
+  --load-2-bg: #e1ecd9;
+  --load-3: #835f21;
+  --load-3-bg: #f0e4d1;
+  --load-4: #a14b26;
+  --load-4-bg: #f2ddd4;
+  --load-5: #b53035;
+  --load-5-bg: #f3d8d9;
+
   /* ---- Typography ------------------------------------------------------ */
   --font-display: 'Archivo', system-ui, sans-serif;
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
@@ -148,6 +164,11 @@
   /* The header changing shape, and the page moving up with it. Slow enough
      that the two read as one motion rather than a jump. */
   --duration-morph: 280ms;
+  /* A panel arriving from the edge of the screen, and the page giving up the
+     width it takes. It leaves in 70 percent of this, so the way out reads as
+     quicker than the way in. */
+  --duration-drawer: 260ms;
+  --duration-drawer-out: calc(var(--duration-drawer) * 0.7);
   --ease: cubic-bezier(0.2, 0, 0.2, 1);
   /* Things arriving decelerate into place; things leaving accelerate away. */
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
@@ -219,6 +240,19 @@
   --status-cloturee: #9ca5ab;
   --status-cloturee-bg: #2a3841;
 
+  /* The ramp holds its hues, eases its saturation, and each mark rises only as
+     far as it must to clear its own ground. */
+  --load-1: #68bb96;
+  --load-1-bg: #274537;
+  --load-2: #86b365;
+  --load-2-bg: #314026;
+  --load-3: #c5a772;
+  --load-3-bg: #4b3d25;
+  --load-4: #cf957d;
+  --load-4-bg: #503226;
+  --load-5: #d08b8d;
+  --load-5-bg: #52282a;
+
   /* A shadow reads as depth only against light. Here the raised surface and its
      border carry the elevation, and the shadow only anchors. */
   --shadow-float: 0 10px 28px -10px rgb(0 0 0 / 0.72);
@@ -232,5 +266,6 @@
     --duration-slow: 1ms;
     --duration-lift: 1ms;
     --duration-morph: 1ms;
+    --duration-drawer: 1ms;
   }
 }

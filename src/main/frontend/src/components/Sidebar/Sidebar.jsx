@@ -16,10 +16,12 @@ const NAV_BY_ROLE = {
   RH: [
     { to: '/offres', label: 'Offres', icon: 'briefcase' },
     { to: '/candidatures', label: 'Candidatures', icon: 'stack' },
+    { to: '/calendrier', label: 'Calendrier', icon: 'calendar' },
     { to: '/historique/candidatures', label: 'Historique', icon: 'archive' },
   ],
   EXPERT: [
     { to: '/evaluations', label: 'Évaluations', icon: 'star' },
+    { to: '/calendrier', label: 'Calendrier', icon: 'calendar' },
     { to: '/historique/evaluations', label: 'Historique', icon: 'archive' },
   ],
 };

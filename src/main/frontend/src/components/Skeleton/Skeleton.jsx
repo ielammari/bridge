@@ -38,6 +38,8 @@ function render(variant, items, size) {
       return record();
     case 'page':
       return page();
+    case 'calendar':
+      return calendar();
     default:
       return cards(items, size);
   }
@@ -129,6 +131,30 @@ function record() {
           ))}
         </div>
       </section>
+    </div>
+  );
+}
+
+/** The month grid: the seven columns and six weeks the page will fill. */
+function calendar() {
+  return (
+    <div className="monthgrid" aria-hidden="true">
+      <div className="monthgrid__week">
+        {Array.from({ length: 7 }, (_, index) => (
+          <span key={index} className="skeleton__bar skeleton__bar--weekday" />
+        ))}
+      </div>
+      <div className="monthgrid__stage">
+        <div className="monthgrid__layer">
+          <div className="monthgrid__days">
+            {Array.from({ length: 42 }, (_, index) => (
+              <span key={index} className="day">
+                <span className="skeleton__bar skeleton__bar--daynum" />
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -196,3 +196,19 @@
     animation-duration: 1ms;
   }
 }
+
+/* The calendar fills the height its grid was given, so the placeholder does not
+   change the page's shape when the month arrives. */
+.skeleton--calendar {
+  height: 100%;
+}
+
+.skeleton__bar--weekday {
+  width: 2rem;
+  height: 0.75rem;
+}
+
+.skeleton__bar--daynum {
+  width: 1.25rem;
+  height: 1.25rem;
+}
