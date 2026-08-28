@@ -1,0 +1,488 @@
+/*
+ * The public front. Bands span the window and alternate ground; their content
+ * stands on the frame's own measure, so everything down the page shares two
+ * edges. Nothing here declares a colour: the grounds, the statuses and the
+ * accent are the application's.
+ */
+
+/* ---- What every band shares --------------------------------------------- */
+
+.section__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+}
+
+/* The mono label the document sections use, so a band is named the way a
+   section is. */
+.section__eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--size-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.section__title {
+  font-size: var(--size-4xl);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+}
+
+/* ---- The hero ----------------------------------------------------------- */
+
+/* The same slab as the header above it, so the first screen is one surface. */
+.hero {
+  background: var(--rail);
+  color: var(--rail-text);
+  --focus: var(--rail-accent);
+}
+
+.hero__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: var(--space-5);
+  padding-block: clamp(var(--space-7), 9vw, 7rem) var(--space-8);
+}
+
+/* The one place on this page the display face runs large. */
+.hero__title {
+  max-width: 20ch;
+  font-size: var(--size-5xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+  color: var(--rail-text-active);
+}
+
+.hero__lead {
+  max-width: 62ch;
+  font-size: var(--size-lg);
+  line-height: var(--leading-normal);
+  color: var(--rail-text);
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+}
+
+/* The page's one primary action, painted in the accent because on this slab it
+   is the only colour that carries. */
+.hero__go {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: var(--space-6);
+  border-radius: var(--radius);
+  background: var(--rail-accent);
+  color: var(--rail);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+  transition: background-color var(--duration) var(--ease);
+}
+
+.hero__go:hover {
+  background: var(--rail-text-active);
+  color: var(--rail);
+}
+
+.hero__alt {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: var(--space-5);
+  border: 1px solid var(--rail-edge);
+  border-radius: var(--radius);
+  color: var(--rail-text-active);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  transition: background-color var(--duration) var(--ease), border-color var(--duration) var(--ease);
+}
+
+.hero__alt:hover {
+  background: var(--rail-hover);
+  border-color: var(--rail-accent);
+  color: var(--rail-text-active);
+}
+
+/* Counted from the offers themselves, on a rule that closes the band. */
+.hero__figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-7);
+  width: 100%;
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--rail-edge);
+}
+
+.hero__figure {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.hero__value {
+  font-size: var(--size-2xl);
+  font-weight: var(--weight-semibold);
+  color: var(--rail-accent);
+}
+
+.hero__label {
+  font-family: var(--font-mono);
+  font-size: var(--size-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--rail-faint);
+}
+
+/* ---- The open positions -------------------------------------------------- */
+
+.positions {
+  padding-block: var(--space-8);
+}
+
+/* The domains the open offers span, each a way into the listing narrowed to it. */
+.positions__domains {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  list-style: none;
+}
+
+.positions__domain {
+  display: inline-block;
+  padding: var(--space-1) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: var(--size-sm);
+  text-decoration: none;
+  transition: border-color var(--duration) var(--ease), color var(--duration) var(--ease);
+}
+
+.positions__domain:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.positions__more {
+  margin-top: var(--space-5);
+  font-weight: var(--weight-medium);
+}
+
+/* ---- The features -------------------------------------------------------- */
+
+.features {
+  background: var(--surface-sunken);
+  padding-block: var(--space-8);
+}
+
+.features__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: var(--space-6);
+}
+
+.feature {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.feature__title {
+  font-size: var(--size-xl);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-heading);
+}
+
+.feature__body {
+  max-width: 46ch;
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+}
+
+/* A real offer's own requirements, which is what the rule above describes. */
+.feature__sample {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.feature__sample-head {
+  font-size: var(--size-sm);
+  color: var(--text-faint);
+}
+
+.feature__row {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.feature__row-label {
+  font-family: var(--font-mono);
+  font-size: var(--size-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.feature__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ---- The funnel ---------------------------------------------------------- */
+
+.funnel {
+  padding-block: var(--space-8);
+}
+
+.funnel__track {
+  --spine: 0.5rem;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 17rem);
+  align-items: start;
+}
+
+.funnel__stages {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.funnel__stage,
+.funnel__outcome {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: var(--space-2);
+  padding-top: calc(var(--spine) + var(--space-5));
+  padding-right: var(--space-5);
+}
+
+/* The spine, drawn cell by cell so it runs the width of the stages and stops
+   where the fork begins. */
+.funnel__stage::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--spine);
+  height: 1px;
+  background: var(--border);
+}
+
+.funnel__node {
+  position: absolute;
+  left: 0;
+  top: calc(var(--spine) - 5px);
+  width: 10px;
+  height: 10px;
+  border: 1px solid;
+  border-radius: 2px;
+}
+
+.funnel__what {
+  max-width: 30ch;
+  font-size: var(--size-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+
+/* The two ways it ends. The spine runs into the branch and the branch reaches
+   both, so neither outcome continues the line and neither hangs off it. */
+.funnel__fork {
+  position: relative;
+}
+
+.funnel__outcomes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.funnel__outcome {
+  padding-left: var(--space-5);
+}
+
+.funnel__outcome .funnel__node {
+  left: var(--space-5);
+}
+
+/* The stub reaching this outcome's node. */
+.funnel__outcome::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: var(--spine);
+  width: var(--space-5);
+  height: 1px;
+  background: var(--border);
+}
+
+/* The vertical between the two nodes. Its height is the first outcome's own
+   box, which is exactly the distance to the node below it. */
+.funnel__outcome:first-child::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: var(--spine);
+  width: 1px;
+  height: 100%;
+  background: var(--border);
+}
+
+/* ---- Who is on the other side -------------------------------------------- */
+
+.inside {
+  background: var(--surface-sunken);
+  padding-block: var(--space-8);
+}
+
+.inside__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: var(--space-6);
+}
+
+.inside__block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.inside__title {
+  font-size: var(--size-xl);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-heading);
+}
+
+.inside__body {
+  max-width: 52ch;
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+}
+
+/* ---- The closing band ---------------------------------------------------- */
+
+.closing {
+  background: var(--rail);
+  color: var(--rail-text);
+  --focus: var(--rail-accent);
+}
+
+.closing__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  padding-block: var(--space-8);
+}
+
+.closing__words {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.closing__title {
+  font-size: var(--size-4xl);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+  color: var(--rail-text-active);
+}
+
+.closing__lead {
+  max-width: 52ch;
+  color: var(--rail-text);
+}
+
+.closing__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.closing__alt {
+  color: var(--rail-text-active);
+  font-weight: var(--weight-medium);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.closing__alt:hover {
+  color: var(--rail-accent);
+}
+
+/* ---- Narrow -------------------------------------------------------------- */
+
+/* The spine turns down the page: one rule on the left, every entry along it,
+   ending at the last node rather than running past it. The fork's own drawing
+   is spent, so both its parts are taken back. */
+@media (max-width: 64rem) {
+  .funnel__track {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .funnel__stages {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .funnel__stage,
+  .funnel__outcome {
+    padding: 0 0 var(--space-6) var(--space-6);
+  }
+
+  .funnel__node,
+  .funnel__outcome .funnel__node {
+    left: 0;
+    top: 4px;
+  }
+
+  .funnel__stage::before,
+  .funnel__outcome::after,
+  .funnel__outcome:first-child::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    right: auto;
+    top: 9px;
+    bottom: 0;
+    width: 1px;
+    height: auto;
+    background: var(--border);
+  }
+
+  .funnel__outcome:last-child::after {
+    content: none;
+  }
+
+  .funnel__outcome::before {
+    content: none;
+  }
+}

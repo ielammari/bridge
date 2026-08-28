@@ -238,7 +238,7 @@ export default function Workspace({
           <Icon name="menu" />
           {unreadCount > 0 && <span className="workspace__menu-dot" aria-hidden="true" />}
         </button>
-        <span className="workspace__logo">Bridge</span>
+        <Link to="/" className="workspace__logo">Bridge</Link>
       </header>
 
       {/* A drawer that is merely translated off screen still holds its links in

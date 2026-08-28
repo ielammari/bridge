@@ -1,4 +1,5 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import Landing from './pages/Landing/Landing.jsx';
 import Login from './pages/auth/Login.jsx';
 import Signup from './pages/auth/Signup.jsx';
 import ForcedPassword from './pages/auth/ForcedPassword.jsx';
@@ -20,31 +21,34 @@ import Hirings from './pages/History/Hirings.jsx';
 import PastEvaluations from './pages/History/PastEvaluations.jsx';
 import ApplicationRecord from './pages/History/ApplicationRecord.jsx';
 import OfferPage from './pages/Offers/OfferPage.jsx';
+import PublicOffer from './pages/Public/PublicOffer.jsx';
+import PublicOffers from './pages/Public/PublicOffers.jsx';
 import PersonPage from './pages/People/PersonPage.jsx';
 import SavedOffers from './pages/Offers/SavedOffers.jsx';
 import Settings from './pages/Settings/Settings.jsx';
 import NotFound from './pages/NotFound/NotFound.jsx';
 import ProtectedRoute, { HOME_BY_ROLE } from './components/ProtectedRoute/ProtectedRoute.jsx';
+import { readSuite } from './constants/navigation.js';
 import { useAuth } from './context/AuthContext.jsx';
 
-// Sends an already signed in visitor to their own workspace.
-function Entry() {
-  const { user, loading } = useAuth();
-  if (loading) return null;
-  return <Navigate to={user ? HOME_BY_ROLE[user.role] : '/connexion'} replace />;
-}
-
-// Keeps a signed in user off the auth pages.
+// Keeps a signed in user off the auth pages, honouring the errand the address
+// carries so a session already open resumes it rather than restarting.
 function GuestOnly({ children }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
   if (loading) return null;
-  return user ? <Navigate to={HOME_BY_ROLE[user.role]} replace /> : children;
+  if (!user) return children;
+  return <Navigate to={readSuite(location.search) ?? HOME_BY_ROLE[user.role]} replace />;
 }
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Entry />} />
+      {/* The public site: the front page and the open positions, which need no
+          account and answer the same to everyone. */}
+      <Route path="/" element={<Landing />} />
+      <Route path="/emplois" element={<PublicOffers />} />
+      <Route path="/emplois/:id" element={<PublicOffer />} />
 
       <Route path="/connexion" element={<GuestOnly><Login /></GuestOnly>} />
       <Route path="/inscription" element={<GuestOnly><Signup /></GuestOnly>} />

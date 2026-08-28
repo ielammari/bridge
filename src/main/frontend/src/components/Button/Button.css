@@ -8,6 +8,7 @@
   border: 1px solid transparent;
   border-radius: var(--radius);
   font-weight: var(--weight-medium);
+  text-decoration: none;
   cursor: pointer;
   transition:
     background-color var(--duration) var(--ease),

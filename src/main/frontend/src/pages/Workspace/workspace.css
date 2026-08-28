@@ -312,6 +312,13 @@
   letter-spacing: var(--tracking-display);
   padding-bottom: 1px;
   border-bottom: 2px solid var(--accent);
+  color: var(--text);
+  text-decoration: none;
+  transition: color var(--duration) var(--ease);
+}
+
+.workspace__logo:hover {
+  color: var(--accent);
 }
 
 .workspace__scrim {

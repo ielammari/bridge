@@ -93,10 +93,10 @@ export default function Sidebar({ collapsed, onToggle, onNavigate }) {
       <div className="sidebar__top">
         {/* The wordmark and the mark share one cell, so collapsing reads as the
             word losing its tail rather than one logo swapping for another. */}
-        <span className="sidebar__logo">
+        <Link to="/" className="sidebar__logo" title={hint('Accueil')} aria-label="Accueil">
           <span className="sidebar__logo-full">Bridge</span>
           <span className="sidebar__logo-mark" aria-hidden="true">B</span>
-        </span>
+        </Link>
       </div>
 
       <button

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import './auth.css';
 
 /**
@@ -8,10 +9,10 @@ export default function AuthLayout({ title, intro, children, footer, wide = fals
   return (
     <div className="auth">
       <aside className="auth__aside">
-        <p className="auth__brand">
+        <Link to="/" className="auth__brand">
           <span className="auth__logo">Bridge</span>
           <span className="auth__scope">Recrutement</span>
-        </p>
+        </Link>
       </aside>
 
       <main className="auth__panel" id="contenu">

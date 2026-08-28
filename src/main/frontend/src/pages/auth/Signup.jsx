@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AuthLayout from './AuthLayout.jsx';
 import GoogleSignIn from './GoogleSignIn.jsx';
 import Alert from '../../components/Alert/Alert.jsx';
@@ -12,6 +12,7 @@ import Select from '../../components/Select/Select.jsx';
 import { HOME_BY_ROLE } from '../../components/ProtectedRoute/ProtectedRoute.jsx';
 import { GENDER_OPTIONS } from '../../constants/enums.js';
 import { localDate } from '../../constants/format.js';
+import { readSuite, withSuite } from '../../constants/navigation.js';
 import { passwordProblem } from '../../constants/password.js';
 import { birthDateProblem, emailFormat, phoneFormat } from '../../constants/validation.js';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -66,6 +67,9 @@ export default function Signup() {
 
   const { register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  // What creating the account was interrupted for, if anything.
+  const suite = readSuite(location.search);
 
   const form = useForm(EMPTY, RULES);
   const [failure, setFailure] = useState(null);
@@ -86,7 +90,7 @@ export default function Signup() {
         country: values.country.trim(),
         password: values.password,
       });
-      navigate(HOME_BY_ROLE[user.role] ?? '/', { replace: true });
+      navigate(suite ?? HOME_BY_ROLE[user.role] ?? '/', { replace: true });
     } catch (apiError) {
       setFailure(apiError.message);
       setSubmitting(false);
@@ -100,7 +104,8 @@ export default function Signup() {
       intro="Le compte créé ici est un compte candidat."
       footer={
         <>
-          Vous avez déjà un compte ? <Link to="/connexion">Se connecter</Link>
+          Vous avez déjà un compte ?{' '}
+          <Link to={suite ? withSuite('/connexion', suite) : '/connexion'}>Se connecter</Link>
         </>
       }
     >
@@ -141,7 +146,7 @@ export default function Signup() {
         </Button>
       </form>
 
-      <GoogleSignIn onError={setFailure} />
+      <GoogleSignIn onError={setFailure} suite={suite} />
     </AuthLayout>
   );
 }

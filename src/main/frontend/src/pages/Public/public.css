@@ -1,0 +1,123 @@
+/*
+ * The two offer pages a reader without an account gets. They stand on the
+ * frame's measure and reuse the application's own listing and document, so an
+ * offer reads the same wherever it is opened.
+ */
+
+/* The document's side column sticks under the public header, as it does under
+   the application's own. */
+.public {
+  --header-h: var(--pubhead-h);
+}
+
+/* ---- The band that names the page --------------------------------------- */
+
+.pubband--head {
+  background: var(--paper);
+  border-bottom: 1px solid var(--border);
+}
+
+.pubhead-band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding-block: var(--space-6) var(--space-5);
+}
+
+.pubhead-band__title {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.pubtitle {
+  font-size: var(--size-4xl);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+  overflow-wrap: anywhere;
+}
+
+.pubtitle__note {
+  color: var(--text-secondary);
+  font-size: var(--size-sm);
+}
+
+.pubback {
+  align-self: start;
+  font-size: var(--size-sm);
+  font-weight: var(--weight-medium);
+}
+
+/* ---- The filters -------------------------------------------------------- */
+
+/* Both narrow the listing at once, so neither is a mode: they sit on one row
+   with the tally they produce at its end. */
+.pubfilters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-4);
+}
+
+.pubfilters__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.pubfilters__search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pubfilters__icon {
+  position: absolute;
+  left: var(--space-3);
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.pubfilters__input {
+  padding-left: var(--space-7);
+  min-width: 16rem;
+}
+
+/* The search control's own clear button, which the icon would otherwise sit
+   opposite in two different sizes. */
+.pubfilters__input::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
+.pubfilters__count {
+  padding-bottom: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+}
+
+/* ---- The listing and the document --------------------------------------- */
+
+.pubband--list,
+.pubband--doc {
+  padding-block: var(--space-6) var(--space-8);
+}
+
+@media (max-width: 48rem) {
+  .pubfilters {
+    width: 100%;
+  }
+
+  .pubfilters__field {
+    flex: 1;
+  }
+
+  .pubfilters__input {
+    min-width: 0;
+    width: 100%;
+  }
+}

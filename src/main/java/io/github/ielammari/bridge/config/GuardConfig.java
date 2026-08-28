@@ -18,7 +18,11 @@ public class GuardConfig implements WebMvcConfigurer {
 
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
-		registry.addInterceptor(accountSetupGuard).addPathPatterns("/api/**");
+		// The public offers are not the account's to owe anything for, so an
+		// account still owing a setup step reads them like any visitor.
+		registry.addInterceptor(accountSetupGuard)
+				.addPathPatterns("/api/**")
+				.excludePathPatterns("/api/v1/public/**");
 	}
 
 }

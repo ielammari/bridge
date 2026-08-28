@@ -1,0 +1,62 @@
+/* The reading column runs a step above the interface around it: the offer is
+   what the page is for, and the terms beside it are scanned rather than read. */
+.doc--side-first > .doc__main {
+  font-size: calc(var(--size-lg) + 0.1rem);
+}
+
+/* Everything inside the column is a ratio of the column's own size, so the one
+   value above carries the whole section: the headings, the mark that opens a
+   hint, the pills and their padding move together with the reading. */
+.doc--side-first > .doc__main .doc__heading {
+  font-size: 0.75em;
+}
+
+.doc--side-first > .doc__main .infohint__trigger {
+  width: 1.43em;
+  height: 1.43em;
+  font-size: 1.17em;
+}
+
+.doc--side-first > .doc__main .offerdoc__group-title,
+.doc--side-first > .doc__main .offerdoc__none {
+  font-size: 0.875em;
+}
+
+.doc--side-first > .doc__main .tag {
+  padding: 0.2em 1em;
+  font-size: 0.75em;
+}
+
+/* Unclipped and held to a readable measure. The card in a listing clamps this
+   to two lines; here it is the point of the page, and the line breaks the
+   recruiter typed survive. */
+.offerdoc__desc {
+  max-width: 80ch;
+  white-space: pre-line;
+  color: var(--text-secondary);
+}
+
+.offerdoc__group + .offerdoc__group {
+  margin-top: var(--space-4);
+}
+
+.offerdoc__group-title {
+  margin-bottom: var(--space-2);
+  font-size: var(--size-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+
+.offerdoc__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.offerdoc__none {
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+}

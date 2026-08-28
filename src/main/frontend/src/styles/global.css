@@ -558,6 +558,26 @@ textarea,
 /* ---- A strip of hard facts ---------------------------------------------
    What gets scanned before a word of prose is read, so the values carry and
    the labels only name them. */
+/* ---- Traits ------------------------------------------------------------- */
+
+.tag {
+  padding: 2px var(--space-3);
+  border-radius: 999px;
+  font-size: var(--size-xs);
+}
+
+/* Required traits carry the accent weight; plus traits stay quiet. */
+.tag--required {
+  background: var(--status-en-revue-bg);
+  color: var(--status-en-revue);
+  font-weight: var(--weight-medium);
+}
+
+.tag--plus {
+  background: var(--surface-sunken);
+  color: var(--text-faint);
+}
+
 .terms {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(9rem, 100%), 1fr));

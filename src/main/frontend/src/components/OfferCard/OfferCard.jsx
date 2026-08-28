@@ -6,16 +6,17 @@ import './OfferCard.css';
 /**
  * One offer in a listing: what identifies the position, and nothing else. The
  * description and the traits belong to the offer's own page. `badge` and
- * `children` are the caller's, since each role acts on an offer differently.
+ * `children` are the caller's, since each role acts on an offer differently,
+ * and `to` names where the title leads for a reader outside the application.
  */
-export default function OfferCard({ offer, badge, children }) {
+export default function OfferCard({ offer, to, badge, children }) {
   const salary = salaryText(offer.salaryMin, offer.salaryMax);
 
   return (
     <li className="tile tile--openable offercard">
       <div className="offercard__head">
         <h2 className="tile__title offercard__title">
-          <OfferLink id={offer.id} className="tile__stretch">{offer.title}</OfferLink>
+          <OfferLink id={offer.id} to={to} className="tile__stretch">{offer.title}</OfferLink>
         </h2>
         {badge}
       </div>

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { DEGREE_LABELS } from '../../constants/enums.js';
 import './MatchNote.css';
 
@@ -23,7 +24,10 @@ export function MatchMark({ match }) {
   return <span className="matchmark">Incompatible</span>;
 }
 
-/** The same state on the offer's page, where it says what is missing. */
+/**
+ * The same state on the offer's page, where it says what is missing and leads
+ * to the profile that declares it.
+ */
 export default function MatchNote({ match, requiredDegree }) {
   if (!match || match.compatible) return null;
 
@@ -31,6 +35,7 @@ export default function MatchNote({ match, requiredDegree }) {
     <p className="matchnote">
       <span className="matchnote__mark">Incompatible</span>
       <span className="matchnote__why">{reasonsFor(match, requiredDegree).join(' · ')}</span>
+      <Link to="/profil" className="matchnote__fix">Compléter mon profil</Link>
     </p>
   );
 }

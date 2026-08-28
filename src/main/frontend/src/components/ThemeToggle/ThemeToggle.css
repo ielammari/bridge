@@ -1,0 +1,23 @@
+/* Square, the height of the controls it sits beside, on the rail's own grounds. */
+.themetoggle {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--rail-edge);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--rail-text);
+  font-size: var(--size-lg);
+  cursor: pointer;
+  transition: background var(--duration) var(--ease), color var(--duration) var(--ease);
+}
+
+.themetoggle:hover {
+  background: var(--rail-hover);
+  color: var(--rail-text-active);
+}
+
+.themetoggle:active {
+  background: var(--rail-active);
+}

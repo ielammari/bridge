@@ -49,6 +49,9 @@ public class SecurityConfig {
 								"/api/v1/auth/google")
 						.permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/v1/auth/providers").permitAll()
+						// The open positions, which a visitor reads before there is an
+						// account to read them with.
+						.requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
 						.requestMatchers("/api/v1/profile/**").hasRole("CANDIDAT")
 						// The candidate feed is matched before the general offer rules,
 						// which are reserved for HR management.

@@ -24,3 +24,11 @@
 .matchnote__why::first-letter {
   text-transform: uppercase;
 }
+
+/* The way to fix what the note reports. On its own line, so the reason reads
+   as one sentence before the action does. */
+.matchnote__fix {
+  flex-basis: 100%;
+  font-weight: var(--weight-medium);
+  text-decoration: underline;
+}

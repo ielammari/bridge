@@ -6,8 +6,8 @@ import { profileApi } from '../../api/profile.js';
 import ApplyDialog from '../../components/ApplyDialog/ApplyDialog.jsx';
 import Button from '../../components/Button/Button.jsx';
 import ErrorState from '../../components/ErrorState/ErrorState.jsx';
-import InfoHint from '../../components/InfoHint/InfoHint.jsx';
 import MatchNote from '../../components/MatchNote/MatchNote.jsx';
+import OfferDocument from '../../components/OfferDocument/OfferDocument.jsx';
 import SaveOffer from '../../components/SaveOffer/SaveOffer.jsx';
 import Skeleton from '../../components/Skeleton/Skeleton.jsx';
 import StatusBadge from '../../components/StatusBadge/StatusBadge.jsx';
@@ -88,8 +88,6 @@ export default function OfferPage() {
   }
 
   const { offer, saved, publisherName, alreadyApplied, applicationCount, match } = data;
-  const required = offer.requirements.filter((r) => r.mandatory);
-  const plus = offer.requirements.filter((r) => !r.mandatory);
   const hasApplied = alreadyApplied || applied;
   const chosen = documents.find((cv) => cv.isDefault) ?? documents[0];
 
@@ -158,48 +156,7 @@ export default function OfferPage() {
         </aside>
 
         <div className="doc__main">
-        <section className="doc__section">
-          <h2 className="doc__heading">Le poste</h2>
-          {/* Runs at full length: this is the reason the page exists. */}
-          <p className="vitrine__desc">{offer.description}</p>
-        </section>
-
-        <section className="doc__section">
-          <h2 className="doc__heading">
-            Profil recherché
-            <InfoHint label="Obligatoire ou atout">
-              Les traits obligatoires conditionnent la candidature. Les autres comptent en votre
-              faveur sans être exigés.
-            </InfoHint>
-          </h2>
-
-          <div className="vitrine__group">
-            <h3 className="vitrine__group-title">Obligatoires</h3>
-            {required.length === 0 ? (
-              <p className="vitrine__none">Aucun trait obligatoire.</p>
-            ) : (
-              <ul className="vitrine__tags">
-                {required.map((r) => (
-                  <li key={r.traitId} className="tag tag--required">{r.label}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div className="vitrine__group">
-            <h3 className="vitrine__group-title">Atouts</h3>
-            {plus.length === 0 ? (
-              <p className="vitrine__none">Aucun atout déclaré.</p>
-            ) : (
-              <ul className="vitrine__tags">
-                {plus.map((r) => (
-                  <li key={r.traitId} className="tag tag--plus">{r.label}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </section>
-
+          <OfferDocument description={offer.description} requirements={offer.requirements} />
         </div>
       </div>
 

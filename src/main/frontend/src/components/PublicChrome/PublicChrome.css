@@ -1,0 +1,247 @@
+/*
+ * The public site's frame. It owns the page's horizontal rhythm: one gutter and
+ * one measure, read by the header, the foot and every band between them, so
+ * everything down the page stands on the same two edges.
+ */
+
+.public {
+  --pub-gutter: clamp(var(--space-5), 4vw, var(--space-8));
+  --pub-max: 88rem;
+  --pubhead-h: 4.5rem;
+
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--background);
+}
+
+.public__main {
+  flex: 1;
+}
+
+/* A band spans the window and paints it; its content stands on the measure. */
+.pubband {
+  width: 100%;
+}
+
+.pubband__inner {
+  max-width: var(--pub-max);
+  margin-inline: auto;
+  padding-inline: var(--pub-gutter);
+}
+
+/* An anchored section clears the header it would otherwise arrive under. */
+.pubband[id] {
+  scroll-margin-top: calc(var(--pubhead-h) + var(--space-4));
+}
+
+.pubskip {
+  position: absolute;
+  left: var(--space-3);
+  top: -4rem;
+  z-index: calc(var(--z-modal) + 1);
+  padding: var(--space-2) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  font-size: var(--size-sm);
+  font-weight: var(--weight-medium);
+  transition: top var(--duration) var(--ease);
+}
+
+.pubskip:focus {
+  top: var(--space-3);
+}
+
+/* ---- The header --------------------------------------------------------- */
+
+/* Navigation's own material, as in the application: the deepest plane, its own
+   foregrounds, and the accent scoped to the one that reads on it. */
+.pubhead {
+  --focus: var(--rail-accent);
+
+  position: sticky;
+  top: 0;
+  z-index: var(--z-nav);
+  background: var(--rail);
+  border-bottom: 1px solid var(--rail-edge);
+  color: var(--rail-text);
+}
+
+.pubhead__inner {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-5);
+  max-width: var(--pub-max);
+  margin-inline: auto;
+  min-height: var(--pubhead-h);
+  padding-inline: var(--pub-gutter);
+}
+
+/* The mark carries the brass rule of the auth panel, held back until the
+   pointer is on it. */
+.pubhead__brand {
+  font-family: var(--font-display);
+  font-size: var(--size-xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-heading);
+  line-height: 1;
+  color: var(--rail-text-active);
+  text-decoration: none;
+  padding-bottom: 2px;
+  border-bottom: 2px solid transparent;
+  transition: border-color var(--duration) var(--ease);
+}
+
+.pubhead__brand:hover {
+  color: var(--rail-text-active);
+  border-bottom-color: var(--rail-accent);
+}
+
+.pubhead__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.pubhead__link {
+  color: var(--rail-text);
+  font-size: var(--size-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  padding-block: var(--space-3);
+  transition: color var(--duration) var(--ease);
+}
+
+.pubhead__link:hover {
+  color: var(--rail-text-active);
+}
+
+/* Brass is what is current, here as in the rail. */
+.pubhead__link--current {
+  color: var(--rail-accent);
+}
+
+.pubhead__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* The way in reads as chrome, not as the page's action: the hero owns that. */
+.pubhead__enter {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  padding-inline: var(--space-4);
+  border: 1px solid var(--rail-edge);
+  border-radius: var(--radius);
+  color: var(--rail-text-active);
+  font-size: var(--size-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  transition: background-color var(--duration) var(--ease), border-color var(--duration) var(--ease);
+}
+
+.pubhead__enter:hover {
+  background: var(--rail-hover);
+  border-color: var(--rail-accent);
+  color: var(--rail-text-active);
+}
+
+.pubhead__enter:active {
+  background: var(--rail-active);
+}
+
+/* The nav takes a row of its own before the three parts crowd each other. */
+@media (max-width: 48rem) {
+  .public {
+    --pubhead-h: 6.5rem;
+  }
+
+  .pubhead__inner {
+    grid-template-columns: 1fr auto;
+    row-gap: var(--space-2);
+    padding-block: var(--space-3);
+  }
+
+  .pubhead__nav {
+    grid-row: 2;
+    grid-column: 1 / -1;
+    gap: var(--space-4);
+  }
+
+  .pubhead__link {
+    padding-block: var(--space-1);
+  }
+}
+
+/* ---- The foot ----------------------------------------------------------- */
+
+.pubfoot {
+  --focus: var(--rail-accent);
+
+  background: var(--rail);
+  border-top: 1px solid var(--rail-edge);
+  color: var(--rail-faint);
+}
+
+.pubfoot__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4) var(--space-6);
+  max-width: var(--pub-max);
+  margin-inline: auto;
+  padding: var(--space-6) var(--pub-gutter);
+}
+
+.pubfoot__brand {
+  font-family: var(--font-display);
+  font-size: var(--size-lg);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-heading);
+  color: var(--rail-text-active);
+  text-decoration: none;
+  padding-bottom: 2px;
+  border-bottom: 2px solid transparent;
+  transition: border-color var(--duration) var(--ease);
+}
+
+.pubfoot__brand:hover {
+  color: var(--rail-text-active);
+  border-bottom-color: var(--rail-accent);
+}
+
+.pubfoot__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+}
+
+.pubfoot__link {
+  color: var(--rail-text);
+  font-size: var(--size-sm);
+  text-decoration: none;
+  transition: color var(--duration) var(--ease);
+}
+
+.pubfoot__link:hover {
+  color: var(--rail-text-active);
+}
+
+/* The mark sits with the year rather than with the name, so its weight is the
+   one knob it needs. */
+.pubfoot__mark {
+  font-weight: 500;
+}
+
+/* Pushed to the far edge, where a colophon belongs. */
+.pubfoot__note {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--size-xs);
+  letter-spacing: var(--tracking-label);
+  color: var(--rail-faint);
+}

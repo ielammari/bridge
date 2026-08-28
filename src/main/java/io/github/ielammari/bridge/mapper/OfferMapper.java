@@ -16,13 +16,6 @@ public final class OfferMapper {
 	}
 
 	public static OfferDto toDto(JobOffer offer) {
-		// Required traits first, then alphabetical, so the view order is stable.
-		List<OfferRequirementDto> requirements = offer.getRequirements().stream()
-				.sorted(Comparator.comparing(OfferRequirement::isMandatory).reversed()
-						.thenComparing(r -> r.getTrait().getLabel()))
-				.map(OfferMapper::toRequirementDto)
-				.toList();
-
 		return new OfferDto(
 				offer.getId(),
 				offer.getTitle(),
@@ -37,7 +30,16 @@ public final class OfferMapper {
 				offer.getPublicationDate(),
 				offer.getStatus(),
 				offer.isWaitForAppointment(),
-				requirements);
+				requirements(offer));
+	}
+
+	/** Required traits first, then alphabetical, so the view order is stable. */
+	static List<OfferRequirementDto> requirements(JobOffer offer) {
+		return offer.getRequirements().stream()
+				.sorted(Comparator.comparing(OfferRequirement::isMandatory).reversed()
+						.thenComparing(r -> r.getTrait().getLabel()))
+				.map(OfferMapper::toRequirementDto)
+				.toList();
 	}
 
 	private static OfferRequirementDto toRequirementDto(OfferRequirement requirement) {

@@ -8,6 +8,7 @@ import Field from '../../components/Field/Field.jsx';
 import FormErrorSummary from '../../components/FormErrorSummary/FormErrorSummary.jsx';
 import PasswordField from '../../components/PasswordField/PasswordField.jsx';
 import { HOME_BY_ROLE } from '../../components/ProtectedRoute/ProtectedRoute.jsx';
+import { readSuite, withSuite } from '../../constants/navigation.js';
 import { emailFormat } from '../../constants/validation.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import useDocumentTitle from '../../hooks/useDocumentTitle.js';
@@ -38,13 +39,15 @@ export default function Login() {
 
   // Set when a session expired mid use, to explain the redirect.
   const expired = location.state?.expired;
+  // What signing in was interrupted for, if anything.
+  const suite = readSuite(location.search);
 
   const submit = form.handleSubmit(async (values) => {
     setFailure(null);
     setSubmitting(true);
     try {
       const user = await login({ email: values.email.trim(), password: values.password });
-      const target = location.state?.from?.pathname ?? HOME_BY_ROLE[user.role] ?? '/';
+      const target = suite ?? location.state?.from?.pathname ?? HOME_BY_ROLE[user.role] ?? '/';
       navigate(target, { replace: true });
     } catch (apiError) {
       setFailure(apiError.message);
@@ -58,7 +61,10 @@ export default function Login() {
       title="Se connecter"
       footer={
         <>
-          Pas encore de compte ? <Link to="/inscription">Créer un compte candidat</Link>
+          Pas encore de compte ?{' '}
+          <Link to={suite ? withSuite('/inscription', suite) : '/inscription'}>
+            Créer un compte candidat
+          </Link>
         </>
       }
     >
@@ -80,7 +86,7 @@ export default function Login() {
         </Button>
       </form>
 
-      <GoogleSignIn onError={setFailure} />
+      <GoogleSignIn onError={setFailure} suite={suite} />
     </AuthLayout>
   );
 }

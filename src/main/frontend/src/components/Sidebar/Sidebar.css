@@ -42,6 +42,12 @@
   font-weight: var(--weight-bold);
   letter-spacing: var(--tracking-display);
   color: var(--rail-text-active);
+  text-decoration: none;
+  transition: color var(--duration) var(--ease);
+}
+
+.sidebar__logo:hover {
+  color: var(--rail-accent);
 }
 
 .sidebar__logo-full,

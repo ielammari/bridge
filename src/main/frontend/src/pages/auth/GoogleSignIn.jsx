@@ -9,7 +9,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
  * button exists, so a blocked script or a server carrying no client id leaves
  * the page as it was.
  */
-export default function GoogleSignIn({ onError }) {
+export default function GoogleSignIn({ onError, suite }) {
   const { loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const clientId = useGoogleClientId();
@@ -20,12 +20,12 @@ export default function GoogleSignIn({ onError }) {
     setBusy(true);
     try {
       const user = await loginWithGoogle(credential);
-      navigate(landingFor(user), { replace: true });
+      navigate(suite ?? landingFor(user), { replace: true });
     } catch (apiError) {
       onError(apiError.message);
       setBusy(false);
     }
-  }, [loginWithGoogle, navigate, onError]);
+  }, [loginWithGoogle, navigate, onError, suite]);
 
   if (!clientId) return null;
 
