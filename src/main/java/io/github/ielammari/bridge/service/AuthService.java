@@ -2,19 +2,26 @@ package io.github.ielammari.bridge.service;
 
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.Optional;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.github.ielammari.bridge.dto.AuthProvidersDto;
 import io.github.ielammari.bridge.dto.AuthResponse;
+import io.github.ielammari.bridge.dto.GoogleSignInRequest;
 import io.github.ielammari.bridge.dto.LoginRequest;
+import io.github.ielammari.bridge.dto.ProfileCompletionRequest;
 import io.github.ielammari.bridge.dto.RegisterRequest;
+import io.github.ielammari.bridge.dto.UserSummary;
 import io.github.ielammari.bridge.exception.ApiException;
 import io.github.ielammari.bridge.mapper.UserMapper;
 import io.github.ielammari.bridge.model.Candidate;
 import io.github.ielammari.bridge.model.User;
 import io.github.ielammari.bridge.repository.UserRepository;
+import io.github.ielammari.bridge.security.GoogleIdentityService;
+import io.github.ielammari.bridge.security.GoogleIdentityService.GoogleAccount;
 import io.github.ielammari.bridge.security.JwtService;
 
 @Service
@@ -26,11 +33,20 @@ public class AuthService {
 	private final UserRepository users;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtService jwtService;
+	private final GoogleIdentityService google;
 
-	public AuthService(UserRepository users, PasswordEncoder passwordEncoder, JwtService jwtService) {
+	public AuthService(UserRepository users, PasswordEncoder passwordEncoder, JwtService jwtService,
+			GoogleIdentityService google) {
 		this.users = users;
 		this.passwordEncoder = passwordEncoder;
 		this.jwtService = jwtService;
+		this.google = google;
+	}
+
+	/** Which sign in methods the auth pages may offer. */
+	@Transactional(readOnly = true)
+	public AuthProvidersDto providers() {
+		return new AuthProvidersDto(google.isConfigured() ? google.clientId() : null);
 	}
 
 	/** Public signup. Creates a candidate; HR and expert accounts are provisioned separately. */
@@ -63,11 +79,65 @@ public class AuthService {
 		User user = users.findByEmailIgnoreCase(normalize(request.email()))
 				.orElseThrow(ApiException::invalidCredentials);
 
+		if (user.getPasswordHash() == null) {
+			throw ApiException.unauthorized("GOOGLE_ACCOUNT_ONLY",
+					"Ce compte se connecte avec Google.");
+		}
 		if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
 			throw ApiException.invalidCredentials();
 		}
 
 		return respond(user);
+	}
+
+	/**
+	 * Signs in the account holding the verified Google subject, or creates a
+	 * candidate for a subject and address nobody holds. An address that already
+	 * belongs to a password account is refused: linking the two is a deliberate
+	 * act, taken from the settings of a session that proved the password.
+	 */
+	@Transactional
+	public AuthResponse signInWithGoogle(GoogleSignInRequest request) {
+		GoogleAccount account = google.verify(request.idToken());
+
+		Optional<User> linked = users.findByGoogleSub(account.subject());
+		if (linked.isPresent()) {
+			return respond(linked.get());
+		}
+
+		if (users.existsByEmailIgnoreCase(account.email())) {
+			throw ApiException.conflict("GOOGLE_ACCOUNT_NOT_LINKED",
+					"Un compte existe déjà avec cette adresse email. Connectez-vous avec votre mot de passe, "
+							+ "puis associez Google depuis vos paramètres.");
+		}
+
+		Candidate candidate = new Candidate(account.email(), null, account.firstName(), account.lastName(),
+				null, null, null, null, null);
+		candidate.setGoogleSub(account.subject());
+
+		return respond(users.save(candidate));
+	}
+
+	/** The details a Google signup could not supply. */
+	@Transactional
+	public UserSummary completeProfile(Integer userId, ProfileCompletionRequest request) {
+		User user = requireById(userId);
+
+		if (!user.mustCompleteProfile()) {
+			throw ApiException.badRequest("PROFILE_ALREADY_COMPLETE", "Ce profil est déjà complet.");
+		}
+
+		checkAge(request.birthDate());
+
+		user.setFirstName(request.firstName().trim());
+		user.setLastName(request.lastName().trim());
+		user.setPhone(blankToNull(request.phone()));
+		user.setBirthDate(request.birthDate());
+		user.setGender(request.gender());
+		user.setCity(blankToNull(request.city()));
+		user.setCountry(blankToNull(request.country()));
+
+		return UserMapper.toSummary(user);
 	}
 
 	@Transactional(readOnly = true)

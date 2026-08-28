@@ -36,6 +36,11 @@ bridge:
     # environment that is not local development.
     secret: ${BRIDGE_JWT_SECRET:dev-secret-change-me-0123456789abcdefghijklmnop}
     expiry: PT24H
+  oauth:
+    google:
+      # The public client id from the Google console. Left empty, the auth pages
+      # offer no Google button and the endpoint refuses.
+      client-id: ${BRIDGE_GOOGLE_CLIENT_ID:}
   storage:
     # Relative paths to the CV files are stored in the database, never the bytes.
     cv-dir: ${BRIDGE_CV_DIR:./storage/cv}

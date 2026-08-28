@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import Login from './pages/auth/Login.jsx';
 import Signup from './pages/auth/Signup.jsx';
 import ForcedPassword from './pages/auth/ForcedPassword.jsx';
+import CompleteProfile from './pages/auth/CompleteProfile.jsx';
 import Profile from './pages/Profile/Profile.jsx';
 import OffersPage from './pages/Offers/OffersPage.jsx';
 import OfferEditor from './pages/Offers/OfferEditor.jsx';
@@ -54,6 +55,16 @@ export default function App() {
         element={
           <ProtectedRoute>
             <ForcedPassword />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* The same, for an account created from a Google identity. */}
+      <Route
+        path="/inscription/finaliser"
+        element={
+          <ProtectedRoute>
+            <CompleteProfile />
           </ProtectedRoute>
         }
       />

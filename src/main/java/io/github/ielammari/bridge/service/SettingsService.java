@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import io.github.ielammari.bridge.dto.AccountDto;
 import io.github.ielammari.bridge.dto.AccountRequest;
+import io.github.ielammari.bridge.dto.GoogleSignInRequest;
 import io.github.ielammari.bridge.dto.NotificationPreferencesDto;
 import io.github.ielammari.bridge.dto.OrganisationSettingsDto;
 import io.github.ielammari.bridge.dto.PasswordChangeRequest;
@@ -26,6 +27,8 @@ import io.github.ielammari.bridge.model.User;
 import io.github.ielammari.bridge.repository.NotificationPreferenceRepository;
 import io.github.ielammari.bridge.repository.OrganisationSettingsRepository;
 import io.github.ielammari.bridge.repository.UserRepository;
+import io.github.ielammari.bridge.security.GoogleIdentityService;
+import io.github.ielammari.bridge.security.GoogleIdentityService.GoogleAccount;
 
 /** Everything an actor can configure, about themselves or about the company. */
 @Service
@@ -35,13 +38,16 @@ public class SettingsService {
 	private final NotificationPreferenceRepository preferences;
 	private final OrganisationSettingsRepository organisation;
 	private final PasswordEncoder passwordEncoder;
+	private final GoogleIdentityService google;
 
 	public SettingsService(UserRepository users, NotificationPreferenceRepository preferences,
-			OrganisationSettingsRepository organisation, PasswordEncoder passwordEncoder) {
+			OrganisationSettingsRepository organisation, PasswordEncoder passwordEncoder,
+			GoogleIdentityService google) {
 		this.users = users;
 		this.preferences = preferences;
 		this.organisation = organisation;
 		this.passwordEncoder = passwordEncoder;
+		this.google = google;
 	}
 
 	// ---- The account ----------------------------------------------------
@@ -80,6 +86,15 @@ public class SettingsService {
 	public void changePassword(Integer userId, PasswordChangeRequest request) {
 		User user = require(userId);
 
+		// An account reaching the application through Google alone has no
+		// password to prove, so this sets its first one.
+		if (user.getPasswordHash() == null) {
+			PasswordPolicy.check(request.newPassword(), user.getEmail(), user.getFirstName(), user.getLastName());
+			user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+			user.setMustChangePassword(false);
+			return;
+		}
+
 		if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
 			throw ApiException.badRequest("WRONG_PASSWORD", "Le mot de passe actuel est incorrect.");
 		}
@@ -91,6 +106,50 @@ public class SettingsService {
 		PasswordPolicy.check(request.newPassword(), user.getEmail(), user.getFirstName(), user.getLastName());
 		user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
 		user.setMustChangePassword(false);
+	}
+
+	// ---- The Google identity --------------------------------------------
+
+	/**
+	 * Associates a verified Google identity with the account in session. Both
+	 * sides are proven: the password opened this session, and Google signed the
+	 * token. The address the two hold need not be the same one.
+	 */
+	@Transactional
+	public UserSummary linkGoogle(Integer userId, GoogleSignInRequest request) {
+		User user = require(userId);
+		if (user.getRole() != Role.CANDIDAT) {
+			throw ApiException.forbidden("GOOGLE_LINK_NOT_ALLOWED",
+					"La connexion Google est réservée aux comptes candidats.");
+		}
+
+		GoogleAccount account = google.verify(request.idToken());
+		users.findByGoogleSub(account.subject())
+				.filter(other -> !other.getId().equals(userId))
+				.ifPresent(other -> {
+					throw ApiException.conflict("GOOGLE_ALREADY_LINKED",
+							"Ce compte Google est déjà associé à un autre compte.");
+				});
+
+		user.setGoogleSub(account.subject());
+		return UserMapper.toSummary(user);
+	}
+
+	/** Removing the association, which a password has to survive. */
+	@Transactional
+	public UserSummary unlinkGoogle(Integer userId) {
+		User user = require(userId);
+		if (user.getGoogleSub() == null) {
+			throw ApiException.badRequest("GOOGLE_NOT_LINKED",
+					"Aucun compte Google n'est associé à ce compte.");
+		}
+		if (user.getPasswordHash() == null) {
+			throw ApiException.badRequest("PASSWORD_REQUIRED_FIRST",
+					"Définissez un mot de passe avant de dissocier votre compte Google.");
+		}
+
+		user.setGoogleSub(null);
+		return UserMapper.toSummary(user);
 	}
 
 	// ---- Notifications --------------------------------------------------

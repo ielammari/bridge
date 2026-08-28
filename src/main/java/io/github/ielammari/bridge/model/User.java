@@ -36,7 +36,8 @@ public abstract class User {
 	@Column(name = "email", nullable = false, unique = true, length = 150)
 	private String email;
 
-	@Column(name = "mot_de_passe", nullable = false, length = 255)
+	/** Absent on an account that reaches the application through Google alone. */
+	@Column(name = "mot_de_passe", length = 255)
 	private String passwordHash;
 
 	@Column(name = "nom", nullable = false, length = 80)
@@ -68,6 +69,10 @@ public abstract class User {
 	@Column(name = "mot_de_passe_a_changer", nullable = false)
 	private boolean mustChangePassword;
 
+	/** The Google subject this account is linked to, unique across accounts. */
+	@Column(name = "google_sub", length = 255)
+	private String googleSub;
+
 	protected User() {
 	}
 
@@ -95,6 +100,15 @@ public abstract class User {
 	 * class to learn which role an account holds.
 	 */
 	public abstract Role getRole();
+
+	/**
+	 * Whether the application still owes this account a profile step before it
+	 * answers anything else. Only a subtype that can be created without its own
+	 * details answers yes.
+	 */
+	public boolean mustCompleteProfile() {
+		return false;
+	}
 
 	public Integer getId() {
 		return id;
@@ -178,6 +192,14 @@ public abstract class User {
 
 	public void setMustChangePassword(boolean mustChangePassword) {
 		this.mustChangePassword = mustChangePassword;
+	}
+
+	public String getGoogleSub() {
+		return googleSub;
+	}
+
+	public void setGoogleSub(String googleSub) {
+		this.googleSub = googleSub;
 	}
 
 	public LocalDate getRegistrationDate() {

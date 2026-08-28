@@ -15,6 +15,8 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
 	boolean existsByEmailIgnoreCase(String email);
 
+	Optional<User> findByGoogleSub(String googleSub);
+
 	// No appointment is tied to a specific expert, so an exam notification goes
 	// to every technical expert.
 	@Query("SELECT e FROM TechnicalExpert e")

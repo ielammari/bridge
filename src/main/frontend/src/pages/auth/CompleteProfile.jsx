@@ -1,35 +1,19 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { authApi } from '../../api/auth.js';
 import AuthLayout from './AuthLayout.jsx';
-import GoogleSignIn from './GoogleSignIn.jsx';
 import Alert from '../../components/Alert/Alert.jsx';
 import Button from '../../components/Button/Button.jsx';
 import Field from '../../components/Field/Field.jsx';
 import FormErrorSummary from '../../components/FormErrorSummary/FormErrorSummary.jsx';
-import PasswordField from '../../components/PasswordField/PasswordField.jsx';
-import PasswordRules from '../../components/PasswordField/PasswordRules.jsx';
 import Select from '../../components/Select/Select.jsx';
 import { HOME_BY_ROLE } from '../../components/ProtectedRoute/ProtectedRoute.jsx';
 import { GENDER_OPTIONS } from '../../constants/enums.js';
 import { localDate } from '../../constants/format.js';
-import { passwordProblem } from '../../constants/password.js';
-import { birthDateProblem, emailFormat, phoneFormat } from '../../constants/validation.js';
+import { birthDateProblem, phoneFormat } from '../../constants/validation.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import useDocumentTitle from '../../hooks/useDocumentTitle.js';
 import useForm from '../../hooks/useForm.js';
-
-const EMPTY = {
-  firstName: '',
-  lastName: '',
-  birthDate: '',
-  gender: '',
-  email: '',
-  phone: '',
-  city: '',
-  country: '',
-  password: '',
-  passwordConfirm: '',
-};
 
 const RULES = {
   firstName: { label: 'Prénom', required: 'Indiquez votre prénom.' },
@@ -40,67 +24,69 @@ const RULES = {
     format: birthDateProblem,
   },
   gender: { label: 'Sexe' },
-  email: {
-    label: 'Adresse email',
-    required: 'Indiquez votre adresse email.',
-    format: emailFormat,
-  },
   phone: { label: 'Téléphone', format: phoneFormat },
   city: { label: 'Ville' },
   country: { label: 'Pays' },
-  password: {
-    label: 'Mot de passe',
-    required: 'Choisissez un mot de passe.',
-    format: (value, values) => passwordProblem(value, values),
-  },
-  passwordConfirm: {
-    label: 'Confirmation du mot de passe',
-    required: 'Saisissez à nouveau votre mot de passe.',
-    format: (value, values) =>
-      value === values.password ? null : 'Les deux mots de passe ne sont pas identiques.',
-  },
 };
 
-export default function Signup() {
-  useDocumentTitle('Créer un compte');
+/**
+ * The details a Google signup could not supply. Nothing else in the
+ * application answers until they are given.
+ */
+export default function CompleteProfile() {
+  useDocumentTitle('Compléter votre profil');
 
-  const { register } = useAuth();
+  const { user, refresh, logout } = useAuth();
   const navigate = useNavigate();
 
-  const form = useForm(EMPTY, RULES);
+  const form = useForm({
+    firstName: user.firstName ?? '',
+    lastName: user.lastName ?? '',
+    birthDate: '',
+    gender: '',
+    phone: '',
+    city: '',
+    country: '',
+  }, RULES);
+
   const [failure, setFailure] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Reached by its own address by somebody whose profile is already complete.
+  if (!user.mustCompleteProfile) {
+    return <Navigate to={HOME_BY_ROLE[user.role] ?? '/'} replace />;
+  }
 
   const submit = form.handleSubmit(async (values) => {
     setFailure(null);
-    setSubmitting(true);
+    setSaving(true);
     try {
-      const user = await register({
+      await authApi.complete({
         firstName: values.firstName.trim(),
         lastName: values.lastName.trim(),
         birthDate: values.birthDate,
         gender: values.gender || null,
-        email: values.email.trim(),
         phone: values.phone.trim(),
         city: values.city.trim(),
         country: values.country.trim(),
-        password: values.password,
       });
-      navigate(HOME_BY_ROLE[user.role] ?? '/', { replace: true });
+      const updated = await refresh();
+      navigate(HOME_BY_ROLE[updated.role] ?? '/', { replace: true });
     } catch (apiError) {
       setFailure(apiError.message);
-      setSubmitting(false);
+      setSaving(false);
     }
   });
 
   return (
     <AuthLayout
       wide
-      title="Créer un compte"
-      intro="Le compte créé ici est un compte candidat."
+      title="Compléter votre profil"
+      intro={`Bienvenue ${user.firstName}. Google ne transmet pas votre date de naissance, nécessaire pour accéder à l'application.`}
       footer={
         <>
-          Vous avez déjà un compte ? <Link to="/connexion">Se connecter</Link>
+          Ce n'est pas votre compte ?{' '}
+          <Button variant="text" onClick={logout}>Se déconnecter</Button>
         </>
       }
     >
@@ -117,31 +103,19 @@ export default function Signup() {
           <Select label="Sexe" options={GENDER_OPTIONS} placeholder="Ne pas préciser"
             hint="Facultatif" {...form.field('gender')} />
 
-          <Field label="Adresse email" type="email" autoComplete="email" {...form.field('email')} />
           <Field label="Téléphone" type="tel" autoComplete="tel" hint="Facultatif"
             {...form.field('phone')} />
-
           <Field label="Ville" autoComplete="address-level2" hint="Facultatif"
             {...form.field('city')} />
+
           <Field label="Pays" autoComplete="country-name" hint="Facultatif"
             {...form.field('country')} />
-
-          <PasswordField label="Mot de passe" autoComplete="new-password" rulesId="password-rules"
-            {...form.field('password')} />
-          <PasswordField label="Confirmer le mot de passe" autoComplete="new-password"
-            {...form.field('passwordConfirm')} />
-
-          <div className="auth__span">
-            <PasswordRules id="password-rules" value={form.values.password} context={form.values} />
-          </div>
         </div>
 
-        <Button type="submit" fullWidth loading={submitting}>
-          Créer mon compte
+        <Button type="submit" fullWidth loading={saving}>
+          Enregistrer et continuer
         </Button>
       </form>
-
-      <GoogleSignIn onError={setFailure} />
     </AuthLayout>
   );
 }

@@ -9,25 +9,28 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import io.github.ielammari.bridge.exception.ApiException;
+import io.github.ielammari.bridge.model.User;
 import io.github.ielammari.bridge.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
- * An account created by somebody else starts on a password that person chose,
- * and nothing else in the application answers it until its holder replaces that
- * password. Reading who you are and making the change stay open.
+ * An account can owe a step before the application belongs to it: a password
+ * somebody else chose, or details a Google signup could not supply. Nothing
+ * else answers until that step is taken. Reading who you are, and taking the
+ * step, stay open.
  */
 @Component
-public class PasswordChangeGuard implements HandlerInterceptor {
+public class AccountSetupGuard implements HandlerInterceptor {
 
 	private static final Set<String> OPEN = Set.of(
 			"/api/v1/auth/me",
+			"/api/v1/auth/complete",
 			"/api/v1/settings/password");
 
 	private final UserRepository users;
 
-	public PasswordChangeGuard(UserRepository users) {
+	public AccountSetupGuard(UserRepository users) {
 		this.users = users;
 	}
 
@@ -43,9 +46,18 @@ public class PasswordChangeGuard implements HandlerInterceptor {
 		}
 
 		Integer id = Integer.valueOf(token.getToken().getSubject());
-		if (users.findById(id).filter(user -> user.isMustChangePassword()).isPresent()) {
+		User user = users.findById(id).orElse(null);
+		if (user == null) {
+			return true;
+		}
+
+		if (user.isMustChangePassword()) {
 			throw ApiException.forbidden("PASSWORD_CHANGE_REQUIRED",
 					"Choisissez un nouveau mot de passe avant d'utiliser ce compte.");
+		}
+		if (user.mustCompleteProfile()) {
+			throw ApiException.forbidden("PROFILE_COMPLETION_REQUIRED",
+					"Complétez votre profil avant d'utiliser ce compte.");
 		}
 		return true;
 	}

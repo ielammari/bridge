@@ -9,5 +9,8 @@ public record UserSummary(
 		String firstName,
 		String lastName,
 		Role role,
-		boolean mustChangePassword) {
+		boolean mustChangePassword,
+		boolean mustCompleteProfile,
+		boolean googleLinked,
+		boolean hasPassword) {
 }

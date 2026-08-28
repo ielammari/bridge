@@ -1,0 +1,13 @@
+/* Google draws a 40px button. The row holds the 44px of our own, so a column
+   that stacks the two keeps one rhythm. */
+.gbutton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.gbutton--busy {
+  opacity: 0.45;
+  pointer-events: none;
+}

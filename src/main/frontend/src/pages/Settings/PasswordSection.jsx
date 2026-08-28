@@ -7,15 +7,19 @@ import PasswordField from '../../components/PasswordField/PasswordField.jsx';
 import PasswordRules from '../../components/PasswordField/PasswordRules.jsx';
 import { useToast } from '../../components/Toast/ToastContext.jsx';
 import { passwordProblem } from '../../constants/password.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 import useForm from '../../hooks/useForm.js';
 
 const EMPTY = { currentPassword: '', newPassword: '', confirmPassword: '' };
 
-const RULES = {
+const CURRENT = {
   currentPassword: {
     label: 'Mot de passe actuel',
     required: 'Saisissez votre mot de passe actuel.',
   },
+};
+
+const RULES = {
   newPassword: {
     label: 'Nouveau mot de passe',
     required: 'Choisissez un nouveau mot de passe.',
@@ -32,21 +36,30 @@ const RULES = {
   },
 };
 
-/** Changing the password, proven by the current one. */
+/**
+ * Changing the password, proven by the current one. An account that reaches
+ * the application through Google alone has none to prove, so it sets its
+ * first one here instead.
+ */
 export default function PasswordSection() {
   const toast = useToast();
+  const { user, refresh } = useAuth();
   const [saving, setSaving] = useState(false);
-  const form = useForm(EMPTY, RULES);
+
+  const first = !user.hasPassword;
+  const rules = first ? RULES : { ...CURRENT, ...RULES };
+  const form = useForm(EMPTY, rules);
 
   const submit = form.handleSubmit(async (values) => {
     setSaving(true);
     try {
       await settingsApi.changePassword({
-        currentPassword: values.currentPassword,
+        currentPassword: first ? null : values.currentPassword,
         newPassword: values.newPassword,
       });
       form.setValues(EMPTY);
-      toast.success('Mot de passe modifié.');
+      if (first) await refresh();
+      toast.success(first ? 'Mot de passe défini.' : 'Mot de passe modifié.');
     } catch (apiError) {
       toast.error(apiError.message);
     } finally {
@@ -58,29 +71,40 @@ export default function PasswordSection() {
     <form className="card" onSubmit={submit} noValidate>
       <div className="card__head">
         <h2 className="card__title">
-          Mot de passe
-          <InfoHint label="Pourquoi le mot de passe actuel">
-            Le mot de passe actuel est demandé pour qu'une session laissée ouverte ne suffise pas à le changer.
-          </InfoHint>
+          {first ? 'Définir un mot de passe' : 'Mot de passe'}
+          {!first && (
+            <InfoHint label="Pourquoi le mot de passe actuel">
+              Le mot de passe actuel est demandé pour qu'une session laissée ouverte ne suffise pas à le changer.
+            </InfoHint>
+          )}
         </h2>
       </div>
       <div className="card__body">
-        <FormErrorSummary errors={form.currentErrors()} rules={RULES} />
+        <FormErrorSummary errors={form.currentErrors()} rules={rules} />
 
-        <PasswordField label="Mot de passe actuel" autoComplete="current-password"
-          {...form.field('currentPassword')} />
+        {first ? (
+          <p className="settings__note">
+            Ce compte se connecte avec Google. Un mot de passe est une seconde façon d'y accéder.
+          </p>
+        ) : (
+          <PasswordField label="Mot de passe actuel" autoComplete="current-password"
+            {...form.field('currentPassword')} />
+        )}
 
         <div className="settings__grid">
-          <PasswordField label="Nouveau mot de passe" autoComplete="new-password"
+          <PasswordField label={first ? 'Mot de passe' : 'Nouveau mot de passe'}
+            autoComplete="new-password"
             rulesId="new-password-rules" {...form.field('newPassword')} />
-          <PasswordField label="Confirmer le nouveau mot de passe" autoComplete="new-password"
-            {...form.field('confirmPassword')} />
+          <PasswordField label={first ? 'Confirmer le mot de passe' : 'Confirmer le nouveau mot de passe'}
+            autoComplete="new-password" {...form.field('confirmPassword')} />
         </div>
 
         <PasswordRules id="new-password-rules" value={form.values.newPassword} context={form.values} />
 
         <div className="settings__actions">
-          <Button type="submit" loading={saving}>Modifier le mot de passe</Button>
+          <Button type="submit" loading={saving}>
+            {first ? 'Définir le mot de passe' : 'Modifier le mot de passe'}
+          </Button>
         </div>
       </div>
     </form>

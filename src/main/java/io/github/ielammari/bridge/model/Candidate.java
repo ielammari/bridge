@@ -44,6 +44,15 @@ public class Candidate extends User {
 		return Role.CANDIDAT;
 	}
 
+	/**
+	 * A candidate reaching the application through Google arrives without a
+	 * birth date, which the working age check needs.
+	 */
+	@Override
+	public boolean mustCompleteProfile() {
+		return getBirthDate() == null;
+	}
+
 	public String getCvPath() {
 		return cvPath;
 	}

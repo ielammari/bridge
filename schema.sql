@@ -298,7 +298,7 @@ ALTER SEQUENCE public.trait_id_trait_seq OWNED BY public.trait.id_trait;
 CREATE TABLE public.utilisateur (
     id_utilisateur integer NOT NULL,
     email character varying(150) NOT NULL,
-    mot_de_passe character varying(255) NOT NULL,
+    mot_de_passe character varying(255),
     nom character varying(80) NOT NULL,
     prenom character varying(80) NOT NULL,
     telephone character varying(20),
@@ -309,7 +309,9 @@ CREATE TABLE public.utilisateur (
     ville character varying(100),
     pays character varying(100),
     mot_de_passe_a_changer boolean DEFAULT false NOT NULL,
+    google_sub character varying(255),
     CONSTRAINT ck_utilisateur_date_naissance CHECK (((date_naissance IS NULL) OR (date_naissance < CURRENT_DATE))),
+    CONSTRAINT ck_utilisateur_identite CHECK (((mot_de_passe IS NOT NULL) OR (google_sub IS NOT NULL))),
     CONSTRAINT ck_utilisateur_role CHECK (((role)::text = ANY ((ARRAY['CANDIDAT'::character varying, 'RH'::character varying, 'EXPERT'::character varying])::text[]))),
     CONSTRAINT ck_utilisateur_sexe CHECK (((sexe IS NULL) OR ((sexe)::text = ANY ((ARRAY['HOMME'::character varying, 'FEMME'::character varying, 'AUTRE'::character varying])::text[]))))
 );
@@ -431,6 +433,9 @@ ALTER TABLE ONLY public.rendez_vous
 
 ALTER TABLE ONLY public.trait
     ADD CONSTRAINT uq_trait_libelle_categorie UNIQUE (id_categorie, libelle);
+
+ALTER TABLE ONLY public.utilisateur
+    ADD CONSTRAINT uq_utilisateur_google_sub UNIQUE (google_sub);
 
 ALTER TABLE ONLY public.utilisateur
     ADD CONSTRAINT utilisateur_email_key UNIQUE (email);

@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.github.ielammari.bridge.dto.AccountDto;
 import io.github.ielammari.bridge.dto.AccountRequest;
+import io.github.ielammari.bridge.dto.GoogleSignInRequest;
 import io.github.ielammari.bridge.dto.NotificationPreferencesDto;
 import io.github.ielammari.bridge.dto.OrganisationSettingsDto;
 import io.github.ielammari.bridge.dto.PasswordChangeRequest;
@@ -50,6 +52,18 @@ public class SettingsController {
 	public void changePassword(@AuthenticationPrincipal Jwt jwt,
 			@Valid @RequestBody PasswordChangeRequest request) {
 		settingsService.changePassword(currentUserId(jwt), request);
+	}
+
+	/** Associates a Google identity with the account in session. */
+	@PutMapping("/google")
+	public UserSummary linkGoogle(@AuthenticationPrincipal Jwt jwt,
+			@Valid @RequestBody GoogleSignInRequest request) {
+		return settingsService.linkGoogle(Integer.valueOf(jwt.getSubject()), request);
+	}
+
+	@DeleteMapping("/google")
+	public UserSummary unlinkGoogle(@AuthenticationPrincipal Jwt jwt) {
+		return settingsService.unlinkGoogle(Integer.valueOf(jwt.getSubject()));
 	}
 
 	@GetMapping("/notifications")

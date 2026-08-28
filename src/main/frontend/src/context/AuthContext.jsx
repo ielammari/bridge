@@ -84,6 +84,11 @@ export function AuthProvider({ children }) {
     [adopt],
   );
 
+  const loginWithGoogle = useCallback(
+    async (idToken) => adopt(await authApi.google(idToken)),
+    [adopt],
+  );
+
   const logout = useCallback(() => {
     clear();
     setExpired(false);
@@ -97,8 +102,18 @@ export function AuthProvider({ children }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, expired, isAuthenticated: Boolean(user), login, register, logout, refresh }),
-    [user, loading, expired, login, register, logout, refresh],
+    () => ({
+      user,
+      loading,
+      expired,
+      isAuthenticated: Boolean(user),
+      login,
+      register,
+      loginWithGoogle,
+      logout,
+      refresh,
+    }),
+    [user, loading, expired, login, register, loginWithGoogle, logout, refresh],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

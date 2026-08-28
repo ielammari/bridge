@@ -45,7 +45,10 @@ public class SecurityConfig {
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(HttpMethod.GET, "/api/v1/health").permitAll()
-						.requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login").permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login",
+								"/api/v1/auth/google")
+						.permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/v1/auth/providers").permitAll()
 						.requestMatchers("/api/v1/profile/**").hasRole("CANDIDAT")
 						// The candidate feed is matched before the general offer rules,
 						// which are reserved for HR management.

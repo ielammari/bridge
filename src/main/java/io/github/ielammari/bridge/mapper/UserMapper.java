@@ -19,7 +19,10 @@ public final class UserMapper {
 				user.getFirstName(),
 				user.getLastName(),
 				user.getRole(),
-				user.isMustChangePassword());
+				user.isMustChangePassword(),
+				user.mustCompleteProfile(),
+				user.getGoogleSub() != null,
+				user.getPasswordHash() != null);
 	}
 
 }

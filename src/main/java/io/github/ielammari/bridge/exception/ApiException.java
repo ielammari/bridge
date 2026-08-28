@@ -27,6 +27,14 @@ public final class ApiException extends RuntimeException {
 				"L'adresse email ou le mot de passe est incorrect.");
 	}
 
+	public static ApiException conflict(String code, String message) {
+		return new ApiException(HttpStatus.CONFLICT, code, message);
+	}
+
+	public static ApiException unauthorized(String code, String message) {
+		return new ApiException(HttpStatus.UNAUTHORIZED, code, message);
+	}
+
 	public static ApiException notFound(String message) {
 		return new ApiException(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", message);
 	}

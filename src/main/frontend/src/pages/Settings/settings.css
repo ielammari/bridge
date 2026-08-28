@@ -51,6 +51,22 @@
   color: var(--text-secondary);
 }
 
+/* ---- The Google identity ------------------------------------------------ */
+
+/* Google is asked for a width in pixels, so the row it measures is bounded
+   here rather than running the width of the card. */
+.settings__google {
+  max-width: 25rem;
+}
+
+/* The reason an action is unavailable, sitting with the action itself. */
+.settings__blocked {
+  margin-right: auto;
+  align-self: center;
+  font-size: var(--size-sm);
+  color: var(--text-secondary);
+}
+
 /* ---- Theme ------------------------------------------------------------- */
 
 .theme {

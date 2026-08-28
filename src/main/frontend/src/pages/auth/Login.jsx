@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AuthLayout from './AuthLayout.jsx';
+import GoogleSignIn from './GoogleSignIn.jsx';
 import Alert from '../../components/Alert/Alert.jsx';
 import Button from '../../components/Button/Button.jsx';
 import Field from '../../components/Field/Field.jsx';
@@ -78,6 +79,8 @@ export default function Login() {
           Se connecter
         </Button>
       </form>
+
+      <GoogleSignIn onError={setFailure} />
     </AuthLayout>
   );
 }
