@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import Wordmark from '../../components/Wordmark/Wordmark.jsx';
 import './auth.css';
 
 /**
@@ -10,7 +11,7 @@ export default function AuthLayout({ title, intro, children, footer, wide = fals
     <div className="auth">
       <aside className="auth__aside">
         <Link to="/" className="auth__brand">
-          <span className="auth__logo">Bridge</span>
+          <Wordmark className="auth__logo" />
           <span className="auth__scope">Recrutement</span>
         </Link>
       </aside>

@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import Icon from '../../components/Icon/Icon.jsx';
 import InfoHint from '../../components/InfoHint/InfoHint.jsx';
 import Sidebar from '../../components/Sidebar/Sidebar.jsx';
+import Wordmark from '../../components/Wordmark/Wordmark.jsx';
 import '../../components/PersonLink/PersonLink.css';
 import { useNotifications } from '../../context/NotificationContext.jsx';
 import useDocumentTitle from '../../hooks/useDocumentTitle.js';
@@ -238,7 +239,9 @@ export default function Workspace({
           <Icon name="menu" />
           {unreadCount > 0 && <span className="workspace__menu-dot" aria-hidden="true" />}
         </button>
-        <Link to="/" className="workspace__logo">Bridge</Link>
+        <Link to="/" className="workspace__logo">
+          <Wordmark on="page" className="workspace__logo-img" />
+        </Link>
       </header>
 
       {/* A drawer that is merely translated off screen still holds its links in

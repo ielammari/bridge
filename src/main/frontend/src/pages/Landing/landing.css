@@ -33,35 +33,80 @@
 
 /* ---- The hero ----------------------------------------------------------- */
 
-/* The same slab as the header above it, so the first screen is one surface. */
+/* The same slab as the header above it, so the first screen is one surface.
+   The sizes, the inset and the drift are declared here; the display line is
+   measured from its own column, which holds it at two lines. */
 .hero {
   background: var(--rail);
   color: var(--rail-text);
   --focus: var(--rail-accent);
+  --hero-title: clamp(2.25rem, min(9.9cqi, 1.15rem + 4.4vw), 4.5rem);
+  --hero-lead: clamp(1.125rem, 1rem + 0.6vw, 1.375rem);
+  --hero-inset: clamp(var(--space-7), 9vw, 7rem);
+  --rule-lift: 1.5mm;
+  --float-travel: 1.25rem;
+  --float-time: 11s;
+  --float-ease: cubic-bezier(0.45, 0, 0.55, 1);
 }
 
+/* The words, then the bridge beside them, then the count on a rule under both. */
 .hero__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+  align-items: center;
+  column-gap: var(--space-8);
+  padding-block: var(--hero-inset) var(--space-8);
+}
+
+/* The column the display line is measured against. The gap is the distance
+   from that line to its deck. */
+.hero__words {
+  container-type: inline-size;
+
   display: flex;
   flex-direction: column;
   align-items: start;
-  gap: var(--space-5);
-  padding-block: clamp(var(--space-7), 9vw, 7rem) var(--space-8);
+  gap: var(--space-4);
+}
+
+/* The one object on the page that moves on its own. It carries no frame: the
+   shape inside the file is the whole of it. */
+.hero__art {
+  justify-self: end;
+  width: 100%;
+  max-width: 36rem;
+  height: auto;
+  animation: hero-float var(--float-time) var(--float-ease) infinite alternate;
+}
+
+@keyframes hero-float {
+  from { transform: translate3d(0, calc(var(--float-travel) / -2), 0); }
+  to { transform: translate3d(0, calc(var(--float-travel) / 2), 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__art {
+    animation: none;
+  }
 }
 
 /* The one place on this page the display face runs large. */
 .hero__title {
-  max-width: 20ch;
-  font-size: var(--size-5xl);
-  font-weight: var(--weight-bold);
-  line-height: var(--leading-tight);
+  font-size: var(--hero-title);
+  font-weight: var(--weight-heavy);
+  line-height: 1.04;
   letter-spacing: var(--tracking-display);
+  text-wrap: balance;
   color: var(--rail-text-active);
 }
 
+/* The deck: the display face on its own measure, out of the page's prose. */
 .hero__lead {
-  max-width: 62ch;
-  font-size: var(--size-lg);
-  line-height: var(--leading-normal);
+  max-width: 60ch;
+  font-family: var(--font-display);
+  font-size: var(--hero-lead);
+  line-height: 1.4;
+  letter-spacing: var(--tracking-heading);
   color: var(--rail-text);
 }
 
@@ -70,7 +115,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-4);
-  margin-top: var(--space-2);
+  margin-top: var(--space-5);
 }
 
 /* The page's one primary action, painted in the accent because on this slab it
@@ -112,13 +157,15 @@
   color: var(--rail-text-active);
 }
 
-/* Counted from the offers themselves, on a rule that closes the band. */
+/* Counted from the offers themselves, on a rule that closes the band. The rule
+   stands the block's own inset under it, less the lift. */
 .hero__figures {
+  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-7);
   width: 100%;
-  margin-top: var(--space-5);
+  margin-top: calc(var(--hero-inset) - var(--rule-lift));
   padding-top: var(--space-5);
   border-top: 1px solid var(--rail-edge);
 }
@@ -440,6 +487,19 @@
 }
 
 /* ---- Narrow -------------------------------------------------------------- */
+
+/* One column: the bridge takes its own row under the words. */
+@media (max-width: 64rem) {
+  .hero__inner {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-7);
+  }
+
+  .hero__art {
+    justify-self: center;
+    max-width: 28rem;
+  }
+}
 
 /* The spine turns down the page: one rule on the left, every entry along it,
    ending at the last node rather than running past it. The fork's own drawing

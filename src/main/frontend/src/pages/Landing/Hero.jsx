@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import art from '../../assets/hero.webp';
 import { landingFor } from '../../components/ProtectedRoute/ProtectedRoute.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 
@@ -14,7 +15,8 @@ function Figure({ value, one, many }) {
 
 /**
  * The first screen: what the application does, the two ways on, and the size of
- * what is open right now, counted from the offers themselves.
+ * what is open right now, counted from the offers themselves. The bridge stands
+ * beside it, drifting.
  */
 export default function Hero({ offers, domains, ready }) {
   const { user, loading } = useAuth();
@@ -22,21 +24,24 @@ export default function Hero({ offers, domains, ready }) {
   return (
     <section className="pubband hero">
       <div className="pubband__inner hero__inner">
-        <h1 className="hero__title">Postuler, et savoir où vous en êtes.</h1>
+        <div className="hero__words">
+          <h1 className="hero__title">Postulez là où votre profil compte.</h1>
 
-        <p className="hero__lead">
-          Bridge publie les postes ouverts de l'entreprise, vous montre ceux dont vous remplissez
-          les conditions, et suit votre candidature de sa réception à la décision.
-        </p>
+          <p className="hero__lead">
+            La plateforme de recrutement de l'entreprise, de l'offre à l'embauche.
+          </p>
 
-        <div className="hero__actions">
-          <Link to="/emplois" className="hero__go">Voir les offres</Link>
-          {!loading && (
-            user
-              ? <Link to={landingFor(user)} className="hero__alt">Ouvrir l'application</Link>
-              : <Link to="/inscription" className="hero__alt">Créer un compte</Link>
-          )}
+          <div className="hero__actions">
+            <Link to="/emplois" className="hero__go">Voir les offres</Link>
+            {!loading && (
+              user
+                ? <Link to={landingFor(user)} className="hero__alt">Ouvrir l'application</Link>
+                : <Link to="/inscription" className="hero__alt">Créer un compte</Link>
+            )}
+          </div>
         </div>
+
+        <img src={art} alt="" className="hero__art" width={1029} height={675} />
 
         {ready && (
           <div className="hero__figures">

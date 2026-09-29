@@ -306,19 +306,16 @@
 }
 
 .workspace__logo {
-  font-family: var(--font-display);
-  font-size: var(--size-lg);
-  font-weight: var(--weight-bold);
-  letter-spacing: var(--tracking-display);
-  padding-bottom: 1px;
+  display: inline-flex;
+  padding-bottom: 3px;
   border-bottom: 2px solid var(--accent);
-  color: var(--text);
   text-decoration: none;
-  transition: color var(--duration) var(--ease);
 }
 
-.workspace__logo:hover {
-  color: var(--accent);
+.workspace__logo-img {
+  display: block;
+  height: 1.15rem;
+  width: auto;
 }
 
 .workspace__scrim {
@@ -364,6 +361,26 @@
     transition:
       transform var(--duration) var(--ease),
       visibility 0s linear 0s;
+  }
+
+  /* The rail crosses the page here rather than standing beside it, so it and
+     its scrim rise over the page header. The bar keeps the top. */
+  .workspace__scrim {
+    z-index: calc(var(--z-nav) + 2);
+  }
+
+  .workspace__rail {
+    z-index: calc(var(--z-nav) + 3);
+  }
+
+  .workspace__mobilebar {
+    z-index: calc(var(--z-nav) + 4);
+  }
+
+  /* The bar carries the mark here, so the rail's own holds its space and
+     nothing else. */
+  .workspace__rail .sidebar__logo {
+    visibility: hidden;
   }
 
   /* Collapsing is a desktop affordance; the drawer opens from the bar and the

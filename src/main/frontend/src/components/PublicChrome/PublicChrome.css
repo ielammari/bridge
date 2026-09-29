@@ -6,8 +6,8 @@
 
 .public {
   --pub-gutter: clamp(var(--space-5), 4vw, var(--space-8));
-  --pub-max: 88rem;
-  --pubhead-h: 4.5rem;
+  --pub-max: 100rem;
+  --pubhead-h: 5rem;
 
   display: flex;
   flex-direction: column;
@@ -79,24 +79,29 @@
   padding-inline: var(--pub-gutter);
 }
 
-/* The mark carries the brass rule of the auth panel, held back until the
-   pointer is on it. */
+/* The link hugs the mark, so the rule the pointer brings out is the width of
+   the word, and the drop sets that word on the line the text beside it holds. */
 .pubhead__brand {
-  font-family: var(--font-display);
-  font-size: var(--size-xl);
-  font-weight: var(--weight-bold);
-  letter-spacing: var(--tracking-heading);
-  line-height: 1;
-  color: var(--rail-text-active);
-  text-decoration: none;
-  padding-bottom: 2px;
+  --logo-h: 1.625rem;
+  --logo-gap: 4px;
+
+  position: relative;
+  top: calc(var(--logo-h) * 0.083 + (var(--logo-gap) + 2px) / 2);
+  display: inline-flex;
+  justify-self: start;
+  padding-bottom: var(--logo-gap);
   border-bottom: 2px solid transparent;
   transition: border-color var(--duration) var(--ease);
 }
 
 .pubhead__brand:hover {
-  color: var(--rail-text-active);
   border-bottom-color: var(--rail-accent);
+}
+
+.pubhead__logo {
+  display: block;
+  height: var(--logo-h);
+  width: auto;
 }
 
 .pubhead__nav {
@@ -107,7 +112,7 @@
 
 .pubhead__link {
   color: var(--rail-text);
-  font-size: var(--size-sm);
+  font-size: var(--size-base);
   font-weight: var(--weight-medium);
   text-decoration: none;
   padding-block: var(--space-3);
@@ -124,6 +129,8 @@
 }
 
 .pubhead__actions {
+  --toggle-size: 2.75rem;
+
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -133,12 +140,12 @@
 .pubhead__enter {
   display: inline-flex;
   align-items: center;
-  min-height: 2.5rem;
-  padding-inline: var(--space-4);
+  min-height: 2.75rem;
+  padding-inline: var(--space-5);
   border: 1px solid var(--rail-edge);
   border-radius: var(--radius);
   color: var(--rail-text-active);
-  font-size: var(--size-sm);
+  font-size: var(--size-base);
   font-weight: var(--weight-medium);
   text-decoration: none;
   transition: background-color var(--duration) var(--ease), border-color var(--duration) var(--ease);
@@ -191,44 +198,33 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-4) var(--space-6);
+  justify-content: center;
+  gap: var(--space-4) var(--space-7);
   max-width: var(--pub-max);
   margin-inline: auto;
   padding: var(--space-6) var(--pub-gutter);
 }
 
 .pubfoot__brand {
-  font-family: var(--font-display);
-  font-size: var(--size-lg);
-  font-weight: var(--weight-bold);
-  letter-spacing: var(--tracking-heading);
-  color: var(--rail-text-active);
-  text-decoration: none;
-  padding-bottom: 2px;
+  --logo-h: 1.1rem;
+  --logo-gap: 3px;
+
+  position: relative;
+  top: calc(var(--logo-h) * 0.083 + (var(--logo-gap) + 2px) / 2);
+  display: inline-flex;
+  padding-bottom: var(--logo-gap);
   border-bottom: 2px solid transparent;
   transition: border-color var(--duration) var(--ease);
 }
 
 .pubfoot__brand:hover {
-  color: var(--rail-text-active);
   border-bottom-color: var(--rail-accent);
 }
 
-.pubfoot__nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-5);
-}
-
-.pubfoot__link {
-  color: var(--rail-text);
-  font-size: var(--size-sm);
-  text-decoration: none;
-  transition: color var(--duration) var(--ease);
-}
-
-.pubfoot__link:hover {
-  color: var(--rail-text-active);
+.pubfoot__logo {
+  display: block;
+  height: var(--logo-h);
+  width: auto;
 }
 
 /* The mark sits with the year rather than with the name, so its weight is the
@@ -237,9 +233,7 @@
   font-weight: 500;
 }
 
-/* Pushed to the far edge, where a colophon belongs. */
 .pubfoot__note {
-  margin-left: auto;
   font-family: var(--font-mono);
   font-size: var(--size-xs);
   letter-spacing: var(--tracking-label);

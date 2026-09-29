@@ -31,24 +31,20 @@
   text-decoration: none;
 }
 
-.auth__brand:hover {
+.auth__brand:hover .auth__scope {
   color: var(--rail-accent);
 }
 
-/* The one place the display face runs large. The brass underline is the
-   accent's only appearance outside focus rings. */
+/* The one place the mark runs large, and the one with no rule under it. */
 .auth__logo {
-  font-family: var(--font-display);
-  font-size: calc(var(--mark) * 1.1);
-  font-weight: var(--weight-bold);
-  line-height: 1;
-  letter-spacing: 0;
-  padding-bottom: calc(var(--mark) * 0.08);
-  border-bottom: 2px solid var(--rail-accent);
+  display: block;
+  height: calc(var(--mark) * 1.3);
+  width: auto;
 }
 
 .auth__scope {
   margin-inline-start: calc(var(--mark) * 1.1);
+  transition: color var(--duration-slow) cubic-bezier(0.42, 0, 0.58, 1);
   font-family: var(--font-display);
   font-size: calc(var(--mark) * 0.55);
   font-weight: var(--weight-heavy);

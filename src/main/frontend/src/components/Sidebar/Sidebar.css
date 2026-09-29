@@ -33,31 +33,29 @@
   overflow-x: hidden;
 }
 
-/* Both marks occupy the same cell and share a left edge, so only their tails
-   differ and the crossfade reads as one word shortening. */
+/* Both marks stand in one cell, on one left edge, at one height, so only the
+   tail of the word changes. */
 .sidebar__logo {
   display: grid;
-  font-family: var(--font-display);
-  font-size: var(--size-2xl);
-  font-weight: var(--weight-bold);
-  letter-spacing: var(--tracking-display);
-  color: var(--rail-text-active);
+  justify-items: start;
   text-decoration: none;
-  transition: color var(--duration) var(--ease);
-}
-
-.sidebar__logo:hover {
-  color: var(--rail-accent);
 }
 
 .sidebar__logo-full,
 .sidebar__logo-mark {
   grid-area: 1 / 1;
   justify-self: start;
-  padding-bottom: 1px;
+  box-sizing: content-box;
+  height: 1.7rem;
+  width: auto;
+  padding-bottom: 2px;
   border-bottom: 2px solid var(--rail-accent);
-  white-space: nowrap;
-  transition: opacity var(--duration) var(--ease);
+  transition: opacity var(--duration) var(--ease), border-color var(--duration) var(--ease);
+}
+
+.sidebar__logo:hover .sidebar__logo-full,
+.sidebar__logo:hover .sidebar__logo-mark {
+  border-bottom-color: var(--rail-text-active);
 }
 
 .sidebar__logo-mark {

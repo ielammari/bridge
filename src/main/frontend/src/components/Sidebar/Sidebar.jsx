@@ -1,5 +1,6 @@
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import Icon from '../Icon/Icon.jsx';
+import Wordmark from '../Wordmark/Wordmark.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useNotifications } from '../../context/NotificationContext.jsx';
 import './Sidebar.css';
@@ -94,8 +95,8 @@ export default function Sidebar({ collapsed, onToggle, onNavigate }) {
         {/* The wordmark and the mark share one cell, so collapsing reads as the
             word losing its tail rather than one logo swapping for another. */}
         <Link to="/" className="sidebar__logo" title={hint('Accueil')} aria-label="Accueil">
-          <span className="sidebar__logo-full">Bridge</span>
-          <span className="sidebar__logo-mark" aria-hidden="true">B</span>
+          <Wordmark className="sidebar__logo-full" alt="" aria-hidden="true" />
+          <Wordmark mark className="sidebar__logo-mark" alt="" aria-hidden="true" />
         </Link>
       </div>
 

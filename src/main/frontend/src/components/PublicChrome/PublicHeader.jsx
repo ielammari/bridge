@@ -1,5 +1,6 @@
 import { Link, NavLink } from 'react-router-dom';
 import ThemeToggle from '../ThemeToggle/ThemeToggle.jsx';
+import Wordmark from '../Wordmark/Wordmark.jsx';
 import { landingFor } from '../ProtectedRoute/ProtectedRoute.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import './PublicChrome.css';
@@ -16,7 +17,9 @@ export default function PublicHeader() {
   return (
     <header className="pubhead">
       <div className="pubhead__inner">
-        <Link to="/" className="pubhead__brand">Bridge</Link>
+        <Link to="/" className="pubhead__brand">
+          <Wordmark className="pubhead__logo" />
+        </Link>
 
         <nav className="pubhead__nav" aria-label="Navigation du site">
           <Link to="/#fonctionnalites" className="pubhead__link">Fonctionnalités</Link>
