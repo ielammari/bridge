@@ -1,0 +1,17 @@
+# The clean production version: the schema and reference data only, its own
+# database and CV directory, and no default signing key.
+
+spring:
+  datasource:
+    url: ${BRIDGE_DB_URL:jdbc:postgresql://localhost:${BRIDGE_PROD_DB_PORT:5433}/${BRIDGE_DB_NAME:bridge}}
+  flyway:
+    locations: classpath:db/prod
+
+bridge:
+  jwt:
+    secret: ${BRIDGE_JWT_SECRET}
+  storage:
+    cv-dir: ${BRIDGE_CV_DIR:./storage/prod/cv}
+  demo:
+    enabled: false
+    reset: false

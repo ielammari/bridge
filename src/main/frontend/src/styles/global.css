@@ -366,7 +366,7 @@ textarea,
 .path__ongoing {
   padding: 2px var(--space-2);
   background: var(--status-en-revue-bg);
-  border-radius: 999px;
+  border-radius: var(--radius);
   font-family: var(--font-mono);
   font-size: var(--size-xs);
   font-weight: var(--weight-semibold);
@@ -561,8 +561,8 @@ textarea,
 /* ---- Traits ------------------------------------------------------------- */
 
 .tag {
-  padding: 2px var(--space-3);
-  border-radius: 999px;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius);
   font-size: var(--size-xs);
 }
 

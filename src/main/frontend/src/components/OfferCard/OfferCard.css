@@ -52,9 +52,9 @@
 }
 
 .offercard__contract {
-  padding: 2px var(--space-3);
+  padding: 2px var(--space-2);
   background: var(--surface-sunken);
-  border-radius: 999px;
+  border-radius: var(--radius);
   font-family: var(--font-mono);
   font-size: var(--size-xs);
   font-weight: var(--weight-semibold);

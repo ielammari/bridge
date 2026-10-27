@@ -12,7 +12,7 @@
   padding: 3px;
   background: var(--surface-sunken);
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-lg);
 }
 
 .toggle__marker {
@@ -22,7 +22,7 @@
   left: 3px;
   width: calc((100% - 6px) / var(--toggle-count));
   background: var(--surface);
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   box-shadow: var(--shadow-float);
   transform: translateX(calc(var(--toggle-index) * 100%));
   transition: transform var(--duration) var(--ease);
@@ -35,7 +35,7 @@
   justify-content: center;
   min-height: 32px;
   padding: 0 var(--space-4);
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 

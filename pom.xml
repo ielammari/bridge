@@ -85,7 +85,7 @@
 				<version>1.15.1</version>
 				<configuration>
 					<workingDirectory>${frontend.dir}</workingDirectory>
-					<installDirectory>${project.build.directory}</installDirectory>
+					<installDirectory>${project.basedir}/target</installDirectory>
 					<skip>${skipFrontend}</skip>
 				</configuration>
 				<executions>
@@ -147,5 +147,41 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<!-- The clean production build, in target/prod so its configuration never
+		     reaches the demonstration build. -->
+		<profile>
+			<id>prod</id>
+			<build>
+				<directory>${project.basedir}/target/prod</directory>
+				<finalName>bridge-prod</finalName>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-resources-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>copy-prod-default-profile</id>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<phase>process-resources</phase>
+								<configuration>
+									<outputDirectory>${project.build.outputDirectory}/config</outputDirectory>
+									<resources>
+										<resource>
+											<directory>${project.basedir}/src/main/prod</directory>
+											<filtering>false</filtering>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 </project>

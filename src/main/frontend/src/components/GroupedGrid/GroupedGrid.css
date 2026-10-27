@@ -22,7 +22,7 @@
 .grouped__count {
   padding: 1px var(--space-2);
   background: var(--surface-sunken);
-  border-radius: 999px;
+  border-radius: var(--radius);
   font-size: var(--size-xs);
   font-weight: var(--weight-medium);
   color: var(--text-faint);

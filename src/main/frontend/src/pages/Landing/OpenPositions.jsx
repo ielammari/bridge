@@ -10,7 +10,7 @@ const SHOWN = 6;
  * The open positions themselves, as early on the page as they can be: the cards
  * are the application's own, carrying the offers it is publishing right now.
  */
-export default function OpenPositions({ offers, domains, pending, leaving }) {
+export default function OpenPositions({ offers, pending, leaving }) {
   const shown = offers.slice(0, SHOWN);
 
   return (
@@ -20,18 +20,6 @@ export default function OpenPositions({ offers, domains, pending, leaving }) {
           <p className="section__eyebrow">Ce qui recrute</p>
           <h2 className="section__title">Les postes ouverts</h2>
         </div>
-
-        {domains.length > 0 && (
-          <ul className="positions__domains" aria-label="Domaines des offres ouvertes">
-            {domains.map((domain) => (
-              <li key={domain}>
-                <Link className="positions__domain" to={`/emplois?domaine=${encodeURIComponent(domain)}`}>
-                  {domain}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
 
         {pending && <Skeleton count={3} leaving={leaving} label="Chargement des offres" />}
 

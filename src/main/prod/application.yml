@@ -1,0 +1,5 @@
+# Packaged at config/application.yml by the Maven prod profile only, making prod
+# the default profile of that build.
+spring:
+  profiles:
+    default: prod

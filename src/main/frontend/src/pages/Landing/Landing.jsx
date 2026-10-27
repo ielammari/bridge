@@ -54,7 +54,7 @@ export default function Landing() {
   return (
     <PublicLayout>
       <Hero offers={offers.length} domains={domains.length} ready={status === 'ready'} />
-      <OpenPositions offers={offers} domains={domains} pending={pending} leaving={leaving} />
+      <OpenPositions offers={offers} pending={pending} leaving={leaving} />
       <Features sample={sample} />
       <Funnel />
       <Inside />

@@ -6,7 +6,7 @@
 
 /* Everything inside the column is a ratio of the column's own size, so the one
    value above carries the whole section: the headings, the mark that opens a
-   hint, the pills and their padding move together with the reading. */
+   hint, the tags and their padding move together with the reading. */
 .doc--side-first > .doc__main .doc__heading {
   font-size: 0.75em;
 }

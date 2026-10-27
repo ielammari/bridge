@@ -244,7 +244,7 @@
   padding: 0 5px;
   background: var(--rail-accent);
   color: var(--rail);
-  border-radius: 999px;
+  border-radius: var(--radius);
   font-family: var(--font-mono);
   font-size: var(--size-xs);
   font-weight: var(--weight-semibold);

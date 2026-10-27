@@ -18,3 +18,24 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  # The prod profile's database, started only when named:
+  # docker compose up -d db-prod.
+  db-prod:
+    image: postgres:16
+    container_name: bridge-prod-db
+    profiles: [prod]
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${BRIDGE_DB_NAME:-bridge}
+      POSTGRES_USER: ${BRIDGE_DB_USER:-bridge}
+      POSTGRES_PASSWORD: ${BRIDGE_DB_PASSWORD:-bridge}
+    ports:
+      - "${BRIDGE_PROD_DB_PORT:-5433}:5432"
+    volumes:
+      - ./.postgres-prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${BRIDGE_DB_USER:-bridge} -d ${BRIDGE_DB_NAME:-bridge}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

@@ -4,8 +4,12 @@ target/
 ### Uploaded files. Paths are stored in the database.
 storage/
 
-### Project local PostgreSQL data directory (docker-compose bind mount).
+### Project local PostgreSQL data directories (docker-compose bind mounts).
 .postgres-data/
+.postgres-prod/
+
+### Local configuration. .env.example is the tracked template.
+.env
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/

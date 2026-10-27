@@ -101,8 +101,8 @@
    does not use the status palette. */
 .verdict {
   flex-shrink: 0;
-  padding: 2px var(--space-3);
-  border-radius: 999px;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius);
   font-size: var(--size-xs);
   font-weight: var(--weight-medium);
 }

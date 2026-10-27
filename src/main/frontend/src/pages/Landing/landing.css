@@ -196,32 +196,6 @@
   padding-block: var(--space-8);
 }
 
-/* The domains the open offers span, each a way into the listing narrowed to it. */
-.positions__domains {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin: 0 0 var(--space-5);
-  padding: 0;
-  list-style: none;
-}
-
-.positions__domain {
-  display: inline-block;
-  padding: var(--space-1) var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  color: var(--text-secondary);
-  font-size: var(--size-sm);
-  text-decoration: none;
-  transition: border-color var(--duration) var(--ease), color var(--duration) var(--ease);
-}
-
-.positions__domain:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-}
-
 .positions__more {
   margin-top: var(--space-5);
   font-weight: var(--weight-medium);

@@ -60,7 +60,7 @@
   flex-shrink: 0;
   padding: 1px var(--space-2);
   background: var(--surface-sunken);
-  border-radius: 999px;
+  border-radius: var(--radius);
   font-family: var(--font-mono);
   font-size: var(--size-xs);
   font-weight: var(--weight-semibold);

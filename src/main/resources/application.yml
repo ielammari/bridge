@@ -2,8 +2,13 @@ spring:
   application:
     name: bridge
 
+  # Optional overrides from .env in the working directory, the file docker
+  # compose reads. Environment variables win.
+  config:
+    import: optional:file:.env[.properties]
+
   datasource:
-    url: ${BRIDGE_DB_URL:jdbc:postgresql://localhost:5432/bridge}
+    url: ${BRIDGE_DB_URL:jdbc:postgresql://localhost:${BRIDGE_DB_PORT:5432}/${BRIDGE_DB_NAME:bridge}}
     username: ${BRIDGE_DB_USER:bridge}
     password: ${BRIDGE_DB_PASSWORD:bridge}
 
@@ -45,6 +50,17 @@ bridge:
     # Relative paths to the CV files are stored in the database, never the bytes.
     cv-dir: ${BRIDGE_CV_DIR:./storage/cv}
     max-file-size-bytes: 5242880
+  demo:
+    # DemoData: the placeholder CVs and the reset. Off under the prod profile.
+    enabled: true
+    # While true, every start empties the database and reloads the demonstration data.
+    reset: ${BRIDGE_DEMO_RESET:false}
+  admin:
+    # The first recruiter, created when none exists, owing a password change.
+    email: ${BRIDGE_ADMIN_EMAIL:}
+    password: ${BRIDGE_ADMIN_PASSWORD:}
+    first-name: ${BRIDGE_ADMIN_FIRST_NAME:Admin}
+    last-name: ${BRIDGE_ADMIN_LAST_NAME:Bridge}
 
 logging:
   level:
