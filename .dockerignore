@@ -1,0 +1,8 @@
+# Only the sources reach the image build.
+*
+!.mvn/wrapper/maven-wrapper.properties
+!mvnw
+!pom.xml
+!src
+src/main/frontend/node_modules
+src/main/frontend/dist
